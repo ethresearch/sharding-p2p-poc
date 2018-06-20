@@ -11,7 +11,7 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 
-	pbmsg "github.com/libp2p/go-libp2p/examples/minimal/pb"
+	pbmsg "github.com/mhchia/sharding-poc/pb"
 
 	ma "github.com/multiformats/go-multiaddr"
 	protobufCodec "github.com/multiformats/go-multicodec/protobuf"

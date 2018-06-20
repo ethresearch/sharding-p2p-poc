@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package protocols.p2p;
+
+// a protocol define a set of reuqest and responses
+message AddPeerRequest {
+    // method specific data
+    string message = 1;
+    // add any data here....
+}
+
+message AddPeerResponse {
+    // response specific data
+    bool success = 1;
+
+    // ... add any additional message data here
+}
+
+message Collation {
+    int64 shardID = 1;
+    int64 number = 2;
+    string blobs = 3;
+}
+
+message NotifyShardsRequest {
+    repeated int64 shardIDs = 1;
+}

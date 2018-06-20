@@ -6,12 +6,13 @@ import (
 	"log"
 	"sync"
 
+	pbmsg "github.com/mhchia/sharding-poc/pb"
+
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/protobuf/proto"
 	floodsub "github.com/libp2p/go-floodsub"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	pbmsg "github.com/libp2p/go-libp2p/examples/minimal/pb"
 )
 
 type ShardManager struct {
