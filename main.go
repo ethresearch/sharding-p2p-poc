@@ -116,6 +116,7 @@ func main() {
 	targetSeed := flag.Int64("target-seed", -1, "target peer's seed")
 	targetIP := flag.String("target-ip", "", "target peer's ip")
 	seed := flag.Int64("seed", 0, "set random seed for id generation")
+	listenShards := flag.Int64("listen-shards", 0, "number of shards listened")
 	sendCollationOption := flag.String("send", "", "send collations")
 	peerSeed := flag.Int64("find", -1, "use dht to find a certain peer with the given peerSeed")
 	flag.Parse()
@@ -169,10 +170,10 @@ func main() {
 		}
 	}
 
-	var numListeningShards ShardIDType = 100
-	for i := ShardIDType(0); i < numListeningShards; i++ {
+	for i := ShardIDType(0); i < *listenShards; i++ {
 		node.ListenShard(i)
 	}
+	node.PublishListeningShards()
 
 	time.Sleep(time.Millisecond * 500)
 

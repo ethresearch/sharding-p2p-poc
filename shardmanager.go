@@ -6,13 +6,13 @@ import (
 	"log"
 	"sync"
 
-	pbmsg "github.com/mhchia/sharding-poc/pb"
-
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/protobuf/proto"
 	floodsub "github.com/libp2p/go-floodsub"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
+	pbmsg "github.com/mhchia/sharding-poc/pb"
+	b58 "github.com/mr-tron/base58/base58"
 )
 
 type ShardManager struct {
@@ -36,7 +36,6 @@ func getCollationsTopic(shardID ShardIDType) string {
 
 func NewShardManager(ctx context.Context, node *Node) *ShardManager {
 	service, err := floodsub.NewGossipSub(ctx, node.Host)
-	// service, err := floodsub.NewFloodSub(ctx, node.Host)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -142,7 +141,7 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 	// listeningShards protocol
 	// TODO: maybe need refactoring
 	n.connectShardNodes(shardID)
-	n.PublishListeningShards()
+	// n.PublishListeningShards()
 
 	// shardCollations protocol
 	n.SubscribeShardCollations(shardID)
@@ -231,8 +230,10 @@ func (n *ShardManager) UnsubscribeListeningShards() {
 }
 
 func (n *ShardManager) PublishListeningShards() {
-	selfListeningShards := n.peerListeningShards[n.node.ID()]
-	log.Printf("%v: %v", n.node.Name(), selfListeningShards)
+	selfListeningShards, prs := n.peerListeningShards[n.node.ID()]
+	if !prs {
+		selfListeningShards = NewListeningShards()
+	}
 	bytes := selfListeningShards.ToBytes()
 	n.pubsubService.Publish(listeningShardTopic, bytes)
 }
@@ -244,7 +245,8 @@ func Hash(msg *pbmsg.Collation) string {
 	if err != nil {
 		log.Printf("Error occurs when hashing %v", msg)
 	}
-	return string(gethcrypto.Keccak256(dataInBytes))
+	// FIXME: for convenience
+	return b58.Encode([]byte(gethcrypto.Keccak256(dataInBytes)))
 }
 
 func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
@@ -276,15 +278,16 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 			collationHash := Hash(&collation)
 			n.lock.Lock()
 			n.collations[collationHash] = struct{}{}
-			log.Printf(
-				"%v: current numCollations=%d",
-				n.node.Name(),
-				len(n.collations),
-			)
+			// log.Printf(
+			// 	"%v: current numCollations=%d",
+			// 	n.node.Name(),
+			// 	len(n.collations),
+			// )
 			n.lock.Unlock()
 			log.Printf(
-				"%v: receive: collation: shardId=%v, number=%v, blobs=%v",
+				"%v: receive: collation: hash=%v, shardId=%v, number=%v, blobs=%v",
 				n.node.Name(),
+				collationHash[:8],
 				collation.GetShardID(),
 				collation.GetNumber(),
 				collation.GetBlobs(),
