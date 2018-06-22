@@ -170,8 +170,10 @@ func main() {
 		}
 	}
 
+	log.Printf("Sending subscriptions...")
 	for i := ShardIDType(0); i < *listenShards; i++ {
 		node.ListenShard(i)
+		time.Sleep(time.Millisecond * 30)
 	}
 	node.PublishListeningShards()
 
@@ -197,24 +199,26 @@ func main() {
 
 		blobSize := int(math.Pow(2, 20) - 100) // roughly 1 MB
 
-		/**** This is where the listener code ends ****/
-
 		for i := 0; i < numSendShards; i++ {
+			time.Sleep(time.Millisecond * time.Duration(timeInMs))
 			go func(shardID int) {
 				for j := 0; j < numCollations; j++ {
+					time.Sleep(time.Millisecond * time.Duration(timeInMs*numSendShards))
 					node.SendCollation(
 						ShardIDType(shardID),
 						int64(j),
 						string(make([]byte, blobSize)),
 					)
 					// TODO: control the speed of sending collations
-					time.Sleep(time.Millisecond * time.Duration(timeInMs))
 				}
 			}(i)
 		}
 	}
 	log.Printf("%v: listening for connections", node.Name())
-	select {}
+	for {
+		node.PublishListeningShards()
+		time.Sleep(time.Second * 1)
+	}
 	// for {
 	// 	log.Println(node.Name())
 	// 	time.Sleep(time.Millisecond * 1000)

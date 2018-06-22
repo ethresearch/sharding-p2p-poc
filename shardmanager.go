@@ -206,12 +206,12 @@ func (n *ShardManager) ListenListeningShards(ctx context.Context) {
 			}
 			listeningShards := ListeningShardsFromBytes(msg.GetData())
 			n.SetPeerListeningShard(peerID, listeningShards.getShards())
-			log.Printf(
-				"%v: receive: peerID=%v, listeningShards=%v",
-				n.node.Name(),
-				peerID,
-				listeningShards.getShards(),
-			)
+			// log.Printf(
+			// 	"%v: receive: peerID=%v, listeningShards=%v",
+			// 	n.node.Name(),
+			// 	peerID,
+			// 	listeningShards.getShards(),
+			// )
 		}
 	}()
 }
@@ -254,6 +254,7 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 		return
 	}
 	shardCollationsSub := n.shardCollationsSubs[shardID]
+	numCollationReceived := 0
 	go func() {
 		for {
 			// TODO: consider to pass the context from outside?
@@ -276,17 +277,19 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 			}
 			// TODO: need some check against collations
 			collationHash := Hash(&collation)
-			n.lock.Lock()
-			n.collations[collationHash] = struct{}{}
-			// log.Printf(
-			// 	"%v: current numCollations=%d",
-			// 	n.node.Name(),
-			// 	len(n.collations),
-			// )
-			n.lock.Unlock()
+			numCollationReceived += 1
+			// n.lock.Lock()
+			// n.collations[collationHash] = struct{}{}
+			// // log.Printf(
+			// // 	"%v: current numCollations=%d",
+			// // 	n.node.Name(),
+			// // 	len(n.collations),
+			// // )
+			// n.lock.Unlock()
 			log.Printf(
-				"%v: receive: collation: hash=%v, shardId=%v, number=%v, blobs=%v",
+				"%v: receive: collation: seqNo=%v, hash=%v, shardId=%v, number=%v, blobs=%v",
 				n.node.Name(),
+				numCollationReceived,
 				collationHash[:8],
 				collation.GetShardID(),
 				collation.GetNumber(),
