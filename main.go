@@ -215,10 +215,12 @@ func main() {
 		}
 	}
 	log.Printf("%v: listening for connections", node.Name())
-	for {
-		node.PublishListeningShards()
+	go func() {
 		time.Sleep(time.Second * 1)
-	}
+		testClient()
+	}()
+	testServer()
+	// select {}
 	// for {
 	// 	log.Println(node.Name())
 	// 	time.Sleep(time.Millisecond * 1000)
