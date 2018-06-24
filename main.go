@@ -158,21 +158,25 @@ func main() {
 	}
 
 	if *isClient {
-		go func() {
-			time.Sleep(time.Second * 1)
-			testClient(rpcAddr)
-		}()
-		testServer(node, rpcAddr)
-	}
-
-	if (*targetSeed != -1) && (*targetIP != "") {
-		targetPort := portBase + *targetSeed
-		go func() {
-			time.Sleep(time.Second * 1)
-			// testClient(rpcAddr)
-			callRPCAddPeer(rpcAddr, *targetIP, int(targetPort), *targetSeed)
-		}()
-		testServer(node, rpcAddr)
+		if len(flag.Args()) <= 0 {
+			log.Fatalf("Client mode: wrong args")
+			return
+		}
+		rpcCmd := flag.Args()[0]
+		rpcArgs := flag.Args()[1:]
+		if rpcCmd == "addpeer" {
+			if len(rpcArgs) != 2 {
+				log.Fatalf("Client mode: addpeer: wrong args")
+			}
+			targetIP := rpcArgs[0]
+			targetSeed, err := strconv.ParseInt(rpcArgs[1], 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			targetPort := portBase + targetSeed
+			callRPCAddPeer(rpcAddr, targetIP, int(targetPort), targetSeed)
+			return
+		}
 	}
 
 	if *peerSeed != -1 {
