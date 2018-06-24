@@ -103,7 +103,26 @@ func makeNode(
 	return node, nil
 }
 
-const portBase = 10000
+const (
+	portBase    = 10000
+	rpcPortBase = 13000
+)
+
+func addPeer(n *Node, seed int64, ip string, port int64) bool {
+	_, targetPID, err := makeKey(seed)
+	mAddr := fmt.Sprintf(
+		"/ip4/%s/tcp/%d/ipfs/%s",
+		ip,
+		port,
+		targetPID.Pretty(),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	n.AddPeer(mAddr)
+	time.Sleep(time.Second * 1)
+	return true
+}
 
 func main() {
 	// LibP2P code uses golog to log messages. They log with different
@@ -119,10 +138,17 @@ func main() {
 	listenShards := flag.Int64("listen-shards", 0, "number of shards listened")
 	sendCollationOption := flag.String("send", "", "send collations")
 	peerSeed := flag.Int64("find", -1, "use dht to find a certain peer with the given peerSeed")
+	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
+	// log.Print(*isClient)
+	// log.Print(flag.Args())
+	// log.Print(*seed)
+	// log.Print(reflection.TypeOf())
+	// return
 
-	listenPort := portBase + *seed
-	targetPort := portBase + *targetSeed
+	listenPort := portBase + int32(*seed)
+	rpcPort := rpcPortBase + int32(*seed)
+	rpcAddr := fmt.Sprintf("127.0.0.1:%v", rpcPort)
 
 	ctx := context.Background()
 	node, err := makeNode(ctx, int(listenPort), *seed, []pstore.PeerInfo{})
@@ -131,25 +157,22 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if *isClient {
+		go func() {
+			time.Sleep(time.Second * 1)
+			testClient(rpcAddr)
+		}()
+		testServer(node, rpcAddr)
+	}
+
 	if (*targetSeed != -1) && (*targetIP != "") {
-		_, targetPID, err := makeKey(*targetSeed)
-		mAddr := fmt.Sprintf(
-			"/ip4/%s/tcp/%d/ipfs/%s",
-			*targetIP,
-			targetPort,
-			targetPID.Pretty(),
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-		time.Sleep(time.Millisecond * 500)
-		node.AddPeer(mAddr)
-		log.Printf(
-			"%v dialing to %v",
-			node.ID(),
-			mAddr,
-		)
-		time.Sleep(time.Millisecond * 1000)
+		targetPort := portBase + *targetSeed
+		go func() {
+			time.Sleep(time.Second * 1)
+			// testClient(rpcAddr)
+			callRPCAddPeer(rpcAddr, *targetIP, int(targetPort), *targetSeed)
+		}()
+		testServer(node, rpcAddr)
 	}
 
 	if *peerSeed != -1 {
@@ -217,10 +240,11 @@ func main() {
 	log.Printf("%v: listening for connections", node.Name())
 	go func() {
 		time.Sleep(time.Second * 1)
-		testClient()
+		testClient(rpcAddr)
 	}()
-	testServer()
-	// select {}
+	// TODO: add "for: n.PublishListeningShards()" back
+	testServer(node, rpcAddr)
+
 	// for {
 	// 	log.Println(node.Name())
 	// 	time.Sleep(time.Millisecond * 1000)
