@@ -317,10 +317,6 @@ func (n *ShardManager) SubscribeShardCollations(shardID ShardIDType) {
 }
 
 func (n *ShardManager) SendCollation(shardID ShardIDType, number int64, blobs string) bool {
-	if !n.IsShardCollationsSubscribed(shardID) {
-		log.Fatalf("Attempted to send collation in a not subscribed shard %v", shardID)
-		return false
-	}
 	// create message data
 	data := &pbmsg.Collation{
 		ShardID: shardID,

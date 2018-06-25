@@ -108,22 +108,6 @@ const (
 	rpcPortBase = 13000
 )
 
-func addPeer(n *Node, seed int64, ip string, port int64) bool {
-	_, targetPID, err := makeKey(seed)
-	mAddr := fmt.Sprintf(
-		"/ip4/%s/tcp/%d/ipfs/%s",
-		ip,
-		port,
-		targetPID.Pretty(),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	n.AddPeer(mAddr)
-	time.Sleep(time.Second * 1)
-	return true
-}
-
 func main() {
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
@@ -132,10 +116,7 @@ func main() {
 
 	// Parse options from the command line
 
-	targetSeed := flag.Int64("target-seed", -1, "target peer's seed")
-	targetIP := flag.String("target-ip", "", "target peer's ip")
 	seed := flag.Int64("seed", 0, "set random seed for id generation")
-	listenShards := flag.Int64("listen-shards", 0, "number of shards listened")
 	sendCollationOption := flag.String("send", "", "send collations")
 	peerSeed := flag.Int64("find", -1, "use dht to find a certain peer with the given peerSeed")
 	isClient := flag.Bool("client", false, "is RPC client or server")
@@ -159,14 +140,14 @@ func main() {
 
 	if *isClient {
 		if len(flag.Args()) <= 0 {
-			log.Fatalf("Client mode: wrong args")
+			log.Fatalf("Client: wrong args")
 			return
 		}
 		rpcCmd := flag.Args()[0]
 		rpcArgs := flag.Args()[1:]
 		if rpcCmd == "addpeer" {
 			if len(rpcArgs) != 2 {
-				log.Fatalf("Client mode: addpeer: wrong args")
+				log.Fatalf("Client: addpeer: wrong args")
 			}
 			targetIP := rpcArgs[0]
 			targetSeed, err := strconv.ParseInt(rpcArgs[1], 10, 64)
@@ -175,6 +156,65 @@ func main() {
 			}
 			targetPort := portBase + targetSeed
 			callRPCAddPeer(rpcAddr, targetIP, int(targetPort), targetSeed)
+			return
+		} else if rpcCmd == "subshard" {
+			if len(rpcArgs) == 0 {
+				log.Fatalf("Client: subshard: wrong args")
+			}
+			shardIDs := []ShardIDType{}
+			for _, shardIDString := range rpcArgs {
+				shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+				if err != nil {
+					panic(err)
+				}
+				shardIDs = append(shardIDs, shardID)
+			}
+			callRPCSubscribeShard(rpcAddr, shardIDs)
+			return
+		} else if rpcCmd == "unsubshard" {
+			if len(rpcArgs) == 0 {
+				log.Fatalf("Client: unsubshard: wrong args")
+			}
+			shardIDs := []ShardIDType{}
+			for _, shardIDString := range rpcArgs {
+				shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+				if err != nil {
+					panic(err)
+				}
+				shardIDs = append(shardIDs, shardID)
+			}
+			callRPCUnsubscribeShard(rpcAddr, shardIDs)
+			return
+		} else if rpcCmd == "getsubshard" {
+			callRPCGetSubscribedShard(rpcAddr)
+			return
+		} else if rpcCmd == "broadcastcollation" {
+			if len(rpcArgs) != 4 {
+				log.Fatalf("Client: broadcastcollation: wrong args")
+			}
+			shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
+			if err != nil {
+				log.Fatalf("wrong send shards %v", rpcArgs)
+			}
+			numCollations, err := strconv.Atoi(rpcArgs[1])
+			if err != nil {
+				log.Fatalf("wrong send shards %v", rpcArgs)
+			}
+			if err != nil {
+				log.Fatalf("wrong send shards %v", rpcArgs)
+			}
+			collationSize, err := strconv.Atoi(rpcArgs[2])
+			timeInMs, err := strconv.Atoi(rpcArgs[3])
+			if err != nil {
+				log.Fatalf("wrong send shards %v", rpcArgs)
+			}
+			callRPCBroadcastCollation(
+				rpcAddr,
+				shardID,
+				numCollations,
+				collationSize,
+				timeInMs,
+			)
 			return
 		}
 	}
@@ -196,13 +236,6 @@ func main() {
 			log.Printf("node.Connect takes %v", time.Since(t))
 		}
 	}
-
-	log.Printf("Sending subscriptions...")
-	for i := ShardIDType(0); i < *listenShards; i++ {
-		node.ListenShard(i)
-		time.Sleep(time.Millisecond * 30)
-	}
-	node.PublishListeningShards()
 
 	time.Sleep(time.Millisecond * 500)
 
@@ -242,12 +275,11 @@ func main() {
 		}
 	}
 	log.Printf("%v: listening for connections", node.Name())
-	go func() {
-		time.Sleep(time.Second * 1)
-		testClient(rpcAddr)
-	}()
+	// go func() {
+	// 	time.Sleep(time.Second * 1)
+	// }()
 	// TODO: add "for: n.PublishListeningShards()" back
-	testServer(node, rpcAddr)
+	runRPCServer(node, rpcAddr)
 
 	// for {
 	// 	log.Println(node.Name())
