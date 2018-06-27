@@ -190,7 +190,9 @@ func main() {
 			return
 		} else if rpcCmd == "broadcastcollation" {
 			if len(rpcArgs) != 4 {
-				log.Fatalf("Client: broadcastcollation: wrong args")
+				log.Fatalf(
+					"Client: broadcastcollation: args: shardID, numCollations, collationSize, timeInMs",
+				)
 			}
 			shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
 			if err != nil {
@@ -208,7 +210,8 @@ func main() {
 			if err != nil {
 				log.Fatalf("wrong send shards %v", rpcArgs)
 			}
-			callRPCBroadcastCollation(
+			// avoid blocking
+			go callRPCBroadcastCollation(
 				rpcAddr,
 				shardID,
 				numCollations,

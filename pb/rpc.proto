@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package protocols.p2p;
+
+service Poc {
+  // Sends a greeting
+  rpc AddPeer (RPCAddPeerReq) returns (RPCReply) {}
+  rpc SubscribeShard(RPCSubscribeShardReq) returns (RPCReply) {}
+  rpc UnsubscribeShard(RPCUnsubscribeShardReq) returns (RPCReply) {}
+  rpc GetSubscribedShard(RPCGetSubscribedShardReq) returns (RPCGetSubscribedShardReply) {}
+  rpc BroadcastCollation(RPCBroadcastCollationReq) returns (RPCReply) {}
+}
+
+// AddPeer
+message RPCAddPeerReq {
+  string ip = 1;
+  int32 port = 2;
+  int64 seed = 3;
+}
+
+// SubscribeShard
+message RPCSubscribeShardReq {
+  repeated int64 shardIDs = 1;
+}
+// UnsubscribeShard
+message RPCUnsubscribeShardReq {
+  repeated int64 shardIDs = 1;
+}
+// GetSubscribedShard
+message RPCGetSubscribedShardReq {
+}
+message RPCGetSubscribedShardReply {
+  repeated int64 shardIDs = 1;
+  bool status = 2;
+}
+// BroadcastCollation
+message RPCBroadcastCollationReq {
+  int64 shardID = 1;
+  int32 number = 2;
+  int32 size = 3;
+  int32 period = 4;
+}
+
+message RPCReply {
+  string message = 1;
+  bool status = 2;
+}
