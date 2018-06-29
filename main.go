@@ -5,11 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	mrand "math/rand"
 	"strconv"
-	"strings"
-	"time"
 
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
@@ -21,7 +18,6 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
-	ma "github.com/multiformats/go-multiaddr"
 	gologging "github.com/whyrusleeping/go-logging"
 )
 
@@ -117,26 +113,12 @@ func main() {
 	// Parse options from the command line
 
 	seed := flag.Int64("seed", 0, "set random seed for id generation")
-	sendCollationOption := flag.String("send", "", "send collations")
-	peerSeed := flag.Int64("find", -1, "use dht to find a certain peer with the given peerSeed")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
-	// log.Print(*isClient)
-	// log.Print(flag.Args())
-	// log.Print(*seed)
-	// log.Print(reflection.TypeOf())
-	// return
 
 	listenPort := portBase + int32(*seed)
 	rpcPort := rpcPortBase + int32(*seed)
 	rpcAddr := fmt.Sprintf("127.0.0.1:%v", rpcPort)
-
-	ctx := context.Background()
-	node, err := makeNode(ctx, int(listenPort), *seed, []pstore.PeerInfo{})
-
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	if *isClient {
 		if len(flag.Args()) <= 0 {
@@ -210,8 +192,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("wrong send shards %v", rpcArgs)
 			}
-			// avoid blocking
-			go callRPCBroadcastCollation(
+			callRPCBroadcastCollation(
 				rpcAddr,
 				shardID,
 				numCollations,
@@ -219,73 +200,17 @@ func main() {
 				timeInMs,
 			)
 			return
-		}
-	}
-
-	if *peerSeed != -1 {
-		_, peerID, err := makeKey(*peerSeed)
-		if err != nil {
-			log.Printf("[ERROR] error parsing peerID in multihash %v", peerID)
-		}
-		pi := pstore.PeerInfo{
-			ID:    peerID,
-			Addrs: []ma.Multiaddr{},
-		}
-		t := time.Now()
-		err = node.Connect(context.Background(), pi)
-		if err != nil {
-			log.Printf("Failed to connect %v", pi.ID)
 		} else {
-			log.Printf("node.Connect takes %v", time.Since(t))
+			log.Fatalf("Client: no cmd '%v'", rpcCmd)
 		}
 	}
 
-	time.Sleep(time.Millisecond * 500)
-
-	if *sendCollationOption != "" {
-		options := strings.Split(*sendCollationOption, ",")
-		if len(options) != 3 {
-			log.Fatalf("wrong collation option %v", *sendCollationOption)
-		}
-		numSendShards, err := strconv.Atoi(options[0])
-		if err != nil {
-			log.Fatalf("wrong send shards %v", options)
-		}
-		numCollations, err := strconv.Atoi(options[1])
-		if err != nil {
-			log.Fatalf("wrong send shards %v", options)
-		}
-		timeInMs, err := strconv.Atoi(options[2])
-		if err != nil {
-			log.Fatalf("wrong send shards %v", options)
-		}
-
-		blobSize := int(math.Pow(2, 20) - 100) // roughly 1 MB
-
-		for i := 0; i < numSendShards; i++ {
-			time.Sleep(time.Millisecond * time.Duration(timeInMs))
-			go func(shardID int) {
-				for j := 0; j < numCollations; j++ {
-					time.Sleep(time.Millisecond * time.Duration(timeInMs*numSendShards))
-					node.SendCollation(
-						ShardIDType(shardID),
-						int64(j),
-						string(make([]byte, blobSize)),
-					)
-					// TODO: control the speed of sending collations
-				}
-			}(i)
-		}
+	ctx := context.Background()
+	node, err := makeNode(ctx, int(listenPort), *seed, []pstore.PeerInfo{})
+	if err != nil {
+		log.Fatal(err)
 	}
+
 	log.Printf("%v: listening for connections", node.Name())
-	// go func() {
-	// 	time.Sleep(time.Second * 1)
-	// }()
-	// TODO: add "for: n.PublishListeningShards()" back
 	runRPCServer(node, rpcAddr)
-
-	// for {
-	// 	log.Println(node.Name())
-	// 	time.Sleep(time.Millisecond * 1000)
-	// }
 }
