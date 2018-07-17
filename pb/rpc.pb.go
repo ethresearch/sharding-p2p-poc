@@ -19,6 +19,8 @@ It has these top-level messages:
 	AddPeerRequest
 	AddPeerResponse
 	Collation
+	CollationRequest
+	CollationResponse
 	NotifyShardsRequest
 */
 package protocols_p2p

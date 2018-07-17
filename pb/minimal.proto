@@ -16,10 +16,22 @@ message AddPeerResponse {
     // ... add any additional message data here
 }
 
+
 message Collation {
     int64 shardID = 1;
-    int64 number = 2;
+    int64 period = 2;
     string blobs = 3;
+}
+
+message CollationRequest {
+    int64 shardID = 1;
+    int64 period = 2;
+    string hash = 3;
+}
+
+message CollationResponse {
+    bool success = 1;
+    Collation collation = 2;
 }
 
 message NotifyShardsRequest {

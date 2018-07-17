@@ -11,7 +11,7 @@ import (
 	floodsub "github.com/libp2p/go-floodsub"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	pbmsg "github.com/mhchia/sharding-poc/pb"
+	pbmsg "github.com/mhchia/sharding-p2p-poc/pb"
 	b58 "github.com/mr-tron/base58/base58"
 )
 
@@ -277,7 +277,7 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 			}
 			// TODO: need some check against collations
 			collationHash := Hash(&collation)
-			numCollationReceived += 1
+			numCollationReceived++
 			// n.lock.Lock()
 			// n.collations[collationHash] = struct{}{}
 			// // log.Printf(
@@ -292,7 +292,7 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 				numCollationReceived,
 				collationHash[:8],
 				collation.GetShardID(),
-				collation.GetNumber(),
+				collation.GetPeriod(),
 				collation.GetBlobs(),
 			)
 		}
@@ -316,18 +316,17 @@ func (n *ShardManager) SubscribeShardCollations(shardID ShardIDType) {
 	n.shardCollationsSubs[shardID] = collationsSub
 }
 
-func (n *ShardManager) SendCollation(shardID ShardIDType, number int64, blobs string) bool {
+func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int64, blobs string) bool {
 	// create message data
 	data := &pbmsg.Collation{
 		ShardID: shardID,
-		Number:  number,
+		Period:  period,
 		Blobs:   blobs,
 	}
-
-	return n.SendCollationMessage(data)
+	return n.broadcastCollationMessage(data)
 }
 
-func (n *ShardManager) SendCollationMessage(collation *pbmsg.Collation) bool {
+func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) bool {
 	if !n.IsShardCollationsSubscribed(collation.GetShardID()) {
 		return false
 	}

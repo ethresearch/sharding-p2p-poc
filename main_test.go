@@ -5,10 +5,12 @@ import (
 	"testing"
 	"time"
 
+	golog "github.com/ipfs/go-log"
 	host "github.com/libp2p/go-libp2p-host"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+	gologging "github.com/whyrusleeping/go-logging"
 )
 
 func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
@@ -224,7 +226,7 @@ func TestAddPeer(t *testing.T) {
 	makePeerNodes(t, ctx)
 }
 
-func TestSendCollation(t *testing.T) {
+func TestBroadcastCollation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -239,7 +241,7 @@ func TestSendCollation(t *testing.T) {
 	//		 receiver should reject it
 
 	// success
-	succeed := node0.SendCollation(
+	succeed := node0.broadcastCollation(
 		testingShardID,
 		1,
 		"123",
@@ -269,19 +271,24 @@ func TestRouting(t *testing.T) {
 	// set the logger to DEBUG, to see the process of dht.FindPeer
 	// we should be able to see something like
 	// "dht: FindPeer <peer.ID d3wzD2> true routed.go:76", if successfully found the desire peer
+	golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
 	node0 := makeUnbootstrappedNode(t, ctx, 0)
 	node1 := makeUnbootstrappedNode(t, ctx, 1)
 	node2 := makeUnbootstrappedNode(t, ctx, 2)
-	node0.AddPeer(node1.GetFullAddr())
 	// node0 <-> node1 <-> node2
+	node0.AddPeer(node1.GetFullAddr())
 	node1.AddPeer(node2.GetFullAddr())
+	time.Sleep(time.Millisecond * 100)
 	if node0.IsPeer(node2.ID()) {
-		t.Error("node1 should not be able to reach node2 before routing")
+		t.Error("node0 should not be able to reach node2 before routing")
 	}
-	piNode2 := node0.Peerstore().PeerInfo(node2.ID())
-	node0.Connect(context.Background(), piNode2)
+	peerinfo2 := pstore.PeerInfo{
+		ID: node2.ID(),
+	}
+	node0.Connect(context.Background(), peerinfo2)
+	time.Sleep(time.Millisecond * 100)
 	if !node2.IsPeer(node0.ID()) {
-		t.Error("node1 should be a peer of node2 now")
+		t.Error("node0 should be a peer of node2 now")
 	}
 }
 

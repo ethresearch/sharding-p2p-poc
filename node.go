@@ -16,17 +16,17 @@ const clientVersion = "go-p2p-node/0.0.1"
 type Node struct {
 	host.Host        // lib-p2p host
 	*AddPeerProtocol // addpeer protocol impl
-
+	*RequestProtocol // for peers to request data
 	*ShardManager
 
 	number int
 }
 
-// Create a new node with its implemented protocols
+// NewNode creates a new node with its implemented protocols
 func NewNode(ctx context.Context, host host.Host, number int) *Node {
 	node := &Node{Host: host, number: number}
 	node.AddPeerProtocol = NewAddPeerProtocol(node)
-
+	node.RequestProtocol = NewRequestProtocol(node)
 	node.ShardManager = NewShardManager(ctx, node)
 	return node
 }

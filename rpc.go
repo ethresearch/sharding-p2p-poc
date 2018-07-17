@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/mhchia/sharding-poc/pb"
+	pb "github.com/mhchia/sharding-p2p-poc/pb"
 )
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {
@@ -200,7 +200,7 @@ func (s *server) BroadcastCollation(
 	for i := 0; i < numCollations; i++ {
 		// control the speed of sending collations
 		time.Sleep(time.Millisecond * time.Duration(timeInMs))
-		s.node.SendCollation(
+		s.node.broadcastCollation(
 			ShardIDType(shardID),
 			int64(i),
 			string(make([]byte, sizeInBytes)),
