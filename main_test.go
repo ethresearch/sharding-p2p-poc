@@ -215,7 +215,7 @@ func makePeerNodes(t *testing.T, ctx context.Context) (*Node, *Node) {
 	if !node0.IsPeer(node1.ID()) || !node1.IsPeer(node0.ID()) {
 		t.Error("Failed to add peer")
 	}
-	// connect(t, node0, node1)
+	connect(t, node0, node1)
 	return node0, node1
 }
 
@@ -264,6 +264,18 @@ func makePartiallyConnected3Nodes(t *testing.T, ctx context.Context) []*Node {
 	return [](*Node){node0, node1, node2}
 }
 
+func TestRequestCollation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	node0, node1 := makePeerNodes(t, ctx)
+	node0.sendCollationRequest(node1.ID(), 0, 1, "2")
+	time.Sleep(time.Millisecond * 100)
+}
+
+func TestRequestCollationNotFound(t *testing.T) {
+	// TODO:
+}
+
 func TestRouting(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -282,10 +294,12 @@ func TestRouting(t *testing.T) {
 	if node0.IsPeer(node2.ID()) {
 		t.Error("node0 should not be able to reach node2 before routing")
 	}
-	peerinfo2 := pstore.PeerInfo{
-		ID: node2.ID(),
-	}
-	node0.Connect(context.Background(), peerinfo2)
+	node0.Connect(
+		context.Background(),
+		pstore.PeerInfo{
+			ID: node2.ID(),
+		},
+	)
 	time.Sleep(time.Millisecond * 100)
 	if !node2.IsPeer(node0.ID()) {
 		t.Error("node0 should be a peer of node2 now")
@@ -320,7 +334,6 @@ func TestPubSub(t *testing.T) {
 	if msg0.GetFrom() != nodes[1].ID() {
 		t.Error("Wrong ID")
 	}
-
 }
 
 func TestPubSubNotifyListeningShards(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"time"
 
@@ -200,10 +201,12 @@ func (s *server) BroadcastCollation(
 	for i := 0; i < numCollations; i++ {
 		// control the speed of sending collations
 		time.Sleep(time.Millisecond * time.Duration(timeInMs))
+		randBytes := make([]byte, sizeInBytes)
+		rand.Read(randBytes)
 		s.node.broadcastCollation(
 			ShardIDType(shardID),
 			int64(i),
-			string(make([]byte, sizeInBytes)),
+			string(randBytes),
 		)
 	}
 	res := &pb.RPCReply{

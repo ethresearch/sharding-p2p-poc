@@ -35,7 +35,7 @@ func (p *RequestProtocol) getCollation(
 	shardID ShardIDType,
 	period int64,
 	collationHash string) (*pbmsg.Collation, error) {
-	// FIXME: fake response
+	// FIXME: fake response for now. Shuld query from the saved data.
 	return &pbmsg.Collation{
 		ShardID: shardID,
 		Period:  period,
@@ -55,7 +55,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 		return
 	}
 
-	// FIXME: add checks and real content
+	// FIXME: add checks
 	var collation *pbmsg.Collation
 	collation, err = p.getCollation(
 		data.GetShardID(),
@@ -82,7 +82,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	log.Printf(
 		"%v: Sent %v to %v",
 		p.node.Name(),
-		collationRespBytes,
+		collationResp,
 		s.Conn().RemotePeer(),
 	)
 }
