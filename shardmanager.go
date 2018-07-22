@@ -6,13 +6,14 @@ import (
 	"log"
 	"sync"
 
-	gethcrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/golang/protobuf/proto"
 	floodsub "github.com/libp2p/go-floodsub"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	pbmsg "github.com/mhchia/sharding-p2p-poc/pb"
 	b58 "github.com/mr-tron/base58/base58"
+
+	gethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/golang/protobuf/proto"
+	pbmsg "github.com/mhchia/sharding-p2p-poc/pb"
 )
 
 type ShardManager struct {
@@ -141,7 +142,7 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 	// listeningShards protocol
 	// TODO: maybe need refactoring
 	n.connectShardNodes(shardID)
-	// n.PublishListeningShards()
+	n.PublishListeningShards()
 
 	// shardCollations protocol
 	n.SubscribeShardCollations(shardID)

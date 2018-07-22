@@ -7,6 +7,9 @@ go:
 
 sudo: required
 
+install:
+  - make deps
+
 before_install:
   - go get github.com/mhchia/sharding-p2p-poc
 

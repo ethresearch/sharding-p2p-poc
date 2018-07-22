@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
-	golog "github.com/ipfs/go-log"
 	host "github.com/libp2p/go-libp2p-host"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
-	gologging "github.com/whyrusleeping/go-logging"
+	// gologging "github.com/whyrusleeping/go-logging"
 )
 
 func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
@@ -186,9 +185,9 @@ func TestPeerListeningShards(t *testing.T) {
 	}
 }
 
-func connect(t *testing.T, a, b host.Host) {
+func connect(t *testing.T, ctx context.Context, a, b host.Host) {
 	pinfo := a.Peerstore().PeerInfo(a.ID())
-	err := b.Connect(context.Background(), pinfo)
+	err := b.Connect(ctx, pinfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +214,7 @@ func makePeerNodes(t *testing.T, ctx context.Context) (*Node, *Node) {
 	if !node0.IsPeer(node1.ID()) || !node1.IsPeer(node0.ID()) {
 		t.Error("Failed to add peer")
 	}
-	connect(t, node0, node1)
+	connect(t, ctx, node0, node1)
 	return node0, node1
 }
 
@@ -225,7 +224,6 @@ func TestAddPeer(t *testing.T) {
 
 	makePeerNodes(t, ctx)
 }
-
 func TestBroadcastCollation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -260,7 +258,7 @@ func makePartiallyConnected3Nodes(t *testing.T, ctx context.Context) []*Node {
 	if !node1.IsPeer(node2.ID()) || !node2.IsPeer(node1.ID()) {
 		t.Error()
 	}
-	connect(t, node1, node2)
+	connect(t, ctx, node1, node2)
 	return [](*Node){node0, node1, node2}
 }
 
@@ -283,7 +281,7 @@ func TestRouting(t *testing.T) {
 	// set the logger to DEBUG, to see the process of dht.FindPeer
 	// we should be able to see something like
 	// "dht: FindPeer <peer.ID d3wzD2> true routed.go:76", if successfully found the desire peer
-	golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
+	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
 	node0 := makeUnbootstrappedNode(t, ctx, 0)
 	node1 := makeUnbootstrappedNode(t, ctx, 1)
 	node2 := makeUnbootstrappedNode(t, ctx, 2)
