@@ -11,9 +11,9 @@ import (
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	b58 "github.com/mr-tron/base58/base58"
 
-	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/protobuf/proto"
 	pbmsg "github.com/mhchia/sharding-p2p-poc/pb"
+	"golang.org/x/crypto/sha3"
 )
 
 type ShardManager struct {
@@ -246,8 +246,10 @@ func Hash(msg *pbmsg.Collation) string {
 	if err != nil {
 		log.Printf("Error occurs when hashing %v", msg)
 	}
+	h := sha3.NewLegacyKeccak256()
+	h.Write(dataInBytes)
 	// FIXME: for convenience
-	return b58.Encode([]byte(gethcrypto.Keccak256(dataInBytes)))
+	return b58.Encode(h.Sum(nil))
 }
 
 func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
