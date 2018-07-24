@@ -1,5 +1,5 @@
 FROM alpine AS base
-RUN apk add --no-cache make gcc musl-dev linux-headers
+RUN apk add --no-cache make gcc musl-dev linux-headers libc6-compat
 
 FROM golang:1.10.3 AS go-builder
 WORKDIR /go
