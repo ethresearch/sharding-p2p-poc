@@ -56,7 +56,7 @@ func makeNode(
 	listenPort int,
 	randseed int64,
 	bootstrapPeers []pstore.PeerInfo) (*Node, error) {
-
+	// FIXME: should be set to localhost if we don't want to expose it to outside
 	listenAddrString := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", listenPort)
 
 	priv, _, err := makeKey(randseed)
@@ -100,8 +100,8 @@ func makeNode(
 }
 
 const (
-	portBase    = 10000
-	rpcPortBase = 13000
+	defaultListenPort = 10000
+	defaultRPCPort    = 13000
 )
 
 func main() {
@@ -113,12 +113,16 @@ func main() {
 	// Parse options from the command line
 
 	seed := flag.Int64("seed", 0, "set random seed for id generation")
+	listenPort := flag.Int(
+		"port",
+		defaultListenPort,
+		"port listened by the node for incoming connections",
+	)
+	rpcPort := flag.Int("rpcport", defaultRPCPort, "rpc port listened by the rpc server")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
-	listenPort := portBase + int32(*seed)
-	rpcPort := rpcPortBase + int32(*seed)
-	rpcAddr := fmt.Sprintf("127.0.0.1:%v", rpcPort)
+	rpcAddr := fmt.Sprintf("127.0.0.1:%v", *rpcPort)
 
 	if *isClient {
 		if len(flag.Args()) <= 0 {
@@ -128,20 +132,19 @@ func main() {
 		rpcCmd := flag.Args()[0]
 		rpcArgs := flag.Args()[1:]
 		if rpcCmd == "addpeer" {
-			if len(rpcArgs) != 2 {
-				log.Fatalf("Client: addpeer: wrong args")
+			if len(rpcArgs) != 3 {
+				log.Fatalf("Client: usage: addpeer ip port seed")
 			}
 			targetIP := rpcArgs[0]
-			targetSeed, err := strconv.ParseInt(rpcArgs[1], 10, 64)
+			targetPort, err := strconv.Atoi(rpcArgs[1])
+			targetSeed, err := strconv.ParseInt(rpcArgs[2], 10, 64)
 			if err != nil {
 				panic(err)
 			}
-			targetPort := portBase + targetSeed
-			callRPCAddPeer(rpcAddr, targetIP, int(targetPort), targetSeed)
-			return
+			callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
 		} else if rpcCmd == "subshard" {
 			if len(rpcArgs) == 0 {
-				log.Fatalf("Client: subshard: wrong args")
+				log.Fatalf("Client: usage: subshard shard0 shard1 ...")
 			}
 			shardIDs := []ShardIDType{}
 			for _, shardIDString := range rpcArgs {
@@ -152,10 +155,9 @@ func main() {
 				shardIDs = append(shardIDs, shardID)
 			}
 			callRPCSubscribeShard(rpcAddr, shardIDs)
-			return
 		} else if rpcCmd == "unsubshard" {
 			if len(rpcArgs) == 0 {
-				log.Fatalf("Client: unsubshard: wrong args")
+				log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
 			}
 			shardIDs := []ShardIDType{}
 			for _, shardIDString := range rpcArgs {
@@ -166,14 +168,12 @@ func main() {
 				shardIDs = append(shardIDs, shardID)
 			}
 			callRPCUnsubscribeShard(rpcAddr, shardIDs)
-			return
 		} else if rpcCmd == "getsubshard" {
 			callRPCGetSubscribedShard(rpcAddr)
-			return
 		} else if rpcCmd == "broadcastcollation" {
 			if len(rpcArgs) != 4 {
 				log.Fatalf(
-					"Client: broadcastcollation: args: shardID, numCollations, collationSize, timeInMs",
+					"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
 				)
 			}
 			shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
@@ -199,14 +199,14 @@ func main() {
 				collationSize,
 				timeInMs,
 			)
-			return
 		} else {
-			log.Fatalf("Client: no cmd '%v'", rpcCmd)
+			log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
 		}
+		return
 	}
 
 	ctx := context.Background()
-	node, err := makeNode(ctx, int(listenPort), *seed, []pstore.PeerInfo{})
+	node, err := makeNode(ctx, *listenPort, *seed, []pstore.PeerInfo{})
 	if err != nil {
 		log.Fatal(err)
 	}
