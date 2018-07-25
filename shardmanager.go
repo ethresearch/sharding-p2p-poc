@@ -313,13 +313,12 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 			// // )
 			// n.lock.Unlock()
 			log.Printf(
-				"%v: receive: collation: seqNo=%v, hash=%v, shardId=%v, number=%v, blobs=%v",
+				"%v: receive: collation: seqNo=%v, hash=%v, shardId=%v, number=%v",
 				n.node.Name(),
 				numCollationReceived,
 				collationHash[:8],
 				collation.GetShardID(),
 				collation.GetPeriod(),
-				collation.GetBlobs(),
 			)
 		}
 	}()
