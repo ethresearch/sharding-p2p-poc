@@ -421,3 +421,26 @@ func TestWithIPFSNodesRouting(t *testing.T) {
 		t.Error()
 	}
 }
+
+func TestListenShardConnectingPeers(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	nodes := makePartiallyConnected3Nodes(t, ctx)
+	// wait for mesh built
+	time.Sleep(time.Second * 2)
+	// 0 <-> 1 <-> 2
+	nodes[0].ListenShard(0)
+	time.Sleep(time.Millisecond * 100)
+	nodes[2].ListenShard(42)
+	time.Sleep(time.Millisecond * 100)
+	connWithNode2 := nodes[0].Network().ConnsToPeer(nodes[2].ID())
+	if len(connWithNode2) != 0 {
+		t.Error("Node 0 shouldn't have connection with node 2")
+	}
+	nodes[0].ListenShard(42)
+	time.Sleep(time.Second * 1)
+	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
+	if len(connWithNode2) == 0 {
+		t.Error("Node 0 should have connected to node 2 after listening to shard 42")
+	}
+}

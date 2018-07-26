@@ -129,8 +129,31 @@ func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
 		pi := n.node.Peerstore().PeerInfo(peerID)
 		pinfos = append(pinfos, pi)
 	}
-	// TODO: borrow the bootstrapConnect, should be modified/refactored and tested
-	return bootstrapConnect(context.Background(), n.node, pinfos)
+
+	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
+	errs := make(chan error, len(pinfos))
+	var wg sync.WaitGroup
+	ctx := context.Background()
+	for _, p := range pinfos {
+		wg.Add(1)
+		go func(p pstore.PeerInfo) {
+			defer wg.Done()
+			if err := n.node.Connect(ctx, p); err != nil {
+				log.Printf(
+					"Failed to connect peer %v in shard %v: %s",
+					p.ID,
+					shardID,
+					err,
+				)
+				errs <- err
+				return
+			}
+			log.Printf("Successfully connected peer %v in shard %v", p.ID, shardID)
+		}(p)
+	}
+	wg.Wait()
+	// FIXME: ignore the errors when connecting shard peers for now
+	return nil
 }
 
 func (n *ShardManager) ListenShard(shardID ShardIDType) {
@@ -139,8 +162,7 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 	}
 	n.AddPeerListeningShard(n.node.ID(), shardID)
 
-	// listeningShards protocol
-	// TODO: maybe need refactoring
+	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	n.connectShardNodes(shardID)
 	n.PublishListeningShards()
 
@@ -150,16 +172,17 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 }
 
 func (n *ShardManager) UnlistenShard(shardID ShardIDType) {
-	if n.IsShardListened(shardID) {
-		n.RemovePeerListeningShard(n.node.ID(), shardID)
-
-		// listeningShards protocol
-		// TODO: some changes to existing peers?
-		n.PublishListeningShards()
-
-		// shardCollations protocol
-		n.UnsubscribeShardCollations(shardID)
+	if !n.IsShardListened(shardID) {
+		return
 	}
+	n.RemovePeerListeningShard(n.node.ID(), shardID)
+
+	// listeningShards protocol
+	// TODO: should we remove some peers in this shard?
+	n.PublishListeningShards()
+
+	// shardCollations protocol
+	n.UnsubscribeShardCollations(shardID)
 }
 
 func (n *ShardManager) GetListeningShards() []ShardIDType {
@@ -290,13 +313,12 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 			// // )
 			// n.lock.Unlock()
 			log.Printf(
-				"%v: receive: collation: seqNo=%v, hash=%v, shardId=%v, number=%v, blobs=%v",
+				"%v: receive: collation: seqNo=%v, hash=%v, shardId=%v, number=%v",
 				n.node.Name(),
 				numCollationReceived,
 				collationHash[:8],
 				collation.GetShardID(),
 				collation.GetPeriod(),
-				collation.GetBlobs(),
 			)
 		}
 	}()
