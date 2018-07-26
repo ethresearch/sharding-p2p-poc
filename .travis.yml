@@ -11,9 +11,9 @@ services:
   - docker
 
 install:
-  - make deps
   - docker build -t ethereum/sharding-p2p:latest .
   - docker run -d --name p2p ethereum/sharding-p2p:latest
+  - make deps
 
 before_install:
   - go get github.com/mhchia/sharding-p2p-poc
