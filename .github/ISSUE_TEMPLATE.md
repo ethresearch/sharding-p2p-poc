@@ -1,7 +1,6 @@
-* py-evm Version: x.x.x
 * OS: osx/linux/win
-* Python Version (python --version):
-* Environment (output of `pip freeze`):
+* go version: 
+* Environment:
 
 ### What is wrong?
 
