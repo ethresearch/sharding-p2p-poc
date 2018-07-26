@@ -5,3 +5,7 @@ gx:
 deps: gx
 	gx --verbose install --global
 	gx-go rewrite
+build:
+	docker build -t ethereum/sharding-p2p:latest .
+run:
+	docker run ethereum/sharding-p2p:latest

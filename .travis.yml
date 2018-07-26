@@ -7,7 +7,12 @@ go:
 
 sudo: required
 
+services:
+  - docker
+
 install:
+  - docker build -t ethereum/sharding-p2p:latest .
+  - docker run -d --name p2p ethereum/sharding-p2p:latest
   - make deps
 
 before_install:
@@ -15,3 +20,4 @@ before_install:
 
 script:
   - go test -v ./...
+  - docker ps | grep -q p2p
