@@ -5,6 +5,7 @@ FROM golang:1.10.3 AS go-builder
 WORKDIR /go
 COPY . /go/
 RUN make deps
+RUN go get -d -v .
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -v -o main .
 
 FROM base
