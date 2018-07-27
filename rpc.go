@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/mhchia/sharding-p2p-poc/pb"
+	pb "github.com/ethresearch/sharding-p2p-poc/pb"
 )
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {

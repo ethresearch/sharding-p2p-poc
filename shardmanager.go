@@ -12,7 +12,7 @@ import (
 	b58 "github.com/mr-tron/base58/base58"
 
 	"github.com/golang/protobuf/proto"
-	pbmsg "github.com/mhchia/sharding-p2p-poc/pb"
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb"
 	"golang.org/x/crypto/sha3"
 )
 

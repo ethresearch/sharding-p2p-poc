@@ -1,10 +1,10 @@
 {
   "author": "mhchia",
   "bugs": {
-    "url": "https://github.com/mhchia/sharding-p2p-poc"
+    "url": "https://github.com/ethresearch/sharding-p2p-poc"
   },
   "gx": {
-    "dvcsimport": "github.com/mhchia/sharding-p2p-poc"
+    "dvcsimport": "github.com/ethresearch/sharding-p2p-poc"
   },
   "gxDependencies": [
     {
