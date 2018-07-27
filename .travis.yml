@@ -16,7 +16,7 @@ install:
   - make deps
 
 before_install:
-  - go get github.com/mhchia/sharding-p2p-poc
+  - go get github.com/ethresearch/sharding-p2p-poc
 
 script:
   - go test -v ./...
