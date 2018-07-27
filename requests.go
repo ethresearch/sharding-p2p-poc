@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/golang/protobuf/proto"
-	pbmsg "github.com/mhchia/sharding-p2p-poc/pb"
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb"
 
 	inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
