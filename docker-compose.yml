@@ -1,0 +1,21 @@
+version: '3'
+services:
+  bootstrap:
+    image: ethereum/sharding-p2p:latest
+    ports:
+      - "5566"
+      - "7788"
+    networks:
+      - sharding-p2p
+    command: /main -seed=0 -port=5566 -rpcport=7788
+  node:
+    image: ethereum/sharding-p2p:latest
+    ports:
+      - "5566"
+      - "7788"
+    networks:
+      - sharding-p2p
+    command: ["/main", "-port=5566", "-rpcport=7788", "-bootstrap=$(http://bootstrap:5566)"]
+
+networks:
+  sharding-p2p:
