@@ -44,7 +44,7 @@ add_peer 0 1
 add_peer 1 2
 
 multiaddr0=/ip4/127.0.0.1/tcp/10000/ipfs/QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7
-multiaddr1=/ip4/127.0.0.1/tcp/10000/ipfs/QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7
+multiaddr1=/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX
 
 spinup_node 3 -bootstrap -bootnodes=$multiaddr0,$multiaddr1
 
