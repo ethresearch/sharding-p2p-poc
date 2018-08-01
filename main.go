@@ -14,14 +14,13 @@ import (
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	ic "github.com/libp2p/go-libp2p-crypto"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
 	gologging "github.com/whyrusleeping/go-logging"
-)
 
-// import "C"
+	kaddht "github.com/libp2p/go-libp2p-kad-dht"
+)
 
 type ShardIDType = int64
 
@@ -55,6 +54,7 @@ func makeNode(
 	ctx context.Context,
 	listenPort int,
 	randseed int64,
+	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) (*Node, error) {
 	// FIXME: should be set to localhost if we don't want to expose it to outside
 	listenAddrString := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", listenPort)
@@ -77,18 +77,36 @@ func makeNode(
 	dstore := dsync.MutexWrap(ds.NewMapDatastore())
 
 	// Make the DHT
-	dht := dht.NewDHT(ctx, basicHost, dstore)
+	dht := kaddht.NewDHT(ctx, basicHost, dstore)
 
 	// Make the routed host
 	routedHost := rhost.Wrap(basicHost, dht)
 
-	// try to connect to the chosen nodes
-	bootstrapConnect(ctx, routedHost, bootstrapPeers)
+	if doBootstrapping {
+		// try to connect to the chosen nodes
+		bootstrapConnect(ctx, routedHost, bootstrapPeers)
 
-	// Bootstrap the host
-	err = dht.Bootstrap(ctx)
-	if err != nil {
-		return nil, err
+		err = dht.Bootstrap(ctx)
+		// FIXME: the following snippet is copied from `go-libp2p-kad-dht`, allowing us to use
+		//		  custom configs. This should be removed after the upstream release the latest fix
+		//		  for dht in `gx`
+		// bootstrapConfig := kaddht.BootstrapConfig{
+		// 	Queries: 1,
+		// 	Period:  time.Duration(5 * time.Minute),
+		// 	Timeout: time.Duration(10 * time.Second),
+		// }
+		// // Bootstrap the host
+		// proc, err := dht.BootstrapWithConfig(bootstrapConfig)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// go func() {
+		// 	defer proc.Close()
+		// 	select {
+		// 	case <-ctx.Done():
+		// 	case <-dht.Context().Done():
+		// 	}
+		// }()
 	}
 
 	// Make a host that listens on the given multiaddress
@@ -125,92 +143,98 @@ func main() {
 	rpcAddr := fmt.Sprintf("127.0.0.1:%v", *rpcPort)
 
 	if *isClient {
-		if len(flag.Args()) <= 0 {
-			log.Fatalf("Client: wrong args")
-			return
-		}
-		rpcCmd := flag.Args()[0]
-		rpcArgs := flag.Args()[1:]
-		if rpcCmd == "addpeer" {
-			if len(rpcArgs) != 3 {
-				log.Fatalf("Client: usage: addpeer ip port seed")
-			}
-			targetIP := rpcArgs[0]
-			targetPort, err := strconv.Atoi(rpcArgs[1])
-			targetSeed, err := strconv.ParseInt(rpcArgs[2], 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
-		} else if rpcCmd == "subshard" {
-			if len(rpcArgs) == 0 {
-				log.Fatalf("Client: usage: subshard shard0 shard1 ...")
-			}
-			shardIDs := []ShardIDType{}
-			for _, shardIDString := range rpcArgs {
-				shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-				if err != nil {
-					panic(err)
-				}
-				shardIDs = append(shardIDs, shardID)
-			}
-			callRPCSubscribeShard(rpcAddr, shardIDs)
-		} else if rpcCmd == "unsubshard" {
-			if len(rpcArgs) == 0 {
-				log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
-			}
-			shardIDs := []ShardIDType{}
-			for _, shardIDString := range rpcArgs {
-				shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-				if err != nil {
-					panic(err)
-				}
-				shardIDs = append(shardIDs, shardID)
-			}
-			callRPCUnsubscribeShard(rpcAddr, shardIDs)
-		} else if rpcCmd == "getsubshard" {
-			callRPCGetSubscribedShard(rpcAddr)
-		} else if rpcCmd == "broadcastcollation" {
-			if len(rpcArgs) != 4 {
-				log.Fatalf(
-					"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
-				)
-			}
-			shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
-			if err != nil {
-				log.Fatalf("wrong send shards %v", rpcArgs)
-			}
-			numCollations, err := strconv.Atoi(rpcArgs[1])
-			if err != nil {
-				log.Fatalf("wrong send shards %v", rpcArgs)
-			}
-			if err != nil {
-				log.Fatalf("wrong send shards %v", rpcArgs)
-			}
-			collationSize, err := strconv.Atoi(rpcArgs[2])
-			timeInMs, err := strconv.Atoi(rpcArgs[3])
-			if err != nil {
-				log.Fatalf("wrong send shards %v", rpcArgs)
-			}
-			callRPCBroadcastCollation(
-				rpcAddr,
-				shardID,
-				numCollations,
-				collationSize,
-				timeInMs,
-			)
-		} else {
-			log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
-		}
-		return
+		runClient(rpcAddr, flag.Args())
+	} else {
+		runServer(*listenPort, *seed, rpcAddr)
 	}
 
+}
+
+func runServer(listenPort int, seed int64, rpcAddr string) {
 	ctx := context.Background()
-	node, err := makeNode(ctx, *listenPort, *seed, []pstore.PeerInfo{})
+	node, err := makeNode(ctx, listenPort, seed, true, []pstore.PeerInfo{})
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Printf("%v: listening for connections", node.Name())
 	runRPCServer(node, rpcAddr)
+}
+
+func runClient(rpcAddr string, cliArgs []string) {
+	if len(cliArgs) <= 0 {
+		log.Fatalf("Client: wrong args")
+		return
+	}
+	rpcCmd := cliArgs[0]
+	rpcArgs := cliArgs[1:]
+	if rpcCmd == "addpeer" {
+		if len(rpcArgs) != 3 {
+			log.Fatalf("Client: usage: addpeer ip port seed")
+		}
+		targetIP := rpcArgs[0]
+		targetPort, err := strconv.Atoi(rpcArgs[1])
+		targetSeed, err := strconv.ParseInt(rpcArgs[2], 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
+	} else if rpcCmd == "subshard" {
+		if len(rpcArgs) == 0 {
+			log.Fatalf("Client: usage: subshard shard0 shard1 ...")
+		}
+		shardIDs := []ShardIDType{}
+		for _, shardIDString := range rpcArgs {
+			shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			shardIDs = append(shardIDs, shardID)
+		}
+		callRPCSubscribeShard(rpcAddr, shardIDs)
+	} else if rpcCmd == "unsubshard" {
+		if len(rpcArgs) == 0 {
+			log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
+		}
+		shardIDs := []ShardIDType{}
+		for _, shardIDString := range rpcArgs {
+			shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			shardIDs = append(shardIDs, shardID)
+		}
+		callRPCUnsubscribeShard(rpcAddr, shardIDs)
+	} else if rpcCmd == "getsubshard" {
+		callRPCGetSubscribedShard(rpcAddr)
+	} else if rpcCmd == "broadcastcollation" {
+		if len(rpcArgs) != 4 {
+			log.Fatalf(
+				"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
+			)
+		}
+		shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
+		if err != nil {
+			log.Fatalf("wrong shard: %v", rpcArgs)
+		}
+		numCollations, err := strconv.Atoi(rpcArgs[1])
+		if err != nil {
+			log.Fatalf("wrong numCollations: %v", rpcArgs)
+		}
+		collationSize, err := strconv.Atoi(rpcArgs[2])
+		if err != nil {
+			log.Fatalf("wrong collationSize: %v", rpcArgs)
+		}
+		timeInMs, err := strconv.Atoi(rpcArgs[3])
+		if err != nil {
+			log.Fatalf("wrong timeInMs: %v", rpcArgs)
+		}
+		callRPCBroadcastCollation(
+			rpcAddr,
+			shardID,
+			numCollations,
+			collationSize,
+			timeInMs,
+		)
+	} else {
+		log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
+	}
 }

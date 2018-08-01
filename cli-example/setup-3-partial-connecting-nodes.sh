@@ -3,6 +3,8 @@
 gx-go rw
 go build
 
+killall sharding-p2p-poc
+
 PORT=10000
 RPCPORT=13000
 SEED=0
