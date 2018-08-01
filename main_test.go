@@ -452,7 +452,7 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	}
 }
 
-func TestBootstrapping(t *testing.T) {
+func TestDHTBootstrapping(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	bootnode := makeUnbootstrappedNode(t, ctx, 0)
@@ -461,10 +461,6 @@ func TestBootstrapping(t *testing.T) {
 		Addrs: bootnode.Addrs(),
 	}
 	node1 := makeUnbootstrappedNode(t, ctx, 1)
-	// piNode1 := pstore.PeerInfo{
-	// 	ID:    node1.ID(),
-	// 	Addrs: node1.Addrs(),
-	// }
 	connect(t, ctx, bootnode, node1)
 	node2 := makeTestingNode(t, ctx, 2, true, []pstore.PeerInfo{piBootnode})
 	time.Sleep(time.Millisecond * 100)

@@ -30,6 +30,7 @@ func convertPeers(peers []string) []pstore.PeerInfo {
 		maddr := ma.StringCast(peer)
 		p, err := pstore.InfoFromP2pAddr(maddr)
 		if err != nil {
+			// TODO: should just skip?
 			log.Fatalln(err)
 		}
 		pinfos[i] = *p

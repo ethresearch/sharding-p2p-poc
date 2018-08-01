@@ -7,17 +7,17 @@ import (
 	"log"
 	mrand "math/rand"
 	"strconv"
+	"strings"
 
+	// gologging "gx/ipfs/QmQvJiADDe7JR4m968MwXobTCCzUqQkP87aRHe29MEBGHV/go-logging"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
-	golog "github.com/ipfs/go-log"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	ic "github.com/libp2p/go-libp2p-crypto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
-	gologging "github.com/whyrusleeping/go-logging"
 
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
@@ -87,26 +87,9 @@ func makeNode(
 		bootstrapConnect(ctx, routedHost, bootstrapPeers)
 
 		err = dht.Bootstrap(ctx)
-		// FIXME: the following snippet is copied from `go-libp2p-kad-dht`, allowing us to use
-		//		  custom configs. This should be removed after the upstream release the latest fix
-		//		  for dht in `gx`
-		// bootstrapConfig := kaddht.BootstrapConfig{
-		// 	Queries: 1,
-		// 	Period:  time.Duration(5 * time.Minute),
-		// 	Timeout: time.Duration(10 * time.Second),
-		// }
-		// // Bootstrap the host
-		// proc, err := dht.BootstrapWithConfig(bootstrapConfig)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// go func() {
-		// 	defer proc.Close()
-		// 	select {
-		// 	case <-ctx.Done():
-		// 	case <-dht.Context().Done():
-		// 	}
-		// }()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Make a host that listens on the given multiaddress
@@ -126,7 +109,7 @@ func main() {
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
 	// all loggers with:
-	golog.SetAllLoggers(gologging.INFO) // Change to DEBUG for extra info
+	// golog.SetAllLoggers(gologging.INFO) // Change to DEBUG for extra info
 
 	// Parse options from the command line
 
@@ -137,6 +120,8 @@ func main() {
 		"port listened by the node for incoming connections",
 	)
 	rpcPort := flag.Int("rpcport", defaultRPCPort, "rpc port listened by the rpc server")
+	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
+	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
@@ -145,14 +130,24 @@ func main() {
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
 	} else {
-		runServer(*listenPort, *seed, rpcAddr)
+		var bootnodes []pstore.PeerInfo
+		if *bootnodesStr == "" {
+			bootnodes = []pstore.PeerInfo{}
+		} else {
+			bootnodes = convertPeers(strings.Split(*bootnodesStr, ","))
+		}
+		runServer(*listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr)
 	}
-
 }
 
-func runServer(listenPort int, seed int64, rpcAddr string) {
+func runServer(
+	listenPort int,
+	seed int64,
+	doBootstrapping bool,
+	bootnodes []pstore.PeerInfo,
+	rpcAddr string) {
 	ctx := context.Background()
-	node, err := makeNode(ctx, listenPort, seed, true, []pstore.PeerInfo{})
+	node, err := makeNode(ctx, listenPort, seed, doBootstrapping, bootnodes)
 	if err != nil {
 		log.Fatal(err)
 	}
