@@ -15,7 +15,8 @@ services:
       - "7788"
     networks:
       - sharding-p2p
-    command: ["/main", "-port=5566", "-rpcport=7788", "-bootstrap=$(http://bootstrap:5566)"]
-
+    volumes:
+      - "${PWD}/cmd/run.sh:/run.sh"
+    command: ["sh", "/run.sh"]
 networks:
   sharding-p2p:

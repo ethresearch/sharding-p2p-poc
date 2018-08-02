@@ -9,3 +9,5 @@ build:
 	docker build -t ethereum/sharding-p2p:latest .
 run:
 	docker run ethereum/sharding-p2p:latest
+run-many:
+	docker-compose up --scale node=5
