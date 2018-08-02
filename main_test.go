@@ -13,16 +13,17 @@ import (
 )
 
 func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
-	return makeTestingNode(t, ctx, number, []pstore.PeerInfo{})
+	return makeTestingNode(t, ctx, number, false, nil)
 }
 
 func makeTestingNode(
 	t *testing.T,
 	ctx context.Context,
 	number int,
+	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) *Node {
 	listeningPort := number + 10000
-	node, err := makeNode(ctx, listeningPort, int64(number), bootstrapPeers)
+	node, err := makeNode(ctx, listeningPort, int64(number), doBootstrapping, bootstrapPeers)
 	if err != nil {
 		t.Error("Failed to create node")
 	}
@@ -186,10 +187,16 @@ func TestPeerListeningShards(t *testing.T) {
 }
 
 func connect(t *testing.T, ctx context.Context, a, b host.Host) {
-	pinfo := a.Peerstore().PeerInfo(a.ID())
+	pinfo := pstore.PeerInfo{
+		ID:    a.ID(),
+		Addrs: a.Addrs(),
+	}
 	err := b.Connect(ctx, pinfo)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(a.Network().ConnsToPeer(b.ID())) == 0 {
+		t.Errorf("Fail to connect %v with %v", a.ID(), b.ID())
 	}
 }
 
@@ -442,5 +449,22 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
 	if len(connWithNode2) == 0 {
 		t.Error("Node 0 should have connected to node 2 after listening to shard 42")
+	}
+}
+
+func TestDHTBootstrapping(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	bootnode := makeUnbootstrappedNode(t, ctx, 0)
+	piBootnode := pstore.PeerInfo{
+		ID:    bootnode.ID(),
+		Addrs: bootnode.Addrs(),
+	}
+	node1 := makeUnbootstrappedNode(t, ctx, 1)
+	connect(t, ctx, bootnode, node1)
+	node2 := makeTestingNode(t, ctx, 2, true, []pstore.PeerInfo{piBootnode})
+	time.Sleep(time.Millisecond * 100)
+	if len(node2.Peerstore().PeerInfo(node1.ID()).Addrs) == 0 {
+		t.Error("node2 should have known node1 through the bootnode")
 	}
 }
