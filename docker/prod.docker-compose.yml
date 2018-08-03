@@ -16,7 +16,7 @@ services:
     networks:
       - sharding-p2p
     volumes:
-      - "${PWD}/cmd/run.sh:/run.sh"
+      - ./cmd/run.sh:/run.sh
     command: ["sh", "/run.sh"]
 networks:
   sharding-p2p:
