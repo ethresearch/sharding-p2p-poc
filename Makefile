@@ -15,6 +15,11 @@ build-dev:
 run-dev:
 	docker run -it --rm -v $(PWD):/go/sharding-p2p/ ethereum/sharding-p2p:dev sh -c "go build -v -o main ."
 
+test-dev:
+	gx-go rw
+	docker run -it --rm -v $(PWD):/go/sharding-p2p/ ethereum/sharding-p2p:dev sh -c "go test"
+	gx-go uw
+
 run-many-dev:
 	docker-compose -f docker/dev.docker-compose.yml up --scale node=5
 
