@@ -5,8 +5,8 @@ import (
 	"context"
 	"log"
 
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb"
 
 	inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"

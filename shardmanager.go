@@ -11,9 +11,10 @@ import (
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	b58 "github.com/mr-tron/base58/base58"
 
-	"github.com/golang/protobuf/proto"
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb"
 	"golang.org/x/crypto/sha3"
+
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
+	"github.com/golang/protobuf/proto"
 )
 
 type ShardManager struct {
