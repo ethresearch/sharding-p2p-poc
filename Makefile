@@ -5,6 +5,7 @@ gx:
 deps: gx
 	gx --verbose install --global
 	gx-go rewrite
+	./script/gx-unwrite-partially.sh
 
 build-prod:
 	docker build -f docker/prod.Dockerfile -t ethereum/sharding-p2p:latest .
@@ -17,6 +18,7 @@ run-dev:
 
 test-dev:
 	gx-go rw
+	./script/gx-unwrite-partially.sh
 	docker run -it --rm -v $(PWD):/go/sharding-p2p/ ethereum/sharding-p2p:dev sh -c "go test"
 	gx-go uw
 
