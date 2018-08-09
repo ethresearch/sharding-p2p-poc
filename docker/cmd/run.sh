@@ -1,3 +1,5 @@
+#!/bin/bash
+
 sleep 1
 
 export BOOTSTRAP_IP=$(getent hosts bootstrap | awk '{ print $1 }')

@@ -1,7 +1,7 @@
 version: '3'
 services:
   bootstrap:
-    image: ethereum/sharding-p2p:latest
+    image: ethereum/sharding-p2p:dev
     ports:
       - "5566"
       - "7788"
@@ -11,7 +11,7 @@ services:
       - ../main:/main
     command: /main -seed=0 -port=5566 -rpcport=7788
   node:
-    image: ethereum/sharding-p2p:latest
+    image: ethereum/sharding-p2p:dev
     ports:
       - "5566"
       - "7788"
@@ -20,7 +20,7 @@ services:
     volumes:
       - ./cmd/run.sh:/run.sh
       - ../main:/main
-    command: ["sh", "/run.sh"]
+    command: ["bash", "/run.sh"]
 networks:
   sharding-p2p:
 
