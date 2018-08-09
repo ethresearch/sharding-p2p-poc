@@ -16,9 +16,9 @@ do
     pkg_name=`echo ${pkg[0]} | sed 's/\//2/g'`
     pkg_path=`echo ${pkg[1]} | sed 's/\//\\\\\//g'`
     if [[ "$os_dist" == 'Darwin' ]]; then
-        sed -i '' "s/$gx_prefix\/.*\/$pkg_name/$pkg_path/g" $target_files
+        find . -name "$target_files" -exec sed -i '' "s/$gx_prefix\/.*\/$pkg_name/$pkg_path/g" {} +
     else
-        sed -i "s/$gx_prefix\/.*\/$pkg_name/$pkg_path/g" $target_files
+        find . -name "$target_files" -exec sed -i "s/$gx_prefix\/.*\/$pkg_name/$pkg_path/g" {} +
     fi
 done
 

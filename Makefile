@@ -16,9 +16,7 @@ build-dev:
 run-dev:
 	docker run -it --rm -v $(PWD):/go/sharding-p2p/ ethereum/sharding-p2p:dev sh -c "go build -v -o main ."
 
-test-dev:
-	gx-go rw
-	./script/gx-unwrite-partially.sh
+test-dev: partial-gx-rw
 	docker run -it --rm -v $(PWD):/go/sharding-p2p/ ethereum/sharding-p2p:dev sh -c "go test"
 	gx-go uw
 
@@ -33,3 +31,13 @@ run-many-prod:
 
 down-prod:
 	docker-compose -f docker/prod.docker-compose.yml down
+
+gx-partial-rw:
+	gx-go rw
+	./script/gx-unwrite-partially.sh
+
+gx-rw:
+	gx-go rw
+
+gx-uw:
+	gx-go uw
