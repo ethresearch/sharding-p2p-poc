@@ -2,6 +2,8 @@
 
 sleep 1
 
+chmod +x docker/cmd/run.sh
+
 export BOOTSTRAP_IP=$(getent hosts bootstrap | awk '{ print $1 }')
 
 /main \
