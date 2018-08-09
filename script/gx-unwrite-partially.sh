@@ -8,6 +8,7 @@ gx-go rewrite
 
 declare -a unwrite_pkgs
 unwrite_pkgs[0]='opentracing-go,github.com/opentracing/opentracing-go'
+unwrite_pkgs[1]='protobuf,github.com/gogo/protobuf'
 # unwrite_pkgs[1]='edf,github.com/abc/edf'
 
 for i in ${unwrite_pkgs[@]}
