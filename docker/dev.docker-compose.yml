@@ -20,7 +20,7 @@ services:
     volumes:
       - ./cmd/run.sh:/run.sh
       - ../main:/main
-    command: ["sh", "/run.sh"]
+    command: ["bash", "/run.sh"]
 networks:
   sharding-p2p:
 
