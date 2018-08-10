@@ -8,6 +8,7 @@ URL_DELIMETER = '/'
 
 gx_import_regex = "gx/ipfs/.+/.+"
 general_import_regex = ".+/.+/.+"
+quoted_gx_pkg_regex = f'"{gx_import_regex}"'
 
 unwrite_pkgs = (
     "github.com/multiformats/go-multicodec/protobuf",
@@ -168,7 +169,7 @@ class GxImportConverter:
         self.unwrite_pkgs = unwrite_pkgs
         self.cache = {}
 
-    def unwrite(self, gx_import_str):
+    def run(self, gx_import_str):
         gx_import = GxImport(gx_import_str)
         gx_import_repo_path = join_url([
             self.go_path,
@@ -187,10 +188,10 @@ class GxImportConverter:
                 gx_import.package_path,
             ])
 
-    def run(self, gx_import_str):
+    def convert(self, gx_import_str):
         if gx_import_str in self.cache:
             return self.cache[gx_import_str]
-        result = self.unwrite(gx_import_str)
+        result = self.run(gx_import_str)
         self.cache[gx_import_str] = result
         if result not in self.unwrite_pkgs:
             return gx_import_str
@@ -202,9 +203,9 @@ def test_gx_import_converter():
     converter = GxImportConverter(temp_unwrite_pkgs)
     s_gx = "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"
     s_general = "github.com/multiformats/go-multicodec/protobuf"
-    assert converter.run(s_gx) == s_gx
+    assert converter.convert(s_gx) == s_gx
     converter.unwrite_pkgs.append(s_general)
-    assert converter.run(s_gx) == s_general
+    assert converter.convert(s_gx) == s_general
 
 
 class Processor:
@@ -232,36 +233,115 @@ def test_processor():
 
 
 class LineConverter:
-    regex_pattern = None
     import_converter = None
+    processor = None
+    pattern = None
 
     def __init__(self, regex_str, processor, import_converter):
         self.import_converter = import_converter
-        self.regex_pattern = re.compile(regex_str)
+        self.processor = processor
+        self.pattern = re.compile(regex_str)
+
+    def convert(self, line):
+        m = self.pattern.search(line)
+        if m is None:
+            return line
+        matched_str = m.group(0)
+        preprocessed_str = self.processor.preprocess(matched_str)
+        converted_str = self.import_converter.convert(preprocessed_str)
+        postprocessed_str = self.processor.postprocess(converted_str)
+        return line[:m.start()] + postprocessed_str + line[m.end():]
 
 
 def test_line_converter():
     temp_unwrite_pkgs = unwrite_pkgs
-    quoted_pkg_regex = f'"{gx_import_regex}"'
     line_converter = LineConverter(
-        quoted_pkg_regex,
+        quoted_gx_pkg_regex,
         Processor(),
         GxImportConverter(temp_unwrite_pkgs),
     )
     line = '    protobufCodec "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"'
-    # line_converter.
+    assert line_converter.convert(line) == '    protobufCodec "github.com/multiformats/go-multicodec/protobuf"'
+    line_not_matched = '    protobufCodec "1gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"'
+    assert line_converter.convert(line_not_matched) == line_not_matched
 
 
-def main():
-    import_map = (
-        ("github.com/multiformats/go-multicodec/protobuf", "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"),
-        ("github.com/gogo/protobuf/proto", "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"),
+def all_go_files(root_path):
+    go_ext = '.go'
+    for path, _, files in os.walk(root_path):
+        for filename in files:
+            if filename[-len(go_ext):] == go_ext:
+                file_path = "{}/{}".format(path, filename)
+                yield file_path
+
+
+class FileUnwriter:
+    temp_unwritten_file_fmt = '.{}.uwbk'
+
+    line_unwriter = None
+
+    def __init__(self, line_unwriter):
+        self.line_unwriter = line_unwriter
+
+    def unwrite(self, file_path):
+        temp_unwritten_file = "{}/{}".format(
+            os.path.dirname(file_path),
+            self.temp_unwritten_file_fmt.format(os.path.basename(file_path)),
+        )
+        with open(file_path, 'r') as f_read, open(temp_unwritten_file, 'w') as f_write:
+            for line in f_read.readlines():
+                unwritten_line = self.line_unwriter.convert(line)
+                f_write.write(unwritten_line)
+        os.rename(temp_unwritten_file, file_path)
+
+
+def test_file_unwriter():
+    temp_unwrite_pkgs = (
+        "github.com/gogo/protobuf/proto",
+        "github.com/multiformats/go-multicodec/protobuf",
     )
+    content = """
+    protobufCodec "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"
+    "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"
+"""
+    line_unwriter = LineConverter(
+        quoted_gx_pkg_regex,
+        Processor(),
+        GxImportConverter(temp_unwrite_pkgs),
+    )
+    file_unwriter = FileUnwriter(line_unwriter)
+
+    test_file = "./temppppppppppppppppppppppp.txt"
+    with open(test_file, 'w') as f_write:
+        f_write.write(content)
+    file_unwriter.unwrite(test_file)
+    try:
+        f_read = open(test_file, 'r')
+        read_content = f_read.read()
+    except IOError:
+        assert False
+    expected_content = """
+    protobufCodec "github.com/multiformats/go-multicodec/protobuf"
+    "github.com/gogo/protobuf/proto"
+"""
+    assert read_content == expected_content
+    os.unlink(test_file)
+
+    # for file_path in all_go_files('.'):
+    #     file_unwriter.unwrite(file_path)
+
+
+def test():
+    # import_map = (
+    #     ("github.com/multiformats/go-multicodec/protobuf", "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"),
+    #     ("github.com/gogo/protobuf/proto", "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"),
+    # )
     test_gx_import()
     test_general_import()
     test_gx_import_converter()
     test_processor()
     test_line_converter()
+    test_file_unwriter()
 
 
 if __name__ == '__main__':
