@@ -19,6 +19,10 @@ def join_url(args):
     return URL_DELIMETER.join(args).rstrip(URL_DELIMETER)
 
 
+class ProcessFailure(Exception):
+    pass
+
+
 class WrongFormat(Exception):
     pass
 
@@ -203,6 +207,51 @@ def test_gx_import_converter():
     assert converter.run(s_gx) == s_general
 
 
+class Processor:
+
+    def preprocess(self, string):
+        if len(string) < 2:
+            raise ProcessFailure("len of {} < 2".format(string))
+        if string[0] != '"' or string[0] != '"':
+            raise ProcessFailure("wrong format: {}".format(string))
+        return string[1:-1]
+
+    def postprocess(self, string):
+        return f"\"{string}\""
+
+
+def test_processor():
+    p = Processor()
+    try:
+        p.preprocess("123")
+        assert False
+    except:
+        pass
+    assert p.preprocess('"123"') == '123'
+    assert p.postprocess('123') == '"123"'
+
+
+class LineConverter:
+    regex_pattern = None
+    import_converter = None
+
+    def __init__(self, regex_str, processor, import_converter):
+        self.import_converter = import_converter
+        self.regex_pattern = re.compile(regex_str)
+
+
+def test_line_converter():
+    temp_unwrite_pkgs = unwrite_pkgs
+    quoted_pkg_regex = f'"{gx_import_regex}"'
+    line_converter = LineConverter(
+        quoted_pkg_regex,
+        Processor(),
+        GxImportConverter(temp_unwrite_pkgs),
+    )
+    line = '    protobufCodec "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"'
+    # line_converter.
+
+
 def main():
     import_map = (
         ("github.com/multiformats/go-multicodec/protobuf", "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"),
@@ -211,6 +260,8 @@ def main():
     test_gx_import()
     test_general_import()
     test_gx_import_converter()
+    test_processor()
+    test_line_converter()
 
 
 if __name__ == '__main__':
