@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
-import re
 import os
+import re
+
+
+unwrite_pkgs = (
+    "github.com/opentracing/opentracing-go",
+    "github.com/gogo/protobuf/proto",
+)
 
 URL_DELIMETER = '/'
 
 gx_import_regex = "gx/ipfs/.+/.+"
 general_import_regex = ".+/.+/.+"
 quoted_gx_pkg_regex = f'"{gx_import_regex}"'
-
-unwrite_pkgs = (
-    "github.com/multiformats/go-multicodec/protobuf",
-    "github.com/gogo/protobuf/proto",
-)
 
 
 def join_url(args):
@@ -109,6 +111,119 @@ class GeneralImport(ImportStatement):
         ])
 
 
+class GxImportConverter:
+    go_path = None
+    unwrite_pkgs = None
+    cache = None
+
+    def __init__(self, unwrite_pkgs):
+        self.go_path = os.environ["GOPATH"]
+        self.unwrite_pkgs = unwrite_pkgs
+        self.cache = {}
+
+    def run(self, gx_import_str):
+        gx_import = GxImport(gx_import_str)
+        gx_import_repo_path = join_url([
+            self.go_path,
+            "src",
+            gx_import.repo_path,
+        ])
+        json_file_path = join_url([
+            gx_import_repo_path,
+            "package.json",
+        ])
+        with open(json_file_path, 'r') as f_read:
+            package_info = json.load(f_read)
+            orig_repo_path = package_info['gx']['dvcsimport']
+            return join_url([
+                orig_repo_path,
+                gx_import.package_path,
+            ])
+
+    def convert(self, gx_import_str):
+        if gx_import_str in self.cache:
+            return self.cache[gx_import_str]
+        result = self.run(gx_import_str)
+        self.cache[gx_import_str] = result
+        if result not in self.unwrite_pkgs:
+            return gx_import_str
+        return result
+
+
+class Processor:
+
+    def preprocess(self, string):
+        if len(string) < 2:
+            raise ProcessFailure("len of {} < 2".format(string))
+        if string[0] != '"' or string[0] != '"':
+            raise ProcessFailure("wrong format: {}".format(string))
+        return string[1:-1]
+
+    def postprocess(self, string):
+        return f"\"{string}\""
+
+
+class LineConverter:
+    import_converter = None
+    processor = None
+    pattern = None
+
+    def __init__(self, regex_str, processor, import_converter):
+        self.import_converter = import_converter
+        self.processor = processor
+        self.pattern = re.compile(regex_str)
+
+    def convert(self, line):
+        m = self.pattern.search(line)
+        if m is None:
+            return line
+        matched_str = m.group(0)
+        preprocessed_str = self.processor.preprocess(matched_str)
+        converted_str = self.import_converter.convert(preprocessed_str)
+        postprocessed_str = self.processor.postprocess(converted_str)
+        return line[:m.start()] + postprocessed_str + line[m.end():]
+
+
+class FileUnwriter:
+    temp_unwritten_file_fmt = '.{}.uwbk'
+
+    line_unwriter = None
+
+    def __init__(self, line_unwriter):
+        self.line_unwriter = line_unwriter
+
+    def unwrite(self, file_path):
+        temp_unwritten_file = "{}/{}".format(
+            os.path.dirname(file_path),
+            self.temp_unwritten_file_fmt.format(os.path.basename(file_path)),
+        )
+        with open(file_path, 'r') as f_read, open(temp_unwritten_file, 'w') as f_write:
+            for line in f_read.readlines():
+                unwritten_line = self.line_unwriter.convert(line)
+                f_write.write(unwritten_line)
+        os.rename(temp_unwritten_file, file_path)
+
+
+def all_go_files(root_path):
+    go_ext = '.go'
+    for path, _, files in os.walk(root_path):
+        for filename in files:
+            if filename[-len(go_ext):] == go_ext:
+                file_path = "{}/{}".format(path, filename)
+                yield file_path
+
+
+def gx_partial_unwrite(root_path):
+    line_unwriter = LineConverter(
+        quoted_gx_pkg_regex,
+        Processor(),
+        GxImportConverter(unwrite_pkgs),
+    )
+    file_unwriter = FileUnwriter(line_unwriter)
+    for file_path in all_go_files(root_path):
+        file_unwriter.unwrite(file_path)
+
+
 def test_gx_import():
     s = "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"
     s_gx = GxImport(s)
@@ -159,45 +274,6 @@ def test_general_import():
         pass
 
 
-class GxImportConverter:
-    go_path = None
-    unwrite_pkgs = None
-    cache = None
-
-    def __init__(self, unwrite_pkgs):
-        self.go_path = os.environ["GOPATH"]
-        self.unwrite_pkgs = unwrite_pkgs
-        self.cache = {}
-
-    def run(self, gx_import_str):
-        gx_import = GxImport(gx_import_str)
-        gx_import_repo_path = join_url([
-            self.go_path,
-            "src",
-            gx_import.repo_path,
-        ])
-        json_file_path = join_url([
-            gx_import_repo_path,
-            "package.json",
-        ])
-        with open(json_file_path, 'r') as f_read:
-            package_info = json.load(f_read)
-            orig_repo_path = package_info['gx']['dvcsimport']
-            return join_url([
-                orig_repo_path,
-                gx_import.package_path,
-            ])
-
-    def convert(self, gx_import_str):
-        if gx_import_str in self.cache:
-            return self.cache[gx_import_str]
-        result = self.run(gx_import_str)
-        self.cache[gx_import_str] = result
-        if result not in self.unwrite_pkgs:
-            return gx_import_str
-        return result
-
-
 def test_gx_import_converter():
     temp_unwrite_pkgs = []
     converter = GxImportConverter(temp_unwrite_pkgs)
@@ -206,19 +282,6 @@ def test_gx_import_converter():
     assert converter.convert(s_gx) == s_gx
     converter.unwrite_pkgs.append(s_general)
     assert converter.convert(s_gx) == s_general
-
-
-class Processor:
-
-    def preprocess(self, string):
-        if len(string) < 2:
-            raise ProcessFailure("len of {} < 2".format(string))
-        if string[0] != '"' or string[0] != '"':
-            raise ProcessFailure("wrong format: {}".format(string))
-        return string[1:-1]
-
-    def postprocess(self, string):
-        return f"\"{string}\""
 
 
 def test_processor():
@@ -232,27 +295,6 @@ def test_processor():
     assert p.postprocess('123') == '"123"'
 
 
-class LineConverter:
-    import_converter = None
-    processor = None
-    pattern = None
-
-    def __init__(self, regex_str, processor, import_converter):
-        self.import_converter = import_converter
-        self.processor = processor
-        self.pattern = re.compile(regex_str)
-
-    def convert(self, line):
-        m = self.pattern.search(line)
-        if m is None:
-            return line
-        matched_str = m.group(0)
-        preprocessed_str = self.processor.preprocess(matched_str)
-        converted_str = self.import_converter.convert(preprocessed_str)
-        postprocessed_str = self.processor.postprocess(converted_str)
-        return line[:m.start()] + postprocessed_str + line[m.end():]
-
-
 def test_line_converter():
     temp_unwrite_pkgs = unwrite_pkgs
     line_converter = LineConverter(
@@ -264,35 +306,6 @@ def test_line_converter():
     assert line_converter.convert(line) == '    protobufCodec "github.com/multiformats/go-multicodec/protobuf"'
     line_not_matched = '    protobufCodec "1gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"'
     assert line_converter.convert(line_not_matched) == line_not_matched
-
-
-def all_go_files(root_path):
-    go_ext = '.go'
-    for path, _, files in os.walk(root_path):
-        for filename in files:
-            if filename[-len(go_ext):] == go_ext:
-                file_path = "{}/{}".format(path, filename)
-                yield file_path
-
-
-class FileUnwriter:
-    temp_unwritten_file_fmt = '.{}.uwbk'
-
-    line_unwriter = None
-
-    def __init__(self, line_unwriter):
-        self.line_unwriter = line_unwriter
-
-    def unwrite(self, file_path):
-        temp_unwritten_file = "{}/{}".format(
-            os.path.dirname(file_path),
-            self.temp_unwritten_file_fmt.format(os.path.basename(file_path)),
-        )
-        with open(file_path, 'r') as f_read, open(temp_unwritten_file, 'w') as f_write:
-            for line in f_read.readlines():
-                unwritten_line = self.line_unwriter.convert(line)
-                f_write.write(unwritten_line)
-        os.rename(temp_unwritten_file, file_path)
 
 
 def test_file_unwriter():
@@ -327,15 +340,8 @@ def test_file_unwriter():
     assert read_content == expected_content
     os.unlink(test_file)
 
-    # for file_path in all_go_files('.'):
-    #     file_unwriter.unwrite(file_path)
-
 
 def test():
-    # import_map = (
-    #     ("github.com/multiformats/go-multicodec/protobuf", "gx/ipfs/QmRDePEiL4Yupq5EkcK3L3ko3iMgYaqUdLu7xc1kqs7dnV/go-multicodec/protobuf"),
-    #     ("github.com/gogo/protobuf/proto", "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"),
-    # )
     test_gx_import()
     test_general_import()
     test_gx_import_converter()
@@ -345,4 +351,13 @@ def test():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+        description="Perform gx-uw partially, which means you can unwrite specific packages.",
+    )
+    parser.add_argument(
+        "root_path",
+        type=str,
+        help="Go files under `root_path` will be all rewritten",
+    )
+    args = parser.parse_args()
+    gx_partial_unwrite(args.root_path)
