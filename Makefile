@@ -5,7 +5,7 @@ gx:
 deps: gx
 	gx --verbose install --global
 	gx-go rewrite
-	./script/gx-unwrite-partially.sh
+	./script/partial-gx-uw.py
 
 build-prod:
 	docker build -f docker/prod.Dockerfile -t ethereum/sharding-p2p:latest .
@@ -32,9 +32,9 @@ run-many-prod:
 down-prod:
 	docker-compose -f docker/prod.docker-compose.yml down
 
-gx-partial-rw:
+partial-gx-rw:
 	gx-go rw
-	./script/gx-unwrite-partially.sh
+	./script/partial-gx-uw.py
 
 gx-rw:
 	gx-go rw
