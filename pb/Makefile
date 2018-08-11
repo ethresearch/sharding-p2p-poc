@@ -11,6 +11,7 @@ all: $(RPC_PBGOS) $(MSG_PBGOS)
 # Explanation: The following if/else add "plugins=grpc" to `--go_out`
 # 	when the file is under the directory rpc/
 # TODO: seems better to have one makefile per subdirectory, and one makefile
+#	under the pb root directory to trigger all compiling jobs
 %.pb.go: %.proto
 	@if [ "$(findstring $^,$(RPC_PROTOS))" = "$^" ]; then\
 		protoc -I $(dir $^) $^ --go_out=plugins=grpc:$(dir $^);\
