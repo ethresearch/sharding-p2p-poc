@@ -62,14 +62,21 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 		s.Close()
 		return
 	}
-	peerIDs := p.node.GetNodesInShard(req.ShardID)
-	peerIDStrings := []string{}
-	for _, peerID := range peerIDs {
-		peerIDStrings = append(peerIDStrings, peerID.Pretty())
+	shardPeers := make(map[ShardIDType]*pbmsg.ShardPeerResponse_Peers)
+	for _, shardID := range req.ShardIDs {
+		peerIDs := p.node.GetNodesInShard(shardID)
+		peerIDStrings := []string{}
+		for _, peerID := range peerIDs {
+			peerIDStrings = append(peerIDStrings, peerID.Pretty())
+		}
+		shardPeers[shardID] = &pbmsg.ShardPeerResponse_Peers{
+			Peers: peerIDStrings,
+		}
 	}
+
 	res := &pbmsg.ShardPeerResponse{
-		Response: &pbmsg.Response{Status: pbmsg.Response_SUCCESS},
-		Peers:    peerIDStrings,
+		Response:   &pbmsg.Response{Status: pbmsg.Response_SUCCESS},
+		ShardPeers: shardPeers,
 	}
 	if !sendProtoMessage(res, s) {
 		log.Printf("onShardPeerRequest: failed to send proto message %v", res)
@@ -80,7 +87,7 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 func (p *RequestProtocol) requestShardPeer(
 	ctx context.Context,
 	peerID peer.ID,
-	shardID ShardIDType) ([]peer.ID, error) {
+	shardIDs []ShardIDType) (map[ShardIDType][]peer.ID, error) {
 	s, err := p.node.NewStream(
 		ctx,
 		peerID,
@@ -90,7 +97,7 @@ func (p *RequestProtocol) requestShardPeer(
 		return nil, fmt.Errorf("failed to open new stream")
 	}
 	req := &pbmsg.ShardPeerRequest{
-		ShardID: shardID,
+		ShardIDs: shardIDs,
 	}
 	if !sendProtoMessage(req, s) {
 		return nil, fmt.Errorf("failed to send request")
@@ -100,15 +107,19 @@ func (p *RequestProtocol) requestShardPeer(
 		s.Close()
 		return nil, fmt.Errorf("failed to read response proto")
 	}
-	peerIDs := []peer.ID{}
-	for _, peerString := range res.Peers {
-		peerID, err := peer.IDB58Decode(peerString)
-		if err != nil {
-			return nil, fmt.Errorf("error occurred when parsing peerIDs")
+	shardPeers := make(map[ShardIDType][]peer.ID)
+	for shardID, peers := range res.ShardPeers {
+		peerIDs := []peer.ID{}
+		for _, peerString := range peers.Peers {
+			peerID, err := peer.IDB58Decode(peerString)
+			if err != nil {
+				return nil, fmt.Errorf("error occurred when parsing peerIDs")
+			}
+			peerIDs = append(peerIDs, peerID)
 		}
-		peerIDs = append(peerIDs, peerID)
+		shardPeers[shardID] = peerIDs
 	}
-	return peerIDs, nil
+	return shardPeers, nil
 }
 
 // collation request

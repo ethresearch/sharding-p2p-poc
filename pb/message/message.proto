@@ -44,12 +44,15 @@ message CollationResponse {
 }
 
 message ShardPeerRequest {
-    int64 shardID = 1;
+    repeated int64 shardIDs = 1;
 }
 
 message ShardPeerResponse {
     Response response = 1;
-    repeated string peers = 2;
+    message Peers {
+        repeated string peers = 1;
+    }
+    map<int64, Peers> shardPeers = 2;
 }
 
 message NotifyShardsRequest {

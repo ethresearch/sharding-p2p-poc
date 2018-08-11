@@ -298,20 +298,47 @@ func TestRequestShardPeer(t *testing.T) {
 	defer cancel()
 	node0, node1 := makePeerNodes(t, ctx)
 	time.Sleep(time.Millisecond * 100)
-	peerIDs, err := node0.requestShardPeer(ctx, node1.ID(), 1)
+	shardPeers, err := node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1})
 	if err != nil {
 		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs, prs := shardPeers[1]
+	if !prs {
+		t.Errorf("node1 should still return a empty peer list of the shard %v", 1)
 	}
 	if len(peerIDs) != 0 {
 		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs)
 	}
 	node1.ListenShard(1)
-	peerIDs, err = node0.requestShardPeer(ctx, node1.ID(), 1)
+	node1.ListenShard(2)
+	// node1 listens to [1, 2], but we only request shard [1]
+	shardPeers, err = node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1})
 	if err != nil {
 		t.Errorf("Error occurred when requesting shard peer: %v", err)
 	}
-	if len(peerIDs) != 1 || peerIDs[0] != node1.ID() {
-		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs)
+	peerIDs1, prs := shardPeers[1]
+	if len(peerIDs1) != 1 || peerIDs1[0] != node1.ID() {
+		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs1)
+	}
+	// node1 only listens to [1, 2], but we request shard [1, 2, 3]
+	shardPeers, err = node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1, 2, 3})
+	if err != nil {
+		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs1, prs = shardPeers[1]
+	if len(peerIDs1) != 1 || peerIDs1[0] != node1.ID() {
+		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs1)
+	}
+	peerIDs2, prs := shardPeers[2]
+	if len(peerIDs2) != 1 || peerIDs2[0] != node1.ID() {
+		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs2)
+	}
+	peerIDs3, prs := shardPeers[3]
+	if !prs {
+		t.Errorf("node1 should still return a empty peer list of the shard %v", 3)
+	}
+	if len(peerIDs3) != 0 {
+		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs3)
 	}
 }
 
