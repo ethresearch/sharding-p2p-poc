@@ -1,6 +1,6 @@
 FROM golang:1.10.3
-WORKDIR /go/sharding-p2p
-COPY . /go/sharding-p2p
+WORKDIR /go/src/github.com/ethresearch/sharding-p2p-poc
+COPY . /go/src/github.com/ethresearch/sharding-p2p-poc
 RUN go get -d -v .
 RUN make deps
 
