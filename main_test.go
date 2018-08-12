@@ -30,32 +30,6 @@ func makeTestingNode(
 	return node
 }
 
-/* unit tests */
-
-func TestListeningShards(t *testing.T) {
-	ls := NewListeningShards()
-	ls.setShard(1)
-	lsSlice := ls.getShards()
-	if (len(lsSlice) != 1) || lsSlice[0] != ShardIDType(1) {
-		t.Error()
-	}
-	ls.setShard(42)
-	if len(ls.getShards()) != 2 {
-		t.Error()
-	}
-	// test `ToBytes` and `ListeningShardsFromBytes`
-	bytes := ls.ToBytes()
-	lsNew := ListeningShardsFromBytes(bytes)
-	if len(ls.getShards()) != len(lsNew.getShards()) {
-		t.Error()
-	}
-	for index, value := range ls.getShards() {
-		if value != lsNew.getShards()[index] {
-			t.Error()
-		}
-	}
-}
-
 func TestNodeListeningShards(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -248,7 +222,7 @@ func TestBroadcastCollation(t *testing.T) {
 	succeed := node0.broadcastCollation(
 		testingShardID,
 		1,
-		"123",
+		[]byte("123"),
 	)
 	if !succeed {
 		t.Errorf("failed to send collation %v, %v, %v", testingShardID, 1, 123)
@@ -453,8 +427,15 @@ func TestWithIPFSNodesRouting(t *testing.T) {
 	defer cancel()
 
 	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
-	ipfsPeer0 := IPFS_PEERS[0]
-	ipfsPeer1 := IPFS_PEERS[1]
+	ipfsPeers := convertPeers([]string{
+		"/ip4/127.0.0.1/tcp/4001/ipfs/QmXa1ncfGc9RQotUAyN3Gb4ar7WXZ4DEb2wPZsSybkK1sf",
+		"/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+		"/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
+		"/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
+		"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
+	})
+	ipfsPeer0 := ipfsPeers[0]
+	ipfsPeer1 := ipfsPeers[1]
 
 	node0 := makeUnbootstrappedNode(t, ctx, 0)
 	node0.Peerstore().AddAddrs(ipfsPeer0.ID, ipfsPeer0.Addrs, pstore.PermanentAddrTTL)

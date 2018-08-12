@@ -9,9 +9,6 @@ import (
 	floodsub "github.com/libp2p/go-floodsub"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	b58 "github.com/mr-tron/base58/base58"
-
-	"golang.org/x/crypto/sha3"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
@@ -265,17 +262,6 @@ func (n *ShardManager) PublishListeningShards() {
 
 // shard collations
 
-func Hash(msg *pbmsg.Collation) string {
-	dataInBytes, err := proto.Marshal(msg)
-	if err != nil {
-		log.Printf("Error occurs when hashing %v", msg)
-	}
-	h := sha3.NewLegacyKeccak256()
-	h.Write(dataInBytes)
-	// FIXME: for convenience
-	return b58.Encode(h.Sum(nil))
-}
-
 func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 	if !n.IsShardCollationsSubscribed(shardID) {
 		return
@@ -303,7 +289,7 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 				continue
 			}
 			// TODO: need some check against collations
-			collationHash := Hash(&collation)
+			collationHash := GetCollationHash(&collation)
 			numCollationReceived++
 			// n.lock.Lock()
 			// n.collations[collationHash] = struct{}{}
@@ -342,7 +328,7 @@ func (n *ShardManager) SubscribeShardCollations(shardID ShardIDType) {
 	n.shardCollationsSubs[shardID] = collationsSub
 }
 
-func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int64, blobs string) bool {
+func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int64, blobs []byte) bool {
 	// create message data
 	data := &pbmsg.Collation{
 		ShardID: shardID,
