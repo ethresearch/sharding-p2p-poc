@@ -1,20 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"log"
 
-	"github.com/gogo/protobuf/proto"
 	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb"
-
-	ma "github.com/multiformats/go-multiaddr"
-	protobufCodec "github.com/multiformats/go-multicodec/protobuf"
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 )
 
 // pattern: /protocol-name/request-or-response-message/version
@@ -41,10 +35,8 @@ func NewAddPeerProtocol(node *Node) *AddPeerProtocol {
 func (p *AddPeerProtocol) onRequest(s inet.Stream) {
 	// get request data
 	data := &pbmsg.AddPeerRequest{}
-	decoder := protobufCodec.Multicodec(nil).Decoder(bufio.NewReader(s))
-	err := decoder.Decode(data)
-	if err != nil {
-		log.Println(err)
+	if !readProtoMessage(data, s) {
+		s.Close()
 		return
 	}
 
@@ -63,7 +55,7 @@ func (p *AddPeerProtocol) onRequest(s inet.Stream) {
 	)
 
 	resp := &pbmsg.AddPeerResponse{
-		Success: true,
+		Response: &pbmsg.Response{Status: pbmsg.Response_SUCCESS},
 	}
 
 	p.node.Peerstore().AddAddr(
@@ -72,32 +64,28 @@ func (p *AddPeerProtocol) onRequest(s inet.Stream) {
 		pstore.PermanentAddrTTL,
 	)
 
-	// send the response
-	s, respErr := p.node.NewStream(context.Background(), s.Conn().RemotePeer(), addPeerResponse)
-	if respErr != nil {
-		log.Println(respErr)
+	sResponse, err := p.node.NewStream(context.Background(), s.Conn().RemotePeer(), addPeerResponse)
+	if err != nil {
+		log.Println(err)
 		return
 	}
-
-	if ok := sendProtoMessage(resp, s); ok {
-		log.Printf("%s: AddPeer response to %s sent.", p.node.Name(), s.Conn().RemotePeer().String())
+	if !sendProtoMessage(resp, sResponse) {
+		sResponse.Close()
 	}
 }
 
 // remote addPeer response handler
 func (p *AddPeerProtocol) onResponse(s inet.Stream) {
 	data := &pbmsg.AddPeerResponse{}
-	decoder := protobufCodec.Multicodec(nil).Decoder(bufio.NewReader(s))
-	err := decoder.Decode(data)
-	if err != nil {
+	if !readProtoMessage(data, s) {
+		s.Close()
 		return
 	}
-
 	log.Printf(
 		"%s: Received addPeer response from %s, result=%v",
 		p.node.Name(),
 		s.Conn().RemotePeer(),
-		data.Success,
+		data.Response.Status,
 	)
 	p.done <- true
 }
@@ -117,59 +105,5 @@ func (p *AddPeerProtocol) AddPeer(peerAddr string) bool {
 		return false
 	}
 
-	if ok := sendProtoMessage(req, s); !ok {
-		return false
-	}
-
-	// store ref request so response handler has access to it
-	// p.requests[req.MessageData.Id] = req
-	// log.Printf("%s: AddPeer to: %s was sent. Message Id: %s, Message: %s", p.node.Name(), host.Name(), req.MessageData.Id, req.Message)
-	return true
-
-}
-
-//
-// utils
-//
-
-// helper method - writes a protobuf go data object to a network stream
-// data: reference of protobuf go data object to send (not the object itself)
-// s: network stream to write the data to
-func sendProtoMessage(data proto.Message, s inet.Stream) bool {
-	writer := bufio.NewWriter(s)
-	enc := protobufCodec.Multicodec(nil).Encoder(writer)
-	err := enc.Encode(data)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-	writer.Flush()
-	return true
-}
-
-func parseAddr(addrString string) (peerID peer.ID, protocolAddr ma.Multiaddr) {
-	// The following code extracts target's the peer ID from the
-	// given multiaddress
-	ipfsaddr, err := ma.NewMultiaddr(addrString) // ipfsaddr=/ip4/127.0.0.1/tcp/10000/ipfs/QmVmDaabYcS3pn23KaFjkdw6hkReUUma8sBKqSDHrPYPd2
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	pid, err := ipfsaddr.ValueForProtocol(ma.P_IPFS) // pid=QmVmDaabYcS3pn23KaFjkdw6hkReUUma8sBKqSDHrPYPd2
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	peerid, err := peer.IDB58Decode(pid) // peerid=<peer.ID VmDaab>
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// Decapsulate the /ipfs/<peerID> part from the target
-	// /ip4/<a.b.c.d>/ipfs/<peer> becomes /ip4/<a.b.c.d>
-	targetPeerAddr, _ := ma.NewMultiaddr(
-		fmt.Sprintf("/ipfs/%s", peer.IDB58Encode(peerid)),
-	)
-	targetAddr := ipfsaddr.Decapsulate(targetPeerAddr)
-	return peerid, targetAddr
+	return sendProtoMessage(req, s)
 }

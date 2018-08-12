@@ -11,9 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
-
-	pb "github.com/ethresearch/sharding-p2p-poc/pb"
 
 	opentracing "github.com/opentracing/opentracing-go"
 )
@@ -24,8 +23,8 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	addPeerReq := &pb.RPCAddPeerReq{
+	client := pbrpc.NewPocClient(conn)
+	addPeerReq := &pbrpc.RPCAddPeerReq{
 		Ip:   ipAddr,
 		Port: int32(port),
 		Seed: seed,
@@ -44,8 +43,8 @@ func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	subscribeShardReq := &pb.RPCSubscribeShardReq{
+	client := pbrpc.NewPocClient(conn)
+	subscribeShardReq := &pbrpc.RPCSubscribeShardReq{
 		ShardIDs: shardIDs,
 	}
 	log.Printf("rpcclient:ShardReq: sending=%v", subscribeShardReq)
@@ -62,8 +61,8 @@ func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	unsubscribeShardReq := &pb.RPCUnsubscribeShardReq{
+	client := pbrpc.NewPocClient(conn)
+	unsubscribeShardReq := &pbrpc.RPCUnsubscribeShardReq{
 		ShardIDs: shardIDs,
 	}
 	log.Printf("rpcclient:UnsubscribeShardReq: sending=%v", unsubscribeShardReq)
@@ -80,8 +79,8 @@ func callRPCGetSubscribedShard(rpcAddr string) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	getSubscribedShardReq := &pb.RPCGetSubscribedShardReq{}
+	client := pbrpc.NewPocClient(conn)
+	getSubscribedShardReq := &pbrpc.RPCGetSubscribedShardReq{}
 	log.Printf("rpcclient:GetSubscribedShard: sending=%v", getSubscribedShardReq)
 	res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq)
 	if err != nil {
@@ -101,8 +100,8 @@ func callRPCBroadcastCollation(
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	broadcastCollationReq := &pb.RPCBroadcastCollationReq{
+	client := pbrpc.NewPocClient(conn)
+	broadcastCollationReq := &pbrpc.RPCBroadcastCollationReq{
 		ShardID: shardID,
 		Number:  int32(numCollations),
 		Size:    int32(collationSize),
@@ -122,8 +121,8 @@ func callRPCStopServer(rpcAddr string) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	stopServerReq := &pb.RPCStopServerReq{}
+	client := pbrpc.NewPocClient(conn)
+	stopServerReq := &pbrpc.RPCStopServerReq{}
 	log.Printf("rpcclient:StopServerReq: sending=%v", stopServerReq)
 	res, err := client.StopServer(context.Background(), stopServerReq)
 	if err != nil {
@@ -133,13 +132,13 @@ func callRPCStopServer(rpcAddr string) {
 }
 
 type server struct {
-	pb.PocServer
+	pbrpc.PocServer
 	node       *Node
 	parentSpan opentracing.Span
 	rpcServer  *grpc.Server
 }
 
-func (s *server) AddPeer(ctx context.Context, req *pb.RPCAddPeerReq) (*pb.RPCReply, error) {
+func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.RPCReply, error) {
 	// Add span for AddPeer
 	span := opentracing.StartSpan("AddPeer", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
@@ -168,7 +167,7 @@ func (s *server) AddPeer(ctx context.Context, req *pb.RPCAddPeerReq) (*pb.RPCRep
 		status = false
 	}
 	span.SetTag("Status", status)
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: replyMsg,
 		Status:  status,
 	}
@@ -177,7 +176,7 @@ func (s *server) AddPeer(ctx context.Context, req *pb.RPCAddPeerReq) (*pb.RPCRep
 
 func (s *server) SubscribeShard(
 	ctx context.Context,
-	req *pb.RPCSubscribeShardReq) (*pb.RPCReply, error) {
+	req *pbrpc.RPCSubscribeShardReq) (*pbrpc.RPCReply, error) {
 	// Add span for SubscribeShard
 	span := opentracing.StartSpan("SubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
@@ -188,7 +187,7 @@ func (s *server) SubscribeShard(
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards()
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Subscribed shard %v",
 			req.ShardIDs,
@@ -202,7 +201,7 @@ func (s *server) SubscribeShard(
 
 func (s *server) UnsubscribeShard(
 	ctx context.Context,
-	req *pb.RPCUnsubscribeShardReq) (*pb.RPCReply, error) {
+	req *pbrpc.RPCUnsubscribeShardReq) (*pbrpc.RPCReply, error) {
 	// Add span for UnsubscribeShard
 	span := opentracing.StartSpan("UnsubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
@@ -213,7 +212,7 @@ func (s *server) UnsubscribeShard(
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards()
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Unsubscribed shard %v",
 			req.ShardIDs,
@@ -227,14 +226,14 @@ func (s *server) UnsubscribeShard(
 
 func (s *server) GetSubscribedShard(
 	ctx context.Context,
-	req *pb.RPCGetSubscribedShardReq) (*pb.RPCGetSubscribedShardReply, error) {
+	req *pbrpc.RPCGetSubscribedShardReq) (*pbrpc.RPCGetSubscribedShardReply, error) {
 	// Add span for GetSubscribedShard
 	span := opentracing.StartSpan("GetSubscribedShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
 
 	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
-	res := &pb.RPCGetSubscribedShardReply{
+	res := &pbrpc.RPCGetSubscribedShardReply{
 		ShardIDs: shardIDs,
 		Status:   true,
 	}
@@ -245,7 +244,7 @@ func (s *server) GetSubscribedShard(
 
 func (s *server) BroadcastCollation(
 	ctx context.Context,
-	req *pb.RPCBroadcastCollationReq) (*pb.RPCReply, error) {
+	req *pbrpc.RPCBroadcastCollationReq) (*pbrpc.RPCReply, error) {
 	// Add span for BroadcastCollation
 	span := opentracing.StartSpan("BroadcastCollation", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
@@ -270,7 +269,7 @@ func (s *server) BroadcastCollation(
 			string(randBytes),
 		)
 	}
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Finished sending %v size=%v collations in shard %v",
 			numCollations,
@@ -288,7 +287,7 @@ func (s *server) BroadcastCollation(
 
 func (s *server) StopServer(
 	ctx context.Context,
-	req *pb.RPCStopServerReq) (*pb.RPCReply, error) {
+	req *pbrpc.RPCStopServerReq) (*pbrpc.RPCReply, error) {
 	// Add span for StopServer
 	span := opentracing.StartSpan("StopServer", opentracing.ChildOf(s.parentSpan.Context()))
 
@@ -298,7 +297,7 @@ func (s *server) StopServer(
 	log.Printf("Closing RPC server by rpc call...")
 	s.rpcServer.Stop()
 
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf("Closed RPC server"),
 		Status:  true,
 	}
@@ -315,7 +314,7 @@ func runRPCServer(n *Node, addr string) {
 		log.Fatal(err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterPocServer(s, &server{node: n, parentSpan: span, rpcServer: s})
+	pbrpc.RegisterPocServer(s, &server{node: n, parentSpan: span, rpcServer: s})
 
 	// Catch interupt signal
 	c := make(chan os.Signal)
@@ -326,7 +325,7 @@ func runRPCServer(n *Node, addr string) {
 		s.Stop()
 	}()
 
+	log.Printf("rpcserver: listening to %v", addr)
 	s.Serve(lis)
 	span.Finish()
-	log.Printf("rpcserver: listening to %v", addr)
 }

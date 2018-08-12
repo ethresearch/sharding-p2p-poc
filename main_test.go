@@ -209,7 +209,6 @@ func makeNodes(t *testing.T, ctx context.Context, number int) []*Node {
 }
 
 func makePeerNodes(t *testing.T, ctx context.Context) (*Node, *Node) {
-
 	node0 := makeUnbootstrappedNode(t, ctx, 0)
 	node1 := makeUnbootstrappedNode(t, ctx, 1)
 	// if node0.IsPeer(node1.ID()) || node1.IsPeer(node0.ID()) {
@@ -273,12 +272,74 @@ func TestRequestCollation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	node0, node1 := makePeerNodes(t, ctx)
-	node0.sendCollationRequest(node1.ID(), 0, 1, "2")
-	time.Sleep(time.Millisecond * 100)
+	shardID := ShardIDType(1)
+	period := int64(42)
+	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period, "2")
+	if err != nil {
+		t.Error("request collation failed")
+	}
+	if collation.ShardID != shardID || collation.Period != period {
+		t.Errorf(
+			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
+			collation.ShardID,
+			shardID,
+			collation.Period,
+			period,
+		)
+	}
 }
 
 func TestRequestCollationNotFound(t *testing.T) {
 	// TODO:
+}
+
+func TestRequestShardPeer(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	node0, node1 := makePeerNodes(t, ctx)
+	time.Sleep(time.Millisecond * 100)
+	shardPeers, err := node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1})
+	if err != nil {
+		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs, prs := shardPeers[1]
+	if !prs {
+		t.Errorf("node1 should still return a empty peer list of the shard %v", 1)
+	}
+	if len(peerIDs) != 0 {
+		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs)
+	}
+	node1.ListenShard(1)
+	node1.ListenShard(2)
+	// node1 listens to [1, 2], but we only request shard [1]
+	shardPeers, err = node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1})
+	if err != nil {
+		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs1, prs := shardPeers[1]
+	if len(peerIDs1) != 1 || peerIDs1[0] != node1.ID() {
+		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs1)
+	}
+	// node1 only listens to [1, 2], but we request shard [1, 2, 3]
+	shardPeers, err = node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1, 2, 3})
+	if err != nil {
+		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs1, prs = shardPeers[1]
+	if len(peerIDs1) != 1 || peerIDs1[0] != node1.ID() {
+		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs1)
+	}
+	peerIDs2, prs := shardPeers[2]
+	if len(peerIDs2) != 1 || peerIDs2[0] != node1.ID() {
+		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs2)
+	}
+	peerIDs3, prs := shardPeers[3]
+	if !prs {
+		t.Errorf("node1 should still return a empty peer list of the shard %v", 3)
+	}
+	if len(peerIDs3) != 0 {
+		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs3)
+	}
 }
 
 func TestRouting(t *testing.T) {
