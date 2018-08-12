@@ -142,11 +142,13 @@ class GxImportConverter:
 
     def convert(self, gx_import_str):
         if gx_import_str in self.cache:
-            return self.cache[gx_import_str]
-        result = self.run(gx_import_str)
-        self.cache[gx_import_str] = result
+            result = self.cache[gx_import_str]
+        else:
+            result = self.run(gx_import_str)
+            self.cache[gx_import_str] = result
         if result not in self.unwrite_pkgs:
             return gx_import_str
+        print("Converted \"{}\" to \"{}\"".format(gx_import_str, result))
         return result
 
 
