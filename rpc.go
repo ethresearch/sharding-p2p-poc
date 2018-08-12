@@ -8,9 +8,8 @@ import (
 	"net"
 	"time"
 
+	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
-
-	pb "github.com/ethresearch/sharding-p2p-poc/pb"
 )
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {
@@ -19,8 +18,8 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	addPeerReq := &pb.RPCAddPeerReq{
+	client := pbrpc.NewPocClient(conn)
+	addPeerReq := &pbrpc.RPCAddPeerReq{
 		Ip:   ipAddr,
 		Port: int32(port),
 		Seed: seed,
@@ -39,8 +38,8 @@ func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	subscribeShardReq := &pb.RPCSubscribeShardReq{
+	client := pbrpc.NewPocClient(conn)
+	subscribeShardReq := &pbrpc.RPCSubscribeShardReq{
 		ShardIDs: shardIDs,
 	}
 	log.Printf("rpcclient:ShardReq: sending=%v", subscribeShardReq)
@@ -57,8 +56,8 @@ func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	unsubscribeShardReq := &pb.RPCUnsubscribeShardReq{
+	client := pbrpc.NewPocClient(conn)
+	unsubscribeShardReq := &pbrpc.RPCUnsubscribeShardReq{
 		ShardIDs: shardIDs,
 	}
 	log.Printf("rpcclient:UnsubscribeShardReq: sending=%v", unsubscribeShardReq)
@@ -75,8 +74,8 @@ func callRPCGetSubscribedShard(rpcAddr string) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	getSubscribedShardReq := &pb.RPCGetSubscribedShardReq{}
+	client := pbrpc.NewPocClient(conn)
+	getSubscribedShardReq := &pbrpc.RPCGetSubscribedShardReq{}
 	log.Printf("rpcclient:GetSubscribedShard: sending=%v", getSubscribedShardReq)
 	res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq)
 	if err != nil {
@@ -96,8 +95,8 @@ func callRPCBroadcastCollation(
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	client := pb.NewPocClient(conn)
-	broadcastCollationReq := &pb.RPCBroadcastCollationReq{
+	client := pbrpc.NewPocClient(conn)
+	broadcastCollationReq := &pbrpc.RPCBroadcastCollationReq{
 		ShardID: shardID,
 		Number:  int32(numCollations),
 		Size:    int32(collationSize),
@@ -112,11 +111,11 @@ func callRPCBroadcastCollation(
 }
 
 type server struct {
-	pb.PocServer
+	pbrpc.PocServer
 	node *Node
 }
 
-func (s *server) AddPeer(ctx context.Context, req *pb.RPCAddPeerReq) (*pb.RPCReply, error) {
+func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.RPCReply, error) {
 	log.Printf("rpcserver:AddPeer: receive=%v", req)
 	_, targetPID, err := makeKey(req.Seed)
 	mAddr := fmt.Sprintf(
@@ -130,7 +129,7 @@ func (s *server) AddPeer(ctx context.Context, req *pb.RPCAddPeerReq) (*pb.RPCRep
 	}
 	s.node.AddPeer(mAddr)
 	time.Sleep(time.Second * 1)
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID),
 		Status:  true,
 	}
@@ -139,14 +138,14 @@ func (s *server) AddPeer(ctx context.Context, req *pb.RPCAddPeerReq) (*pb.RPCRep
 
 func (s *server) SubscribeShard(
 	ctx context.Context,
-	req *pb.RPCSubscribeShardReq) (*pb.RPCReply, error) {
+	req *pbrpc.RPCSubscribeShardReq) (*pbrpc.RPCReply, error) {
 	log.Printf("rpcserver:SubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
 		s.node.ListenShard(shardID)
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards()
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Subscribed shard %v",
 			req.ShardIDs,
@@ -158,14 +157,14 @@ func (s *server) SubscribeShard(
 
 func (s *server) UnsubscribeShard(
 	ctx context.Context,
-	req *pb.RPCUnsubscribeShardReq) (*pb.RPCReply, error) {
+	req *pbrpc.RPCUnsubscribeShardReq) (*pbrpc.RPCReply, error) {
 	log.Printf("rpcserver:UnsubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
 		s.node.UnlistenShard(shardID)
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards()
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Unsubscribed shard %v",
 			req.ShardIDs,
@@ -177,10 +176,10 @@ func (s *server) UnsubscribeShard(
 
 func (s *server) GetSubscribedShard(
 	ctx context.Context,
-	req *pb.RPCGetSubscribedShardReq) (*pb.RPCGetSubscribedShardReply, error) {
+	req *pbrpc.RPCGetSubscribedShardReq) (*pbrpc.RPCGetSubscribedShardReply, error) {
 	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
-	res := &pb.RPCGetSubscribedShardReply{
+	res := &pbrpc.RPCGetSubscribedShardReply{
 		ShardIDs: shardIDs,
 		Status:   true,
 	}
@@ -189,7 +188,7 @@ func (s *server) GetSubscribedShard(
 
 func (s *server) BroadcastCollation(
 	ctx context.Context,
-	req *pb.RPCBroadcastCollationReq) (*pb.RPCReply, error) {
+	req *pbrpc.RPCBroadcastCollationReq) (*pbrpc.RPCReply, error) {
 	log.Printf("rpcserver:BroadcastCollationReq: receive=%v", req)
 	shardID := req.ShardID
 	numCollations := int(req.Number)
@@ -209,7 +208,7 @@ func (s *server) BroadcastCollation(
 			string(randBytes),
 		)
 	}
-	res := &pb.RPCReply{
+	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Finished sending %v size=%v collations in shard %v",
 			numCollations,
@@ -227,7 +226,7 @@ func runRPCServer(n *Node, addr string) {
 		log.Fatal(err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterPocServer(s, &server{node: n})
+	pbrpc.RegisterPocServer(s, &server{node: n})
 	s.Serve(lis)
 	log.Printf("rpcserver: listening to %v", addr)
 }
