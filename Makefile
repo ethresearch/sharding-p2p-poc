@@ -5,7 +5,7 @@ gx:
 deps: gx
 	gx --verbose install --global
 	gx-go rewrite
-	./script/partial-gx-uw.py
+	python3 ./script/partial-gx-uw.py .
 
 build-prod:
 	docker build -f docker/prod.Dockerfile -t ethereum/sharding-p2p:latest .
