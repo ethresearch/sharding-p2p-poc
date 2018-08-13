@@ -15,7 +15,7 @@ URL_DELIMETER = '/'
 
 gx_import_regex = "gx/ipfs/.+/.+"
 general_import_regex = ".+/.+/.+"
-quoted_gx_pkg_regex = f'"{gx_import_regex}"'
+quoted_gx_pkg_regex = '"{}"'.format(gx_import_regex)
 
 
 def join_url(args):
@@ -162,7 +162,7 @@ class Processor:
         return string[1:-1]
 
     def postprocess(self, string):
-        return f"\"{string}\""
+        return '"{}"'.format(string)
 
 
 class LineConverter:
@@ -298,7 +298,9 @@ def test_processor():
 
 
 def test_line_converter():
-    temp_unwrite_pkgs = unwrite_pkgs
+    temp_unwrite_pkgs = (
+        "github.com/multiformats/go-multicodec/protobuf",
+    )
     line_converter = LineConverter(
         quoted_gx_pkg_regex,
         Processor(),
