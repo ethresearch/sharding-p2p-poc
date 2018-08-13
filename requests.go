@@ -34,15 +34,18 @@ func NewRequestProtocol(node *Node) *RequestProtocol {
 	return p
 }
 
-func (p *RequestProtocol) getCollation(
+func getCollation(
 	shardID ShardIDType,
 	period int64,
 	collationHash string) (*pbmsg.Collation, error) {
 	// FIXME: fake response for now. Shuld query from the saved data.
+	//	with
+	//    	case specifies `shardID`, `period`
+	//  and case specifies `collationHash`
 	return &pbmsg.Collation{
 		ShardID: shardID,
 		Period:  period,
-		Blobs:   "",
+		Blobs:   []byte{},
 	}, nil
 }
 
@@ -133,7 +136,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	}
 	// FIXME: add checks
 	var collation *pbmsg.Collation
-	collation, err := p.getCollation(
+	collation, err := getCollation(
 		data.GetShardID(),
 		data.GetPeriod(),
 		data.GetHash(),

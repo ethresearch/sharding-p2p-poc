@@ -205,7 +205,7 @@ func (s *server) BroadcastCollation(
 		s.node.broadcastCollation(
 			ShardIDType(shardID),
 			int64(i),
-			string(randBytes),
+			randBytes,
 		)
 	}
 	res := &pbrpc.RPCReply{
