@@ -16,6 +16,7 @@ install:
   - make deps
 
 before_install:
+  - sudo add-apt-repository ppa:deadsnakes/ppa
   - sudo apt-get update
   - sudo apt-get install -y python3.6
   - go get github.com/ethresearch/sharding-p2p-poc
