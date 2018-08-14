@@ -162,7 +162,6 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	n.connectShardNodes(shardID)
-	n.PublishListeningShards()
 
 	// shardCollations protocol
 	n.SubscribeShardCollations(shardID)
@@ -177,7 +176,6 @@ func (n *ShardManager) UnlistenShard(shardID ShardIDType) {
 
 	// listeningShards protocol
 	// TODO: should we remove some peers in this shard?
-	n.PublishListeningShards()
 
 	// shardCollations protocol
 	n.UnsubscribeShardCollations(shardID)

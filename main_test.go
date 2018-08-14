@@ -42,6 +42,7 @@ func TestNodeListeningShards(t *testing.T) {
 	}
 	// test `ListenShard`
 	node.ListenShard(testingShardID)
+	node.PublishListeningShards()
 	if !node.IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been listened", testingShardID)
 	}
@@ -53,6 +54,7 @@ func TestNodeListeningShards(t *testing.T) {
 	}
 	anotherShardID := testingShardID + 1
 	node.ListenShard(anotherShardID)
+	node.PublishListeningShards()
 	if !node.IsShardListened(anotherShardID) {
 		t.Errorf("Shard %v should have been listened", anotherShardID)
 	}
@@ -62,6 +64,7 @@ func TestNodeListeningShards(t *testing.T) {
 	}
 	// test `UnlistenShard`
 	node.UnlistenShard(testingShardID)
+	node.PublishListeningShards()
 	if node.IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been unlistened", testingShardID)
 	}
@@ -72,6 +75,7 @@ func TestNodeListeningShards(t *testing.T) {
 		)
 	}
 	node.UnlistenShard(testingShardID) // ensure no side effect
+	node.PublishListeningShards()
 }
 
 func TestPeerListeningShards(t *testing.T) {
@@ -212,9 +216,11 @@ func TestBroadcastCollation(t *testing.T) {
 	node0, node1 := makePeerNodes(t, ctx)
 	var testingShardID ShardIDType = 42
 	node0.ListenShard(testingShardID)
+	node0.PublishListeningShards()
 	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
 
 	node1.ListenShard(testingShardID)
+	node1.PublishListeningShards()
 	// TODO: fail: if the collation's shardID does not correspond to the protocol's shardID,
 	//		 receiver should reject it
 
@@ -390,6 +396,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 		t.Error()
 	}
 	nodes[0].ListenShard(42)
+	nodes[0].PublishListeningShards()
 	time.Sleep(time.Millisecond * 100)
 	if len(nodes[1].GetPeerListeningShard(nodes[0].ID())) != 1 {
 		t.Error()
@@ -398,6 +405,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 		t.Error()
 	}
 	nodes[1].ListenShard(42)
+	nodes[1].PublishListeningShards()
 
 	time.Sleep(time.Millisecond * 100)
 	shardPeers42 := nodes[2].GetNodesInShard(42)
@@ -412,6 +420,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 
 	// test unsetShard with notifying
 	nodes[0].UnlistenShard(42)
+	nodes[0].PublishListeningShards()
 	time.Sleep(time.Millisecond * 100)
 	if len(nodes[1].GetPeerListeningShard(nodes[0].ID())) != 0 {
 		t.Error()
@@ -479,14 +488,17 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	time.Sleep(time.Second * 2)
 	// 0 <-> 1 <-> 2
 	nodes[0].ListenShard(0)
+	nodes[0].PublishListeningShards()
 	time.Sleep(time.Millisecond * 100)
 	nodes[2].ListenShard(42)
+	nodes[2].PublishListeningShards()
 	time.Sleep(time.Millisecond * 100)
 	connWithNode2 := nodes[0].Network().ConnsToPeer(nodes[2].ID())
 	if len(connWithNode2) != 0 {
 		t.Error("Node 0 shouldn't have connection with node 2")
 	}
 	nodes[0].ListenShard(42)
+	nodes[0].PublishListeningShards()
 	time.Sleep(time.Second * 1)
 	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
 	if len(connWithNode2) == 0 {
