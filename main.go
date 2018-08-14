@@ -18,6 +18,10 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
+	opentracing "github.com/opentracing/opentracing-go"
+
+	"sourcegraph.com/sourcegraph/appdash"
+	appdashtracer "sourcegraph.com/sourcegraph/appdash/opentracing"
 
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
@@ -151,6 +155,13 @@ func runServer(
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Set up Opentracing and Appdash tracer
+	remoteCollector := appdash.NewRemoteCollector("localhost:8701")
+	tracer := appdashtracer.NewTracer(remoteCollector)
+	opentracing.SetGlobalTracer(tracer)
+	// End of tracer setup
+
 	runRPCServer(node, rpcAddr)
 }
 
@@ -229,6 +240,8 @@ func runClient(rpcAddr string, cliArgs []string) {
 			collationSize,
 			timeInMs,
 		)
+	} else if rpcCmd == "stop" {
+		callRPCStopServer(rpcAddr)
 	} else {
 		log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
 	}

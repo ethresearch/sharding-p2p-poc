@@ -5,6 +5,7 @@ gx:
 deps: gx
 	gx --verbose install --global
 	gx-go rewrite
+	python3 ./script/partial-gx-uw.py .
 
 build-prod:
 	docker build -f docker/prod.Dockerfile -t ethereum/sharding-p2p:latest .
@@ -15,8 +16,7 @@ build-dev:
 run-dev:
 	docker run -it --rm -v $(PWD):/go/sharding-p2p/ ethereum/sharding-p2p:dev sh -c "go build -v -o main ."
 
-test-dev:
-	gx-go rw
+test-dev: partial-gx-rw
 	docker run -it --rm -v $(PWD):/go/sharding-p2p/ ethereum/sharding-p2p:dev sh -c "go test"
 	gx-go uw
 
@@ -31,3 +31,13 @@ run-many-prod:
 
 down-prod:
 	docker-compose -f docker/prod.docker-compose.yml down
+
+partial-gx-rw:
+	gx-go rw
+	./script/partial-gx-uw.py
+
+gx-rw:
+	gx-go rw
+
+gx-uw:
+	gx-go uw
