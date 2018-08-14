@@ -8,8 +8,8 @@ import fmt "fmt"
 import math "math"
 
 import (
-	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
+	context "gx/ipfs/QmRvYNctevGUW52urgmoFZscT6buMKqhHezLUS64WepGWn/go-net/context"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
