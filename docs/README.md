@@ -35,24 +35,24 @@ A list of hardcoded nodes serve as the initial contact nodes, and each node perf
 #### Shard peer discovery
 A global topic is used for every node to broadcast its "Shard Preference". A "Shard Preference" specifies which shards a node is currently listening to. With this topic, a node is able to discover peers in specific shard through looking up the table of "Shard Preference".
 
-### Other functionalities
+## Implementation
+### Goal
+- To see if our current design as stated [above](#design) actually meets the need of [ethereum sharding](https://ethresear.ch/c/sharding) p2p layer
+- To see if the [implementation](#implementation) works well
+
+### Stack
+Currently, we use [go-libp2p](https://github.com/libp2p/go-libp2p) as the p2p stack.
+- [PubSub](https://github.com/libp2p/specs/tree/master/pubsub/gossipsub): we use [gossipsub](https://github.com/libp2p/go-floodsub/blob/master/gossipsub.go) right now. 
+- DHT: [go-libp2p-kad-dht](https://github.com/libp2p/go-libp2p-kad-dht)
+
+### Functionalities
 - Join the sharding network
 - Broadcast/receive messages in the global topics
 - Subscribe to multiple shards
 - Broadcast/receive messages in the shard which the node has subscribed to
 - Request for collations from the node's peers
 - Request for peer infos from the node's peers
-    - E.g., request for info of peers who are also interested in shard No.3 from my peer A
-
-## Implementation
-### Goal
-- To see if our current design as stated [above](#design) actually meets the need of [ethereum sharding](https://ethresear.ch/c/sharding) p2p layer
-- To see if the [implementation](#implementation) works well
-
-Currently, we use [go-libp2p](https://github.com/libp2p/go-libp2p) as the p2p stack.
-- [PubSub](https://github.com/libp2p/specs/tree/master/pubsub/gossipsub): we use [gossipsub](https://github.com/libp2p/go-floodsub/blob/master/gossipsub.go) right now. 
-- DHT: [go-libp2p-kad-dht](https://github.com/libp2p/go-libp2p-kad-dht)
-
+    - E.g., request for info of peers who are also interested in shard 3 from my peer A
 
 ## Reminder
 Because the idea might keep changing, please check out https://github.com/ethresearch/sharding-p2p-poc/issues for the latest issues and idea.
