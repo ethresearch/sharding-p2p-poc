@@ -18,9 +18,9 @@ func TestListeningShards(t *testing.T) {
 	if len(ls.getShards()) != 2 {
 		t.Error()
 	}
-	// test `ToBytes` and `ListeningShardsFromBytes`
-	bytes := ls.ToBytes()
-	lsNew := ListeningShardsFromBytes(bytes)
+	// test `toBytes` and `fromBytes`
+	bytes := ls.toBytes()
+	lsNew := ls.fromBytes(bytes)
 	if len(ls.getShards()) != len(lsNew.getShards()) {
 		t.Error()
 	}

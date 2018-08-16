@@ -231,7 +231,7 @@ func (n *ShardManager) ListenListeningShards(ctx context.Context) {
 			if peerID == n.node.ID() {
 				continue
 			}
-			listeningShards := ListeningShardsFromBytes(msg.GetData())
+			listeningShards := NewListeningShards().fromBytes(msg.GetData())
 			n.SetPeerListeningShard(peerID, listeningShards.getShards())
 			// log.Printf(
 			// 	"%v: receive: peerID=%v, listeningShards=%v",
@@ -261,7 +261,7 @@ func (n *ShardManager) PublishListeningShards() {
 	if !prs {
 		selfListeningShards = NewListeningShards()
 	}
-	bytes := selfListeningShards.ToBytes()
+	bytes := selfListeningShards.toBytes()
 	n.pubsubService.Publish(listeningShardTopic, bytes)
 }
 
