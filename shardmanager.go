@@ -12,6 +12,7 @@ import (
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
+	b58 "github.com/mr-tron/base58/base58"
 )
 
 type ShardManager struct {
@@ -28,6 +29,12 @@ type ShardManager struct {
 
 const listeningShardTopic = "listeningShard"
 const collationTopicFmt = "shardCollations_%d"
+
+func getCollationHash(msg *pbmsg.Collation) string {
+	hashBytes := keccak(msg)
+	// FIXME: for convenience
+	return b58.Encode(hashBytes)
+}
 
 func getCollationsTopic(shardID ShardIDType) string {
 	return fmt.Sprintf(collationTopicFmt, shardID)
@@ -287,7 +294,7 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 				continue
 			}
 			// TODO: need some check against collations
-			collationHash := GetCollationHash(&collation)
+			collationHash := getCollationHash(&collation)
 			numCollationReceived++
 			// n.lock.Lock()
 			// n.collations[collationHash] = struct{}{}
