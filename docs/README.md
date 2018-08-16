@@ -37,10 +37,10 @@ A global topic is used for every node to broadcast its "Shard Preference". A "Sh
 
 ## Implementation
 ### Goal
-- To see if our current design as stated [above](#design) actually meets the need of [ethereum sharding](https://ethresear.ch/c/sharding) p2p layer
-- To see if the [implementation](#implementation) works well
+- To see if our current design as stated [above](#design) actually meets the need of [ethereum sharding](https://ethresear.ch/c/sharding) p2p layer.
+- To see if the [P2P stack](#p2p-stack) is sufficient for our usage.
 
-### Stack
+### P2P Stack
 Currently, we use [go-libp2p](https://github.com/libp2p/go-libp2p) as the p2p stack.
 - [PubSub](https://github.com/libp2p/specs/tree/master/pubsub/gossipsub): we use [gossipsub](https://github.com/libp2p/go-floodsub/blob/master/gossipsub.go) right now. 
 - DHT: [go-libp2p-kad-dht](https://github.com/libp2p/go-libp2p-kad-dht)
