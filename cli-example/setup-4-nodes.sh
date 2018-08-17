@@ -1,4 +1,5 @@
 #!/bin/bash
+# This script is expected to be executed in the root dir of the repo
 
 EXE_NAME="./sharding-p2p-poc"
 IP=127.0.0.1
@@ -28,10 +29,10 @@ add_peer() {
     `cli_prompt $seed0` addpeer $IP $((PORT+seed1)) $seed1
 }
 
-gx-go rw
+make partial-gx-rw
 go build
 
-killall sharding-p2p-poc
+killall $EXE_NAME
 
 for i in `seq 0 2`;
 do
@@ -48,5 +49,5 @@ multiaddr1=/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck
 
 spinup_node 3 -bootstrap -bootnodes=$multiaddr0,$multiaddr1
 
-gx-go uw
+make gx-uw
 
