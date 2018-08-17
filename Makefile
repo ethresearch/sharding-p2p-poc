@@ -34,7 +34,7 @@ down-prod:
 
 partial-gx-rw:
 	gx-go rw
-	./script/partial-gx-uw.py
+	python3 ./script/partial-gx-uw.py .
 
 gx-rw:
 	gx-go rw
