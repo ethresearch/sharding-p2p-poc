@@ -5,7 +5,7 @@
 > This is the poc of ethereum sharding p2p layer with pubsub in libp2p, based on the idea from the [slide](
 https://docs.google.com/presentation/d/11a0jibNz0fyUnsWt9fa2MmghHANdHAAABa0TV7EieHs/edit?usp=sharing).
 
-For more information, please check out the [document](https://github.com/ethresearch/sharding-p2p-poc/docs/tree/master/README.md).
+For more information, please check out the [document](https://github.com/ethresearch/sharding-p2p-poc/blob/master/docs/README.md).
 
 ## Install
 
