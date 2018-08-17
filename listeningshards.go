@@ -78,21 +78,19 @@ func (ls *ListeningShards) getShards() []ShardIDType {
 	return shards
 }
 
-func ListeningShardsFromSlice(shards []ShardIDType) *ListeningShards {
-	listeningShards := NewListeningShards()
+func (ls *ListeningShards) fromSlice(shards []ShardIDType) *ListeningShards {
 	for _, shardID := range shards {
-		listeningShards.setShard(shardID)
+		ls.setShard(shardID)
 	}
-	return listeningShards
+	return ls
 }
 
 // TODO: need checks against the format of bytes
-func ListeningShardsFromBytes(bytes []byte) *ListeningShards {
-	listeningShards := NewListeningShards()
-	listeningShards.shardBits = bytes
-	return listeningShards
+func (ls *ListeningShards) fromBytes(bytes []byte) *ListeningShards {
+	ls.shardBits = bytes
+	return ls
 }
 
-func (ls *ListeningShards) ToBytes() []byte {
+func (ls *ListeningShards) toBytes() []byte {
 	return ls.shardBits
 }

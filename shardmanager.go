@@ -12,6 +12,7 @@ import (
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
+	b58 "github.com/mr-tron/base58/base58"
 )
 
 type ShardManager struct {
@@ -28,6 +29,12 @@ type ShardManager struct {
 
 const listeningShardTopic = "listeningShard"
 const collationTopicFmt = "shardCollations_%d"
+
+func getCollationHash(msg *pbmsg.Collation) string {
+	hashBytes := keccak(msg)
+	// FIXME: for convenience
+	return b58.Encode(hashBytes)
+}
 
 func getCollationsTopic(shardID ShardIDType) string {
 	return fmt.Sprintf(collationTopicFmt, shardID)
@@ -162,7 +169,6 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	n.connectShardNodes(shardID)
-	n.PublishListeningShards()
 
 	// shardCollations protocol
 	n.SubscribeShardCollations(shardID)
@@ -177,7 +183,6 @@ func (n *ShardManager) UnlistenShard(shardID ShardIDType) {
 
 	// listeningShards protocol
 	// TODO: should we remove some peers in this shard?
-	n.PublishListeningShards()
 
 	// shardCollations protocol
 	n.UnsubscribeShardCollations(shardID)
@@ -226,7 +231,7 @@ func (n *ShardManager) ListenListeningShards(ctx context.Context) {
 			if peerID == n.node.ID() {
 				continue
 			}
-			listeningShards := ListeningShardsFromBytes(msg.GetData())
+			listeningShards := NewListeningShards().fromBytes(msg.GetData())
 			n.SetPeerListeningShard(peerID, listeningShards.getShards())
 			// log.Printf(
 			// 	"%v: receive: peerID=%v, listeningShards=%v",
@@ -256,7 +261,7 @@ func (n *ShardManager) PublishListeningShards() {
 	if !prs {
 		selfListeningShards = NewListeningShards()
 	}
-	bytes := selfListeningShards.ToBytes()
+	bytes := selfListeningShards.toBytes()
 	n.pubsubService.Publish(listeningShardTopic, bytes)
 }
 
@@ -289,7 +294,7 @@ func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
 				continue
 			}
 			// TODO: need some check against collations
-			collationHash := GetCollationHash(&collation)
+			collationHash := getCollationHash(&collation)
 			numCollationReceived++
 			// n.lock.Lock()
 			// n.collations[collationHash] = struct{}{}

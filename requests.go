@@ -49,6 +49,9 @@ func getCollation(
 	}, nil
 }
 
+// helper method - reads a protobuf go data object from a network stream
+// data: reference of protobuf go data object(not the object itself)
+// s: network stream to read the data from
 func readProtoMessage(data proto.Message, s inet.Stream) bool {
 	decoder := protobufCodec.Multicodec(nil).Decoder(bufio.NewReader(s))
 	err := decoder.Decode(data)
@@ -56,6 +59,21 @@ func readProtoMessage(data proto.Message, s inet.Stream) bool {
 		log.Println("readProtoMessage: ", err)
 		return false
 	}
+	return true
+}
+
+// helper method - writes a protobuf go data object to a network stream
+// data: reference of protobuf go data object to send (not the object itself)
+// s: network stream to write the data to
+func sendProtoMessage(data proto.Message, s inet.Stream) bool {
+	writer := bufio.NewWriter(s)
+	enc := protobufCodec.Multicodec(nil).Encoder(writer)
+	err := enc.Encode(data)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	writer.Flush()
 	return true
 }
 
