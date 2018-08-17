@@ -8,18 +8,17 @@ What does a node in the sharding p2p network need?
 
 ## Design
 In the current stage, we are building a gossip layer on top of a [PubSub](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) system. The basic concept is that every shard is one-to-one mapped to a topic in the PubSub and every node will subscribe to the topics they are interested in.
-**NOTE**: To avoid adding too much details in this documentation, please refer to PubSub documents for basic understanding about what a topic is and how publish/subscribe work.
+**NOTE**: To avoid adding too many details in this documentation, please refer to PubSub documents for basic understanding about what a topic is and how publishing/subscribing works.
 - If a node wants to publish shard-specific messages, it **publishes** them to the topic corresponding to that shard.
     - E.g. We can agree on using the topic "Shard_9_collation" as the topic for the collation messages in shard 9. In this manner, collations in shard 9 are published to that topic, and nodes subscribing that topic will get the published collations.
 - A node interested in a shard **subscribes** to the topic corresponding to that shard, in order to receive messages regarding the shard.
 
 ### Topic allocation
-Some messages are required by all of the nodes, like headers from main chain. We broadcast those messages in the corresponding topics, for convenience we call them "global topics". While some messages are shard-specific and only required by some nodes, we call the corresponding topics "local topics".
+Some messages are required by all of the nodes, e.g., beacon chain block headers. We broadcast those messages in the corresponding topics, for convenience we call them "global topics". While some messages are shard-specific and only required by some nodes, we call the corresponding topics "local topics".
 
 - Global topics
     - Shard subscription preferences
         - `shardIDs`: `SHARD_COUNT` bits
-    - Main chain messages
     - Beacon chain messages
 - Local topics
     - Local shard transactions
