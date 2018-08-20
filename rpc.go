@@ -14,7 +14,7 @@ import (
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
 
-	opentracing "gx/ipfs/QmWLWmRVSiagqP15jczsGME1qpob6HDbtbHAY2he9W5iUo/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {
