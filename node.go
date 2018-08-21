@@ -10,7 +10,7 @@ import (
 )
 
 // node client version
-const clientVersion = "go-p2p-node/0.0.1"
+const clientVersion = "sharding-p2p-node/0.0.1"
 
 // Node type - a p2p host implementing one or more p2p protocols
 type Node struct {

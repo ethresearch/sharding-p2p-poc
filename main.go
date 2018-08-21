@@ -27,14 +27,15 @@ import (
 )
 
 type ShardIDType = int64
+type PBInt = int64
 
 const numShards ShardIDType = 100
 
-func makeKey(seed int64) (ic.PrivKey, peer.ID, error) {
+func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
 	// If the seed is zero, use real cryptographic randomness. Otherwise, use a
 	// deterministic randomness source to make generated keys stay the same
 	// across multiple runs
-	r := mrand.New(mrand.NewSource(seed))
+	r := mrand.New(mrand.NewSource(int64(seed)))
 	// r := rand.Reader
 
 	// Generate a key pair for this host. We will use it at least
@@ -57,7 +58,7 @@ func makeKey(seed int64) (ic.PrivKey, peer.ID, error) {
 func makeNode(
 	ctx context.Context,
 	listenPort int,
-	randseed int64,
+	randseed int,
 	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) (*Node, error) {
 	// FIXME: should be set to localhost if we don't want to expose it to outside
@@ -117,7 +118,7 @@ func main() {
 
 	// Parse options from the command line
 
-	seed := flag.Int64("seed", 0, "set random seed for id generation")
+	seed := flag.Int("seed", 0, "set random seed for id generation")
 	listenPort := flag.Int(
 		"port",
 		defaultListenPort,
@@ -146,7 +147,7 @@ func main() {
 
 func runServer(
 	listenPort int,
-	seed int64,
+	seed int,
 	doBootstrapping bool,
 	bootnodes []pstore.PeerInfo,
 	rpcAddr string) {
@@ -178,7 +179,7 @@ func runClient(rpcAddr string, cliArgs []string) {
 		}
 		targetIP := rpcArgs[0]
 		targetPort, err := strconv.Atoi(rpcArgs[1])
-		targetSeed, err := strconv.ParseInt(rpcArgs[2], 10, 64)
+		targetSeed, err := strconv.Atoi(rpcArgs[2])
 		if err != nil {
 			panic(err)
 		}

@@ -253,12 +253,12 @@ func TestRequestCollation(t *testing.T) {
 	defer cancel()
 	node0, node1 := makePeerNodes(t, ctx)
 	shardID := ShardIDType(1)
-	period := int64(42)
+	period := 42
 	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period, "2")
 	if err != nil {
 		t.Error("request collation failed")
 	}
-	if collation.ShardID != shardID || collation.Period != period {
+	if collation.ShardID != shardID || collation.Period != PBInt(period) {
 		t.Errorf(
 			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
 			collation.ShardID,

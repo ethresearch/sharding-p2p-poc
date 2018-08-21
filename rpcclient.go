@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {
+func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -18,8 +18,8 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int64) {
 	client := pbrpc.NewPocClient(conn)
 	addPeerReq := &pbrpc.RPCAddPeerReq{
 		Ip:   ipAddr,
-		Port: int32(port),
-		Seed: seed,
+		Port: PBInt(port),
+		Seed: PBInt(seed),
 	}
 	log.Printf("rpcclient:AddPeer: sending=%v", addPeerReq)
 	res, err := client.AddPeer(context.Background(), addPeerReq)
@@ -95,9 +95,9 @@ func callRPCBroadcastCollation(
 	client := pbrpc.NewPocClient(conn)
 	broadcastCollationReq := &pbrpc.RPCBroadcastCollationReq{
 		ShardID: shardID,
-		Number:  int32(numCollations),
-		Size:    int32(collationSize),
-		Period:  int32(period),
+		Number:  PBInt(numCollations),
+		Size:    PBInt(collationSize),
+		Period:  PBInt(period),
 	}
 	log.Printf("rpcclient:BroadcastCollation: sending=%v", broadcastCollationReq)
 	res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq)

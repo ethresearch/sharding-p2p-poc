@@ -36,15 +36,15 @@ func NewRequestProtocol(node *Node) *RequestProtocol {
 
 func getCollation(
 	shardID ShardIDType,
-	period int64,
+	period int,
 	collationHash string) (*pbmsg.Collation, error) {
 	// FIXME: fake response for now. Shuld query from the saved data.
 	//	with
 	//    	case specifies `shardID`, `period`
 	//  and case specifies `collationHash`
 	return &pbmsg.Collation{
-		ShardID: shardID,
-		Period:  period,
+		ShardID: PBInt(shardID),
+		Period:  PBInt(period),
 		Blobs:   []byte{},
 	}, nil
 }
@@ -155,8 +155,8 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	// FIXME: add checks
 	var collation *pbmsg.Collation
 	collation, err := getCollation(
-		data.GetShardID(),
-		data.GetPeriod(),
+		ShardIDType(data.GetShardID()),
+		int(data.GetPeriod()),
 		data.GetHash(),
 	)
 	var collationResp *pbmsg.CollationResponse
@@ -187,7 +187,7 @@ func (p *RequestProtocol) requestCollation(
 	ctx context.Context,
 	peerID peer.ID,
 	shardID ShardIDType,
-	period int64,
+	period int,
 	blobs string) (*pbmsg.Collation, error) {
 	s, err := p.node.NewStream(
 		ctx,
@@ -198,8 +198,8 @@ func (p *RequestProtocol) requestCollation(
 		return nil, fmt.Errorf("failed to open new stream %v", err)
 	}
 	req := &pbmsg.CollationRequest{
-		ShardID: shardID,
-		Period:  period,
+		ShardID: PBInt(shardID),
+		Period:  PBInt(period),
 	}
 	if !sendProtoMessage(req, s) {
 		return nil, fmt.Errorf("failed to send request")

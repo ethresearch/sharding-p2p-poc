@@ -15,7 +15,7 @@ service Poc {
 // AddPeer
 message RPCAddPeerReq {
   string ip = 1;
-  int32 port = 2;
+  int64 port = 2;
   int64 seed = 3;
 }
 
@@ -37,13 +37,19 @@ message RPCGetSubscribedShardReply {
 // BroadcastCollation
 message RPCBroadcastCollationReq {
   int64 shardID = 1;
-  int32 number = 2;
-  int32 size = 3;
-  int32 period = 4;
+  int64 number = 2;
+  int64 size = 3;
+  int64 period = 4;
+}
+// RequestCollation
+message RPCRequestCollationReq {
+  int64 shardID = 1;
+  int64 period = 4;
 }
 // StopServer
 message RPCStopServerReq {
 }
+
 
 message RPCReply {
   string message = 1;
