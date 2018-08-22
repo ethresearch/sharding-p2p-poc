@@ -30,7 +30,7 @@ func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.
 	defer span.Finish()
 
 	log.Printf("rpcserver:AddPeer: receive=%v", req)
-	_, targetPID, err := makeKey(req.Seed)
+	_, targetPID, err := makeKey(int(req.Seed))
 	mAddr := fmt.Sprintf(
 		"/ip4/%s/tcp/%d/ipfs/%s",
 		req.Ip,
@@ -151,7 +151,7 @@ func (s *server) BroadcastCollation(
 		// TODO: catching error
 		s.node.broadcastCollation(
 			ShardIDType(shardID),
-			int64(i),
+			i,
 			randBytes,
 		)
 	}

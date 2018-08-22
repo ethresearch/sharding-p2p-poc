@@ -12,6 +12,8 @@ import (
 	// gologging "github.com/whyrusleeping/go-logging"
 )
 
+var nodeCount int
+
 func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
 	return makeTestingNode(t, ctx, number, false, nil)
 }
@@ -22,8 +24,12 @@ func makeTestingNode(
 	number int,
 	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) *Node {
-	listeningPort := number + 10000
-	node, err := makeNode(ctx, listeningPort, int64(number), doBootstrapping, bootstrapPeers)
+	// FIXME:
+	//		1. Use 20000 to avoid conflitcs with the running nodes in the environment
+	//		2. Avoid reuse of listeningPort in the entire test, to avoid `dial error`s
+	listeningPort := 20000 + nodeCount
+	nodeCount++
+	node, err := makeNode(ctx, listeningPort, number, doBootstrapping, bootstrapPeers)
 	if err != nil {
 		t.Error("Failed to create node")
 	}
@@ -253,12 +259,12 @@ func TestRequestCollation(t *testing.T) {
 	defer cancel()
 	node0, node1 := makePeerNodes(t, ctx)
 	shardID := ShardIDType(1)
-	period := int64(42)
+	period := 42
 	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period, "2")
 	if err != nil {
 		t.Error("request collation failed")
 	}
-	if collation.ShardID != shardID || collation.Period != period {
+	if collation.ShardID != shardID || collation.Period != PBInt(period) {
 		t.Errorf(
 			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
 			collation.ShardID,

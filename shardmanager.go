@@ -333,11 +333,11 @@ func (n *ShardManager) SubscribeShardCollations(shardID ShardIDType) {
 	n.shardCollationsSubs[shardID] = collationsSub
 }
 
-func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int64, blobs []byte) bool {
+func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs []byte) bool {
 	// create message data
 	data := &pbmsg.Collation{
 		ShardID: shardID,
-		Period:  period,
+		Period:  PBInt(period),
 		Blobs:   blobs,
 	}
 	return n.broadcastCollationMessage(data)
