@@ -1,3 +1,5 @@
+# Testing Methodology 
+
 ## Overview
 The network is segmented into X number of shards. Every ~10 minutes, validators are randomly assigned to a shard, so the stress point is observing and testing the ability of validators to subscribe to new topics and send/receive messages pertaining to this new topic in an adequate amount of time.
 
