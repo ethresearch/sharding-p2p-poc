@@ -2,15 +2,15 @@
 The network is segmented into X number of shards. Every ~10 minutes, validators are randomly assigned to a shard, so the stress point is observing and testing the ability of validators to subscribe to new topics and send/receive messages pertaining to this new topic in an adequate amount of time.
 
 ## Test Utility
-We will perform tests using the Whiteblock testing platform. The following functionalities would likely be most relevant to this particular test series:
+We will perform tests using the [Whiteblock](www.whiteblock.io) testing platform. The following functionalities would likely be most relevant to this particular test series:
 
-Number of nodes: <100 (more if necessary)  
-Automated provisioning of nodes  
-Behaviors, parameters, commands, and actions can be automated or assigned to individual nodes and also the network as a whole.  
-Bandwidth: 1G (standard, up to 10G if necessary) can be configured and assigned to each individual node.  
-VLAN: Each node can be configured within its own VLAN and assigned a unique IP address, allowing for the emulation of realistic network conditions which accurately mimic real-world conditions.  
-Latency: Up to 1 second of network latency can be applied to each node’s individual link.  
-Data aggregation and visualization  
+* Number of nodes: <100 (more if necessary)  
+* Automated provisioning of nodes  
+* Behaviors, parameters, commands, and actions can be automated or assigned to individual nodes and also the network as a whole.  
+* Bandwidth: 1G (standard, up to 10G if necessary) can be configured and assigned to each individual node.  
+* VLAN: Each node can be configured within its own VLAN and assigned a unique IP address, allowing for the emulation of realistic network conditions which accurately mimic real-world conditions.  
+* Latency: Up to 1 second of network latency can be applied to each node’s individual link.  
+* Data aggregation and visualization  
 
 ## Test Scenarios
 
