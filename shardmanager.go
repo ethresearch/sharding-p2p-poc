@@ -77,8 +77,6 @@ func (n *ShardManager) AddPeerListeningShard(ctx context.Context, peerID peer.ID
 		n.peerListeningShards[peerID] = NewListeningShards()
 	}
 	n.peerListeningShards[peerID].setShard(shardID)
-	span.SetTag("peerID", peerID)
-	span.SetTag("shardID", shardID)
 }
 
 func (n *ShardManager) RemovePeerListeningShard(ctx context.Context, peerID peer.ID, shardID ShardIDType) {
@@ -140,7 +138,6 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	// Add span for connectShardNodes of ShardManager
 	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.connectShardNodes")
 	defer span.Finish()
-	span.SetTag("shardID", shardID)
 
 	peerIDs := n.GetNodesInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
@@ -188,7 +185,8 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
 	// Add span for AddPeer of ShardManager
 	span, newctx := opentracing.StartSpanFromContext(ctx, "ShardManager.ListenShard")
 	defer span.Finish()
-	span.SetTag("ShardID", shardID)
+	// Set shardID info in Baggage
+	span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
 
 	if n.IsShardListened(shardID) {
 		return
@@ -207,7 +205,8 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) {
 	// Add span for UnlistenShard of ShardManager
 	span, newctx := opentracing.StartSpanFromContext(ctx, "ShardManager.UnlistenShard")
 	defer span.Finish()
-	span.SetTag("shardID", shardID)
+	// Set shardID info in Baggage
+	span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
 
 	if !n.IsShardListened(shardID) {
 		return
@@ -308,7 +307,6 @@ func (n *ShardManager) ListenShardCollations(ctx context.Context, shardID ShardI
 	// Add span for ListenShardCollations of ShardManager
 	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.ListenShardCollations")
 	defer span.Finish()
-	span.SetTag("shardID", shardID)
 
 	if !n.IsShardCollationsSubscribed(shardID) {
 		return
@@ -367,7 +365,6 @@ func (n *ShardManager) SubscribeShardCollations(ctx context.Context, shardID Sha
 	// Add span for SubscribeShardCollations of ShardManager
 	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.SubscribeShardCollations")
 	defer span.Finish()
-	span.SetTag("shardID", shardID)
 
 	if n.IsShardCollationsSubscribed(shardID) {
 		return
@@ -384,7 +381,6 @@ func (n *ShardManager) broadcastCollation(ctx context.Context, shardID ShardIDTy
 	// Add span for broadcastCollation of ShardManager
 	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.broadcastCollation")
 	defer span.Finish()
-	span.SetTag("shardID", shardID)
 	span.SetTag("Period", period)
 	span.SetTag("Blobs", blobs)
 
@@ -425,5 +421,4 @@ func (n *ShardManager) UnsubscribeShardCollations(ctx context.Context, shardID S
 		n.shardCollationsSubs[shardID].Cancel()
 		n.shardCollationsSubs[shardID] = nil
 	}
-	span.SetTag("shardID", shardID)
 }
