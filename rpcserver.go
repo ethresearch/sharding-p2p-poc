@@ -103,7 +103,7 @@ func (s *server) UnsubscribeShard(
 
 	log.Printf("rpcserver:UnsubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.UnlistenShard(shardID)
+		s.node.UnlistenShard(spanctx, shardID)
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards(spanctx)
@@ -125,6 +125,9 @@ func (s *server) GetSubscribedShard(
 	// Add span for GetSubscribedShard
 	span := opentracing.StartSpan("GetSubscribedShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Create span context
+	spanctx := context.Background()
+	spanctx = opentracing.ContextWithSpan(spanctx, span)
 
 	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
@@ -143,6 +146,9 @@ func (s *server) BroadcastCollation(
 	// Add span for BroadcastCollation
 	span := opentracing.StartSpan("BroadcastCollation", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Create span context
+	spanctx := context.Background()
+	spanctx = opentracing.ContextWithSpan(spanctx, span)
 
 	log.Printf("rpcserver:BroadcastCollationReq: receive=%v", req)
 	shardID := req.ShardID
@@ -159,6 +165,7 @@ func (s *server) BroadcastCollation(
 		rand.Read(randBytes)
 		// TODO: catching error
 		s.node.broadcastCollation(
+			spanctx,
 			ShardIDType(shardID),
 			i,
 			randBytes,
