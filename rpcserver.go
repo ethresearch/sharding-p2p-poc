@@ -25,9 +25,12 @@ type server struct {
 }
 
 func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.RPCReply, error) {
-	// Add span for AddPeer
-	span := opentracing.StartSpan("AddPeer", opentracing.ChildOf(s.parentSpan.Context()))
+	// Add span for AddPeer of RPC Server
+	span := opentracing.StartSpan("RPCServer.AddPeer", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Create span context
+	spanctx := context.Background()
+	spanctx = opentracing.ContextWithSpan(spanctx, span)
 
 	log.Printf("rpcserver:AddPeer: receive=%v", req)
 	_, targetPID, err := makeKey(int(req.Seed))
@@ -43,7 +46,7 @@ func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.
 
 	var replyMsg string
 	var status bool
-	if success := s.node.AddPeer(mAddr); success {
+	if success := s.node.AddPeer(spanctx, mAddr); success {
 		replyMsg = fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 		status = true
 		// Tag the span with peer info
@@ -192,7 +195,7 @@ func (s *server) StopServer(
 
 func runRPCServer(n *Node, addr string) {
 	// Start a new trace
-	span := opentracing.StartSpan("RPC Server")
+	span := opentracing.StartSpan("RPCServer")
 	span.SetTag("Seed Number", n.number)
 
 	lis, err := net.Listen("tcp", addr)
