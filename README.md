@@ -10,7 +10,7 @@ For more information, please check out the [document](https://github.com/ethrese
 ## Install
 
 ### Prerequisites
-- Make sure you have installed `go` already and set the `$GOPATH` properly
+- Make sure you have installed `go` already and set the `$GOPATH` [properly](https://github.com/golang/go/wiki/GOPATH)
 - `gx` and `gx-go`
 - If you modify `*.proto` files, you will also need `protoc` to compile them to `*.pb.go`
     - e.g., [Install protoc on mac](https://medium.com/@erika_dike/installing-the-protobuf-compiler-on-a-mac-a0d397af46b8)
