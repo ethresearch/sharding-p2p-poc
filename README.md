@@ -9,9 +9,11 @@ For more information, please check out the [document](https://github.com/ethrese
 
 ## Install
 
-### Prerequisites
-- Make sure you have installed `go` already and set the `$GOPATH` [properly](https://github.com/golang/go/wiki/GOPATH)
-- `gx` and `gx-go`
+### Prequisites
+- `go` is installed and properly configured on your machine.  
+    - `$GOPATH` variable has been [specified](https://github.com/golang/go/wiki/GOPATH).
+    - `$GOPATH/bin/` is part of your `$PATH`.
+- `gx` and `gx-go` are [installed](https://github.com/whyrusleeping/gx) on your machine. 
 - If you modify `*.proto` files, you will also need `protoc` to compile them to `*.pb.go`
     - e.g., [Install protoc on mac](https://medium.com/@erika_dike/installing-the-protobuf-compiler-on-a-mac-a0d397af46b8)
 
