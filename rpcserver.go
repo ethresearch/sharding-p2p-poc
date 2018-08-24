@@ -69,13 +69,16 @@ func (s *server) SubscribeShard(
 	// Add span for SubscribeShard
 	span := opentracing.StartSpan("SubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Create span context
+	spanctx := context.Background()
+	spanctx = opentracing.ContextWithSpan(spanctx, span)
 
 	log.Printf("rpcserver:SubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.ListenShard(shardID)
+		s.node.ListenShard(spanctx, shardID)
 		time.Sleep(time.Millisecond * 30)
 	}
-	s.node.PublishListeningShards()
+	s.node.PublishListeningShards(spanctx)
 	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Subscribed shard %v",
@@ -94,13 +97,16 @@ func (s *server) UnsubscribeShard(
 	// Add span for UnsubscribeShard
 	span := opentracing.StartSpan("UnsubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Create span context
+	spanctx := context.Background()
+	spanctx = opentracing.ContextWithSpan(spanctx, span)
 
 	log.Printf("rpcserver:UnsubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
 		s.node.UnlistenShard(shardID)
 		time.Sleep(time.Millisecond * 30)
 	}
-	s.node.PublishListeningShards()
+	s.node.PublishListeningShards(spanctx)
 	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Unsubscribed shard %v",

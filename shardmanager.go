@@ -9,6 +9,7 @@ import (
 	floodsub "github.com/libp2p/go-floodsub"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
+	opentracing "github.com/opentracing/opentracing-go"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
@@ -61,7 +62,11 @@ func NewShardManager(ctx context.Context, node *Node) *ShardManager {
 
 // management for peers' listening shards
 
-func (n *ShardManager) AddPeerListeningShard(peerID peer.ID, shardID ShardIDType) {
+func (n *ShardManager) AddPeerListeningShard(ctx context.Context, peerID peer.ID, shardID ShardIDType) {
+	// Add span for AddPeerListeningShard of ShardManager
+	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.AddPeerListeningShard")
+	defer span.Finish()
+
 	if shardID >= numShards {
 		return
 	}
@@ -94,7 +99,9 @@ func (n *ShardManager) SetPeerListeningShard(peerID peer.ID, shardIDs []ShardIDT
 		n.RemovePeerListeningShard(peerID, shardID)
 	}
 	for _, shardID := range shardIDs {
-		n.AddPeerListeningShard(peerID, shardID)
+		// TODO: Passing in the span context to generate new span in SetPeerListeningShard
+		// and pass on the new span context to AddPeerListeningShard
+		n.AddPeerListeningShard(context.Background(), peerID, shardID)
 	}
 }
 
@@ -118,7 +125,11 @@ func (n *ShardManager) GetNodesInShard(shardID ShardIDType) []peer.ID {
 
 // listen/unlisten shards
 
-func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
+func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDType) error {
+	// Add span for connectShardNodes of ShardManager
+	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.connectShardNodes")
+	defer span.Finish()
+
 	peerIDs := n.GetNodesInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
 	for _, peerID := range peerIDs {
@@ -138,7 +149,7 @@ func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
 	errs := make(chan error, len(pinfos))
 	var wg sync.WaitGroup
-	ctx := context.Background()
+	ctx = context.Background()
 	for _, p := range pinfos {
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
@@ -161,18 +172,23 @@ func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
 	return nil
 }
 
-func (n *ShardManager) ListenShard(shardID ShardIDType) {
+func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
+	// Add span for AddPeer of AddPeerProtocol
+	span, newctx := opentracing.StartSpanFromContext(ctx, "ShardManager.ListenShard")
+	defer span.Finish()
+	span.SetTag("ShardID", shardID)
+
 	if n.IsShardListened(shardID) {
 		return
 	}
-	n.AddPeerListeningShard(n.node.ID(), shardID)
+	n.AddPeerListeningShard(newctx, n.node.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
-	n.connectShardNodes(shardID)
+	n.connectShardNodes(newctx, shardID)
 
 	// shardCollations protocol
-	n.SubscribeShardCollations(shardID)
-	n.ListenShardCollations(shardID)
+	n.SubscribeShardCollations(newctx, shardID)
+	n.ListenShardCollations(newctx, shardID)
 }
 
 func (n *ShardManager) UnlistenShard(shardID ShardIDType) {
@@ -256,7 +272,11 @@ func (n *ShardManager) UnsubscribeListeningShards() {
 	n.listeningShardsSub = nil
 }
 
-func (n *ShardManager) PublishListeningShards() {
+func (n *ShardManager) PublishListeningShards(ctx context.Context) {
+	// Add span for PublishListeningShards of AddPeerProtocol
+	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.PublishListeningShards")
+	defer span.Finish()
+
 	selfListeningShards, prs := n.peerListeningShards[n.node.ID()]
 	if !prs {
 		selfListeningShards = NewListeningShards()
@@ -267,7 +287,11 @@ func (n *ShardManager) PublishListeningShards() {
 
 // shard collations
 
-func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
+func (n *ShardManager) ListenShardCollations(ctx context.Context, shardID ShardIDType) {
+	// Add span for ListenShardCollations of AddPeerProtocol
+	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.ListenShardCollations")
+	defer span.Finish()
+
 	if !n.IsShardCollationsSubscribed(shardID) {
 		return
 	}
@@ -321,7 +345,11 @@ func (n *ShardManager) IsShardCollationsSubscribed(shardID ShardIDType) bool {
 	return prs && (n.shardCollationsSubs[shardID] != nil)
 }
 
-func (n *ShardManager) SubscribeShardCollations(shardID ShardIDType) {
+func (n *ShardManager) SubscribeShardCollations(ctx context.Context, shardID ShardIDType) {
+	// Add span for SubscribeShardCollations of AddPeerProtocol
+	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.SubscribeShardCollations")
+	defer span.Finish()
+
 	if n.IsShardCollationsSubscribed(shardID) {
 		return
 	}
