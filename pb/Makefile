@@ -14,9 +14,9 @@ all: $(RPC_PBGOS) $(MSG_PBGOS)
 #	under the pb root directory to trigger all compiling jobs
 %.pb.go: %.proto
 	@if [ "$(findstring $^,$(RPC_PROTOS))" = "$^" ]; then\
-		protoc -I $(dir $^) $^ --go_out=plugins=grpc:$(dir $^);\
+		protoc -I$(GOPATH)/src -I$(dir $^) $^ --go_out=plugins=grpc:$(dir $^);\
 	else\
-		protoc -I $(dir $^) $^ --go_out=$(dir $^);\
+		protoc -I$(GOPATH)/src -I$(dir $^) $^ --go_out=$(dir $^);\
 	fi
 
 clean:

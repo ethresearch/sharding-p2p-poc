@@ -231,13 +231,13 @@ func TestBroadcastCollation(t *testing.T) {
 	//		 receiver should reject it
 
 	// success
-	succeed := node0.broadcastCollation(
+	err := node0.broadcastCollation(
 		testingShardID,
 		1,
 		[]byte("123"),
 	)
-	if !succeed {
-		t.Errorf("failed to send collation %v, %v, %v", testingShardID, 1, 123)
+	if err != nil {
+		t.Errorf("failed to send collation %v, %v, %v. reason=%v", testingShardID, 1, 123, err)
 	}
 	time.Sleep(time.Millisecond * 100)
 }
@@ -260,11 +260,11 @@ func TestRequestCollation(t *testing.T) {
 	node0, node1 := makePeerNodes(t, ctx)
 	shardID := ShardIDType(1)
 	period := 42
-	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period, "2")
+	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period)
 	if err != nil {
 		t.Error("request collation failed")
 	}
-	if collation.ShardID != shardID || collation.Period != PBInt(period) {
+	if collation.ShardID != shardID || int(collation.Period) != period {
 		t.Errorf(
 			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
 			collation.ShardID,

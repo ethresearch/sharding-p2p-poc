@@ -6,8 +6,8 @@ import (
 	"log"
 
 	inet "github.com/libp2p/go-libp2p-net"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
 	peer "github.com/libp2p/go-libp2p-peer"
+	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"

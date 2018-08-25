@@ -333,7 +333,7 @@ func (n *ShardManager) SubscribeShardCollations(shardID ShardIDType) {
 	n.shardCollationsSubs[shardID] = collationsSub
 }
 
-func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs []byte) bool {
+func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs []byte) error {
 	// create message data
 	data := &pbmsg.Collation{
 		ShardID: shardID,
@@ -343,22 +343,22 @@ func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs
 	return n.broadcastCollationMessage(data)
 }
 
-func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) bool {
+func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
 	if !n.IsShardCollationsSubscribed(collation.GetShardID()) {
-		return false
+		return fmt.Errorf("broadcasting to a not subscribed shard")
 	}
 	collationsTopic := getCollationsTopic(collation.ShardID)
 	bytes, err := proto.Marshal(collation)
 	if err != nil {
 		log.Fatal(err)
-		return false
+		return err
 	}
 	err = n.pubsubService.Publish(collationsTopic, bytes)
 	if err != nil {
 		log.Fatal(err)
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
 func (n *ShardManager) UnsubscribeShardCollations(shardID ShardIDType) {

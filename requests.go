@@ -152,6 +152,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 		s.Close()
 		return
 	}
+	s.Reset()
 	// FIXME: add checks
 	var collation *pbmsg.Collation
 	collation, err := getCollation(
@@ -187,8 +188,11 @@ func (p *RequestProtocol) requestCollation(
 	ctx context.Context,
 	peerID peer.ID,
 	shardID ShardIDType,
-	period int,
-	blobs string) (*pbmsg.Collation, error) {
+	period int) (*pbmsg.Collation, error) {
+	log.Println(
+		"!@# connection before `NewStream`: ",
+		p.node.Network().ConnsToPeer(peerID),
+	)
 	s, err := p.node.NewStream(
 		ctx,
 		peerID,
@@ -206,6 +210,10 @@ func (p *RequestProtocol) requestCollation(
 	}
 	data := &pbmsg.CollationResponse{}
 	if !readProtoMessage(data, s) {
+		log.Println(
+			"!@# connection after node1 `s.Reset`: ",
+			p.node.Network().ConnsToPeer(peerID),
+		)
 		return nil, fmt.Errorf("failed to read response proto")
 	}
 	return data.Collation, nil
