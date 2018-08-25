@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package proto.event;
+
+import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
+
+service Event {
+    // Sends a greeting
+    rpc NewCollation (CollationNotify) returns (Response) {}
+  }
+
+message MetaMsg {
+}
+
+message CollationNotify {
+    MetaMsg metaMsg = 1;
+    proto.message.Collation collation = 2;
+}
+
+message Response {
+    Status status = 1;
+    enum Status {
+        VALID = 0;
+        INVALID = 1;
+    }
+}
