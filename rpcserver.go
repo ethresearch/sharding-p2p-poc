@@ -44,8 +44,7 @@ func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.
 	// Set peer info in Baggage
 	span.SetBaggageItem("peerAddr", mAddr)
 	// Create span context
-	spanctx := context.Background()
-	spanctx = opentracing.ContextWithSpan(spanctx, span)
+	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	var replyMsg string
 	var status bool
@@ -73,8 +72,7 @@ func (s *server) SubscribeShard(
 	// Tag the span with shardIDs to be subscribed to
 	span.SetTag("req.ShardIDs", fmt.Sprintf("%v", req.ShardIDs))
 	// Create span context
-	spanctx := context.Background()
-	spanctx = opentracing.ContextWithSpan(spanctx, span)
+	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	log.Printf("rpcserver:SubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
@@ -99,8 +97,7 @@ func (s *server) UnsubscribeShard(
 	span := opentracing.StartSpan("RPCServer.UnsubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
 	// Create span context
-	spanctx := context.Background()
-	spanctx = opentracing.ContextWithSpan(spanctx, span)
+	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	log.Printf("rpcserver:UnsubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
@@ -126,9 +123,6 @@ func (s *server) GetSubscribedShard(
 	// Add span for GetSubscribedShard
 	span := opentracing.StartSpan("RPCServer.GetSubscribedShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
-	// Create span context
-	spanctx := context.Background()
-	spanctx = opentracing.ContextWithSpan(spanctx, span)
 
 	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
@@ -150,8 +144,7 @@ func (s *server) BroadcastCollation(
 	// Set shardID info in Baggage
 	span.SetBaggageItem("shardID", fmt.Sprintf("%v", req.ShardID))
 	// Create span context
-	spanctx := context.Background()
-	spanctx = opentracing.ContextWithSpan(spanctx, span)
+	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	log.Printf("rpcserver:BroadcastCollationReq: receive=%v", req)
 	shardID := req.ShardID
