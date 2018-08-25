@@ -24,6 +24,22 @@ type server struct {
 	rpcServer  *grpc.Server
 }
 
+func makeResponse(success bool, message string) *pbrpc.Response {
+	var status pbrpc.Response_Status
+	if success {
+		status = pbrpc.Response_SUCCESS
+	} else {
+		status = pbrpc.Response_FAILURE
+	}
+	return &pbrpc.Response{Status: status, Message: message}
+}
+
+func makePlainResponse(success bool, message string) *pbrpc.RPCPlainResponse {
+	return &pbrpc.RPCPlainResponse{
+		Response: makeResponse(success, message),
+	}
+}
+
 func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerRequest) (*pbrpc.RPCPlainResponse, error) {
 	// Add span for AddPeer
 	span := opentracing.StartSpan("AddPeer", opentracing.ChildOf(s.parentSpan.Context()))
@@ -42,21 +58,16 @@ func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerRequest) (*pb
 	}
 
 	var replyMsg string
-	var status pbrpc.Response_Status
-	if success := s.node.AddPeer(mAddr); success {
+	success := s.node.AddPeer(mAddr)
+	if success {
 		replyMsg = fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
-		status = pbrpc.Response_SUCCESS
 		// Tag the span with peer info
 		span.SetTag("Peer info", fmt.Sprintf("%v:%v", req.Ip, req.Port))
 	} else {
 		replyMsg = fmt.Sprintf("Failed to add Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
-		status = pbrpc.Response_FAILURE
 	}
-	span.SetTag("Status", status)
-	res := &pbrpc.RPCPlainResponse{
-		Response: &pbrpc.Response{Status: status, Message: replyMsg},
-	}
-	return res, nil
+	span.SetTag("Status", success)
+	return makePlainResponse(success, replyMsg), nil
 }
 
 func (s *server) SubscribeShard(
@@ -76,15 +87,9 @@ func (s *server) SubscribeShard(
 		"Subscribed shard %v",
 		req.ShardIDs,
 	)
-	res := &pbrpc.RPCPlainResponse{
-		Response: &pbrpc.Response{
-			Status:  pbrpc.Response_SUCCESS,
-			Message: replyMsg,
-		},
-	}
 	// Tag the span with shard info
 	span.SetTag("Shard info", fmt.Sprintf("shard %v", req.ShardIDs))
-	return res, nil
+	return makePlainResponse(true, replyMsg), nil
 }
 
 func (s *server) UnsubscribeShard(
@@ -104,15 +109,9 @@ func (s *server) UnsubscribeShard(
 		"Unsubscribed shard %v",
 		req.ShardIDs,
 	)
-	res := &pbrpc.RPCPlainResponse{
-		Response: &pbrpc.Response{
-			Status:  pbrpc.Response_SUCCESS,
-			Message: replyMsg,
-		},
-	}
 	// Tag the span with shard info
 	span.SetTag("Shard info", fmt.Sprintf("shard %v", req.ShardIDs))
-	return res, nil
+	return makePlainResponse(true, replyMsg), nil
 }
 
 func (s *server) GetSubscribedShard(
@@ -125,10 +124,7 @@ func (s *server) GetSubscribedShard(
 	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
 	res := &pbrpc.RPCGetSubscribedShardResponse{
-		Response: &pbrpc.Response{
-			Status:  pbrpc.Response_SUCCESS,
-			Message: "",
-		},
+		Response: makeResponse(true, ""),
 		ShardIDs: shardIDs,
 	}
 	// Tag the span with shards info
@@ -162,7 +158,9 @@ func (s *server) BroadcastCollation(
 			randBytes,
 		)
 		if err != nil {
-			log.Printf("broadcastcollation fails: %v", err)
+			failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
+			log.Println(failureMsg)
+			return makePlainResponse(false, failureMsg), err
 		}
 	}
 	replyMsg := fmt.Sprintf(
@@ -171,17 +169,11 @@ func (s *server) BroadcastCollation(
 		sizeInBytes,
 		shardID,
 	)
-	res := &pbrpc.RPCPlainResponse{
-		Response: &pbrpc.Response{
-			Status:  pbrpc.Response_SUCCESS,
-			Message: replyMsg,
-		},
-	}
 	// Tag the span with collations info
 	span.SetTag("Number of collations", numCollations)
 	span.SetTag("Size of collation", sizeInBytes)
 	span.SetTag("Shard", shardID)
-	return res, nil
+	return makePlainResponse(true, replyMsg), nil
 }
 
 func (s *server) SendCollation(
@@ -195,7 +187,9 @@ func (s *server) SendCollation(
 	collation := req.Collation
 	err := s.node.broadcastCollationMessage(collation)
 	if err != nil {
-		log.Printf("broadcastcollation fails: %v", err)
+		failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
+		log.Println(failureMsg)
+		return makePlainResponse(false, failureMsg), err
 	}
 	replyMsg := fmt.Sprintf(
 		"Finished sending collation shardID=%v, period=%v, len(blobs)=%v",
@@ -203,17 +197,11 @@ func (s *server) SendCollation(
 		collation.Period,
 		len(collation.Blobs),
 	)
-	res := &pbrpc.RPCPlainResponse{
-		Response: &pbrpc.Response{
-			Status:  pbrpc.Response_SUCCESS,
-			Message: replyMsg,
-		},
-	}
 	// Tag the span with collations info
 	span.SetTag("Shard", collation.ShardID)
 	span.SetTag("Period of collation", collation.Period)
 	span.SetTag("Blobs of collation", collation.Blobs)
-	return res, nil
+	return makePlainResponse(true, replyMsg), nil
 }
 
 func (s *server) StopServer(
@@ -229,13 +217,7 @@ func (s *server) StopServer(
 	s.rpcServer.Stop()
 
 	replyMsg := fmt.Sprintf("Closed RPC server")
-	res := &pbrpc.RPCPlainResponse{
-		Response: &pbrpc.Response{
-			Status:  pbrpc.Response_SUCCESS,
-			Message: replyMsg,
-		},
-	}
-	return res, nil
+	return makePlainResponse(true, replyMsg), nil
 }
 
 func runRPCServer(n *Node, addr string) {

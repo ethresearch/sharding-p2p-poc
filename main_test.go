@@ -262,7 +262,7 @@ func TestRequestCollation(t *testing.T) {
 	period := 42
 	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period)
 	if err != nil {
-		t.Error("request collation failed")
+		t.Errorf("request collation failed: %v", err)
 	}
 	if collation.ShardID != shardID || int(collation.Period) != period {
 		t.Errorf(

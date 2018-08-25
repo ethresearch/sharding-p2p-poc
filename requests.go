@@ -78,9 +78,9 @@ func sendProtoMessage(data proto.Message, s inet.Stream) bool {
 }
 
 func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
+	defer inet.FullClose(s)
 	req := &pbmsg.ShardPeerRequest{}
 	if !readProtoMessage(req, s) {
-		s.Close()
 		return
 	}
 	shardPeers := make(map[ShardIDType]*pbmsg.ShardPeerResponse_Peers)
@@ -101,7 +101,7 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 	}
 	if !sendProtoMessage(res, s) {
 		log.Printf("onShardPeerRequest: failed to send proto message %v", res)
-		s.Close()
+		return
 	}
 }
 
@@ -145,14 +145,12 @@ func (p *RequestProtocol) requestShardPeer(
 
 // collation request
 func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
-	// defer inet.FullClose(s)
+	defer inet.FullClose(s)
 	// reject if the sender is not a peer
 	data := &pbmsg.CollationRequest{}
 	if !readProtoMessage(data, s) {
-		s.Close()
 		return
 	}
-	s.Reset()
 	// FIXME: add checks
 	var collation *pbmsg.Collation
 	collation, err := getCollation(
@@ -174,7 +172,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	}
 	if !sendProtoMessage(collationResp, s) {
 		log.Printf("onCollationRequest: failed to send proto message %v", collationResp)
-		s.Close()
+		return
 	}
 	log.Printf(
 		"%v: Sent %v to %v",

@@ -161,6 +161,7 @@ func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
 	return nil
 }
 
+// TODO: return error if it fails
 func (n *ShardManager) ListenShard(shardID ShardIDType) {
 	if n.IsShardListened(shardID) {
 		return
