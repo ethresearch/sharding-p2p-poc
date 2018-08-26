@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	host "github.com/libp2p/go-libp2p-host"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
@@ -527,4 +529,14 @@ func TestDHTBootstrapping(t *testing.T) {
 	if len(node2.Peerstore().PeerInfo(node1.ID()).Addrs) == 0 {
 		t.Error("node2 should have known node1 through the bootnode")
 	}
+}
+
+func TestCallEventRPC(t *testing.T) {
+	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", EVENT_RPC_PORT)
+	collation := &pbmsg.Collation{
+		ShardID: 42,
+		Period:  5566,
+		Blobs:   []byte("123"),
+	}
+	callEventRPC(eventRPCAddr, collation)
 }

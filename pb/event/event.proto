@@ -6,13 +6,13 @@ import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 
 service Event {
     // Sends a greeting
-    rpc NewCollation (NewCollationNotify) returns (NewCollationResponse) {}
+    rpc NewCollation (NewCollationNotifier) returns (NewCollationResponse) {}
   }
 
 message MetaMsg {
 }
 
-message NewCollationNotify {
+message NewCollationNotifier {
     MetaMsg metaMsg = 1;
     proto.message.Collation collation = 2;
 }
