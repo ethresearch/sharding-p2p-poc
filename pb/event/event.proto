@@ -6,21 +6,26 @@ import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 
 service Event {
     // Sends a greeting
-    rpc NewCollation (CollationNotify) returns (Response) {}
+    rpc NewCollation (NewCollationNotify) returns (NewCollationResponse) {}
   }
 
 message MetaMsg {
 }
 
-message CollationNotify {
+message NewCollationNotify {
     MetaMsg metaMsg = 1;
     proto.message.Collation collation = 2;
+}
+
+message NewCollationResponse {
+    Response response = 1;
+    bool isValid = 2;
 }
 
 message Response {
     Status status = 1;
     enum Status {
-        VALID = 0;
-        INVALID = 1;
+        SUCCESS = 0;
+        FAILURE = 1;
     }
 }
