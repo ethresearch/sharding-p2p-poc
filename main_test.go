@@ -536,7 +536,8 @@ func TestDHTBootstrapping(t *testing.T) {
 // FIXME: tests below are just playing with event rpc server in python,
 //	and should be ignored by `go test` due to named without the prefix "Test"
 
-func CallEventRPCTest(t *testing.T) {
+func TestCallEventRPC(t *testing.T) {
+	t.Skip()
 	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", EVENT_RPC_PORT)
 	collation := &pbmsg.Collation{
 		ShardID: 42,
@@ -561,7 +562,8 @@ func simpleValidator(ctx context.Context, msg *pubsub.Message) bool {
 	return validity
 }
 
-func SimpleValidatorTest(t *testing.T) {
+func TestSimpleValidator(t *testing.T) {
+	t.Skip()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	nodes := makePartiallyConnected3Nodes(t, ctx)
