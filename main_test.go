@@ -7,6 +7,8 @@ import (
 	"time"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
+	"github.com/golang/protobuf/proto"
+	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
@@ -531,7 +533,10 @@ func TestDHTBootstrapping(t *testing.T) {
 	}
 }
 
-func TestCallEventRPC(t *testing.T) {
+// FIXME: tests below are just playing with event rpc server in python,
+//	and should be ignored by `go test` due to named without the prefix "Test"
+
+func CallEventRPCTest(t *testing.T) {
 	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", EVENT_RPC_PORT)
 	collation := &pbmsg.Collation{
 		ShardID: 42,
@@ -539,4 +544,44 @@ func TestCallEventRPC(t *testing.T) {
 		Blobs:   []byte("123"),
 	}
 	callEventRPC(eventRPCAddr, collation)
+}
+
+func simpleValidator(ctx context.Context, msg *pubsub.Message) bool {
+	bytes := msg.GetData()
+	collation := &pbmsg.Collation{}
+	err := proto.Unmarshal(bytes, collation)
+	if err != nil {
+		return false
+	}
+	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", EVENT_RPC_PORT)
+	validity, err := callEventRPC(eventRPCAddr, collation)
+	if err != nil {
+		return false
+	}
+	return validity
+}
+
+func SimpleValidatorTest(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	nodes := makePartiallyConnected3Nodes(t, ctx)
+	shardID := ShardIDType(1)
+	nodes[0].ListenShard(shardID)
+	nodes[1].ListenShard(shardID)
+	nodes[2].ListenShard(shardID)
+	time.Sleep(time.Second * 2)
+	shardTopic := getCollationsTopic(shardID)
+	// TODO: should be sure when is the validator executed, and how it will affect relaying
+	nodes[1].pubsubService.RegisterTopicValidator(shardTopic, simpleValidator)
+	nodes[2].pubsubService.RegisterTopicValidator(shardTopic, simpleValidator)
+	nodes[0].broadcastCollation(shardID, 1, []byte{})
+
+	time.Sleep(time.Millisecond * 100)
+	// max #validators per topic: defaultValidateConcurrency = 100
+	// max #validators among all topics: defaultValidateThrottle = 8192
+	// for i := 0; i < 10000; i++ {
+	// 	node0.broadcastCollation(shardID, 1, []byte{})
+	// 	time.Sleep(time.Millisecond * 10)
+	// 	log.Printf("!@# %v loop\n", i)
+	// }
 }

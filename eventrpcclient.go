@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
@@ -12,10 +11,11 @@ import (
 
 const EVENT_RPC_PORT = 15000
 
-func callEventRPC(eventRPCAddr string, collation *pbmsg.Collation) {
+func callEventRPC(eventRPCAddr string, collation *pbmsg.Collation) (bool, error) {
 	conn, err := grpc.Dial(eventRPCAddr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
+		return false, err
 	}
 	defer conn.Close()
 	client := pbevent.NewEventClient(conn)
@@ -27,6 +27,7 @@ func callEventRPC(eventRPCAddr string, collation *pbmsg.Collation) {
 	res, err := client.NewCollation(context.Background(), newCollationNotifier)
 	if err != nil {
 		log.Fatal(err)
+		return false, err
 	}
-	fmt.Print(res)
+	return res.IsValid, nil
 }
