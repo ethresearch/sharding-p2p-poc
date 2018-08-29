@@ -107,13 +107,7 @@ make test-dev
 
 ### Setting up tracer
 
-> #### All in one Docker image
-> This image, designed for quick local testing, launches the Jaeger UI, collector, query, and agent, with an in memory storage component.
-> You can then navigate to http://localhost:16686 to access the Jaeger UI.
-
-```
-$ docker run -d --name jaeger -p 6831:6831/udp -p 6832:6832/udp -p 5778:5778 -p 16686:16686 -p 14268:14268 jaegertracing/all-in-one:latest
-```
+See [tracer](./docs/tracer.md) in the document.
 
 ## Contributing
 
