@@ -7,6 +7,8 @@
 $ docker run -d --name jaeger -p 6831:6831/udp -p 6832:6832/udp -p 5778:5778 -p 16686:16686 -p 14268:14268 jaegertracing/all-in-one:latest
 ```
 
+**NOTE**: For trace `RPCServer` to show up in the UI, the rpc server needs to terminate first in order for the span to finish.
+
 ### snapshots of the tracer UI
 
 #### Search by service
