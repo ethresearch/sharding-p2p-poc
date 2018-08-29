@@ -25,8 +25,8 @@ type server struct {
 }
 
 func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.RPCReply, error) {
-	// Add span for AddPeer
-	span := opentracing.StartSpan("AddPeer", opentracing.ChildOf(s.parentSpan.Context()))
+	// Add span for AddPeer of RPC Server
+	span := opentracing.StartSpan("RPCServer.AddPeer", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
 
 	log.Printf("rpcserver:AddPeer: receive=%v", req)
@@ -41,13 +41,16 @@ func (s *server) AddPeer(ctx context.Context, req *pbrpc.RPCAddPeerReq) (*pbrpc.
 		log.Fatal(err)
 	}
 
+	// Set peer info in Baggage
+	span.SetBaggageItem("peerAddr", mAddr)
+	// Create span context
+	spanctx := opentracing.ContextWithSpan(ctx, span)
+
 	var replyMsg string
 	var status bool
-	if success := s.node.AddPeer(mAddr); success {
+	if success := s.node.AddPeer(spanctx, mAddr); success {
 		replyMsg = fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 		status = true
-		// Tag the span with peer info
-		span.SetTag("Peer info", fmt.Sprintf("%v:%v", req.Ip, req.Port))
 	} else {
 		replyMsg = fmt.Sprintf("Failed to add Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 		status = false
@@ -64,15 +67,19 @@ func (s *server) SubscribeShard(
 	ctx context.Context,
 	req *pbrpc.RPCSubscribeShardReq) (*pbrpc.RPCReply, error) {
 	// Add span for SubscribeShard
-	span := opentracing.StartSpan("SubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
+	span := opentracing.StartSpan("RPCServer.SubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Tag the span with shardIDs to be subscribed to
+	span.SetTag("req.ShardIDs", fmt.Sprintf("%v", req.ShardIDs))
+	// Create span context
+	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	log.Printf("rpcserver:SubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.ListenShard(shardID)
+		s.node.ListenShard(spanctx, shardID)
 		time.Sleep(time.Millisecond * 30)
 	}
-	s.node.PublishListeningShards()
+	s.node.PublishListeningShards(spanctx)
 	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Subscribed shard %v",
@@ -80,8 +87,6 @@ func (s *server) SubscribeShard(
 		),
 		Status: true,
 	}
-	// Tag the span with shard info
-	span.SetTag("Shard info", fmt.Sprintf("shard %v", req.ShardIDs))
 	return res, nil
 }
 
@@ -89,15 +94,17 @@ func (s *server) UnsubscribeShard(
 	ctx context.Context,
 	req *pbrpc.RPCUnsubscribeShardReq) (*pbrpc.RPCReply, error) {
 	// Add span for UnsubscribeShard
-	span := opentracing.StartSpan("UnsubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
+	span := opentracing.StartSpan("RPCServer.UnsubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Create span context
+	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	log.Printf("rpcserver:UnsubscribeShardReq: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.UnlistenShard(shardID)
+		s.node.UnlistenShard(spanctx, shardID)
 		time.Sleep(time.Millisecond * 30)
 	}
-	s.node.PublishListeningShards()
+	s.node.PublishListeningShards(spanctx)
 	res := &pbrpc.RPCReply{
 		Message: fmt.Sprintf(
 			"Unsubscribed shard %v",
@@ -114,7 +121,7 @@ func (s *server) GetSubscribedShard(
 	ctx context.Context,
 	req *pbrpc.RPCGetSubscribedShardReq) (*pbrpc.RPCGetSubscribedShardReply, error) {
 	// Add span for GetSubscribedShard
-	span := opentracing.StartSpan("GetSubscribedShard", opentracing.ChildOf(s.parentSpan.Context()))
+	span := opentracing.StartSpan("RPCServer.GetSubscribedShard", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
 
 	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
@@ -124,7 +131,7 @@ func (s *server) GetSubscribedShard(
 		Status:   true,
 	}
 	// Tag the span with shards info
-	span.SetTag("Shards subscribed to", shardIDs)
+	span.SetTag("shardIDs", shardIDs)
 	return res, nil
 }
 
@@ -132,8 +139,12 @@ func (s *server) BroadcastCollation(
 	ctx context.Context,
 	req *pbrpc.RPCBroadcastCollationReq) (*pbrpc.RPCReply, error) {
 	// Add span for BroadcastCollation
-	span := opentracing.StartSpan("BroadcastCollation", opentracing.ChildOf(s.parentSpan.Context()))
+	span := opentracing.StartSpan("RPCServer.BroadcastCollation", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
+	// Set shardID info in Baggage
+	span.SetBaggageItem("shardID", fmt.Sprintf("%v", req.ShardID))
+	// Create span context
+	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	log.Printf("rpcserver:BroadcastCollationReq: receive=%v", req)
 	shardID := req.ShardID
@@ -150,6 +161,7 @@ func (s *server) BroadcastCollation(
 		rand.Read(randBytes)
 		// TODO: catching error
 		s.node.broadcastCollation(
+			spanctx,
 			ShardIDType(shardID),
 			i,
 			randBytes,
@@ -165,9 +177,8 @@ func (s *server) BroadcastCollation(
 		Status: true,
 	}
 	// Tag the span with collations info
-	span.SetTag("Number of collations", numCollations)
-	span.SetTag("Size of collation", sizeInBytes)
-	span.SetTag("Shard", shardID)
+	span.SetTag("numCollations", numCollations)
+	span.SetTag("sizeInBytes", sizeInBytes)
 	return res, nil
 }
 
@@ -175,7 +186,7 @@ func (s *server) StopServer(
 	ctx context.Context,
 	req *pbrpc.RPCStopServerReq) (*pbrpc.RPCReply, error) {
 	// Add span for StopServer
-	span := opentracing.StartSpan("StopServer", opentracing.ChildOf(s.parentSpan.Context()))
+	span := opentracing.StartSpan("RPCServer.StopServer", opentracing.ChildOf(s.parentSpan.Context()))
 
 	log.Printf("rpcserver:StopServer: receive=%v", req)
 	time.Sleep(time.Millisecond * 500)
@@ -192,7 +203,7 @@ func (s *server) StopServer(
 
 func runRPCServer(n *Node, addr string) {
 	// Start a new trace
-	span := opentracing.StartSpan("RPC Server")
+	span := opentracing.StartSpan("RPCServer")
 	span.SetTag("Seed Number", n.number)
 
 	lis, err := net.Listen("tcp", addr)
