@@ -2,16 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"testing"
 	"time"
 
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
-	"github.com/golang/protobuf/proto"
-	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
-	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	// gologging "github.com/whyrusleeping/go-logging"
@@ -34,7 +28,7 @@ func makeTestingNode(
 	//		2. Avoid reuse of listeningPort in the entire test, to avoid `dial error`s
 	listeningPort := 20000 + nodeCount
 	nodeCount++
-	node, err := makeNode(ctx, listeningPort, number, doBootstrapping, bootstrapPeers)
+	node, err := makeNode(ctx, listeningPort, number, nil, doBootstrapping, bootstrapPeers)
 	if err != nil {
 		t.Error("Failed to create node")
 	}
@@ -87,92 +81,6 @@ func TestNodeListeningShards(t *testing.T) {
 	}
 	node.UnlistenShard(testingShardID) // ensure no side effect
 	node.PublishListeningShards()
-}
-
-func TestPeerListeningShards(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	node := makeUnbootstrappedNode(t, ctx, 0)
-	arbitraryPeerID := peer.ID("123456")
-	if node.IsPeer(arbitraryPeerID) {
-		t.Errorf(
-			"PeerID %v should be a non-peer peerID to make the test work correctly",
-			arbitraryPeerID,
-		)
-	}
-	var testingShardID ShardIDType = 42
-	if len(node.GetPeerListeningShard(arbitraryPeerID)) != 0 {
-		t.Errorf("Peer %v should not be listening to any shard", arbitraryPeerID)
-	}
-	if node.IsPeerListeningShard(arbitraryPeerID, testingShardID) {
-		t.Errorf("Peer %v should not be listening to shard %v", arbitraryPeerID, testingShardID)
-	}
-	node.AddPeerListeningShard(arbitraryPeerID, testingShardID)
-	if !node.IsPeerListeningShard(arbitraryPeerID, testingShardID) {
-		t.Errorf("Peer %v should be listening to shard %v", arbitraryPeerID, testingShardID)
-	}
-	node.AddPeerListeningShard(arbitraryPeerID, numShards)
-	if node.IsPeerListeningShard(arbitraryPeerID, numShards) {
-		t.Errorf(
-			"Peer %v should not be able to listen to shardID bigger than %v",
-			arbitraryPeerID,
-			numShards,
-		)
-	}
-	// listen to multiple shards
-	anotherShardID := testingShardID + 1 // notice that it should be less than `numShards`
-	node.AddPeerListeningShard(arbitraryPeerID, anotherShardID)
-	if !node.IsPeerListeningShard(arbitraryPeerID, anotherShardID) {
-		t.Errorf("Peer %v should be listening to shard %v", arbitraryPeerID, testingShardID)
-	}
-	if len(node.GetPeerListeningShard(arbitraryPeerID)) != 2 {
-		t.Errorf(
-			"Peer %v should be listening to %v shards, not %v",
-			arbitraryPeerID,
-			2,
-			len(node.GetPeerListeningShard(arbitraryPeerID)),
-		)
-	}
-	node.RemovePeerListeningShard(arbitraryPeerID, anotherShardID)
-	if node.IsPeerListeningShard(arbitraryPeerID, anotherShardID) {
-		t.Errorf("Peer %v should be listening to shard %v", arbitraryPeerID, testingShardID)
-	}
-	if len(node.GetPeerListeningShard(arbitraryPeerID)) != 1 {
-		t.Errorf(
-			"Peer %v should be only listening to %v shards, not %v",
-			arbitraryPeerID,
-			1,
-			len(node.GetPeerListeningShard(arbitraryPeerID)),
-		)
-	}
-
-	// see if it is still correct with multiple peers
-	anotherPeerID := peer.ID("9547")
-	if node.IsPeer(anotherPeerID) {
-		t.Errorf(
-			"PeerID %v should be a non-peer peerID to make the test work correctly",
-			anotherPeerID,
-		)
-	}
-	if len(node.GetPeerListeningShard(anotherPeerID)) != 0 {
-		t.Errorf("Peer %v should not be listening to any shard", anotherPeerID)
-	}
-	node.AddPeerListeningShard(anotherPeerID, testingShardID)
-	if len(node.GetPeerListeningShard(anotherPeerID)) != 1 {
-		t.Errorf("Peer %v should be listening to 1 shard", anotherPeerID)
-	}
-	// make sure not affect other peers
-	if len(node.GetPeerListeningShard(arbitraryPeerID)) != 1 {
-		t.Errorf("Peer %v should be listening to 1 shard", arbitraryPeerID)
-	}
-	node.RemovePeerListeningShard(anotherPeerID, testingShardID)
-	if len(node.GetPeerListeningShard(anotherPeerID)) != 0 {
-		t.Errorf("Peer %v should be listening to 0 shard", anotherPeerID)
-	}
-	if len(node.GetPeerListeningShard(arbitraryPeerID)) != 1 {
-		t.Errorf("Peer %v should be listening to 1 shard", arbitraryPeerID)
-	}
 }
 
 func connect(t *testing.T, ctx context.Context, a, b host.Host) {
@@ -403,23 +311,23 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	time.Sleep(time.Second * 2)
 
 	// ensure notifyShards message is propagated through node1
-	if len(nodes[1].GetPeerListeningShard(nodes[0].ID())) != 0 {
+	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
 		t.Error()
 	}
 	nodes[0].ListenShard(42)
 	nodes[0].PublishListeningShards()
 	time.Sleep(time.Millisecond * 100)
-	if len(nodes[1].GetPeerListeningShard(nodes[0].ID())) != 1 {
+	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
 		t.Error()
 	}
-	if len(nodes[2].GetPeerListeningShard(nodes[0].ID())) != 1 {
+	if len(nodes[2].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
 		t.Error()
 	}
 	nodes[1].ListenShard(42)
 	nodes[1].PublishListeningShards()
 	time.Sleep(time.Millisecond * 100)
 
-	shardPeers42 := nodes[2].GetNodesInShard(42)
+	shardPeers42 := nodes[2].shardPrefTable.GetPeersInShard(42)
 	if len(shardPeers42) != 2 {
 		t.Errorf(
 			"len(shardPeers42) should be %v, not %v. shardPeers42=%v",
@@ -433,7 +341,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	nodes[0].UnlistenShard(42)
 	nodes[0].PublishListeningShards()
 	time.Sleep(time.Millisecond * 100)
-	if len(nodes[1].GetPeerListeningShard(nodes[0].ID())) != 0 {
+	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
 		t.Error()
 	}
 }
@@ -537,56 +445,40 @@ func TestDHTBootstrapping(t *testing.T) {
 // FIXME: tests below are just playing with event rpc server in python,
 //	and should be ignored by `go test` due to named without the prefix "Test"
 
-func TestCallEventRPC(t *testing.T) {
-	t.Skip()
-	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
-	collation := &pbmsg.Collation{
-		ShardID: 42,
-		Period:  5566,
-		Blobs:   []byte("123"),
-	}
-	callEventRPCNewCollation(eventRPCAddr, collation)
-}
+// func simpleValidator(ctx context.Context, msg *pubsub.Message) bool {
+// 	bytes := msg.GetData()
+// 	collation := &pbmsg.Collation{}
+// 	err := proto.Unmarshal(bytes, collation)
+// 	if err != nil {
+// 		return false
+// 	}
+// 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", defulatEventRPCPort)
+// 	eventNotifier := NewRpcEventNotifier(ctx, )
+// 	validity, err :=
+// 	if err != nil {
+// 		log.Println("!@# 123")
+// 		return false
+// 	}
+// 	return validity
+// }
 
-func simpleValidator(ctx context.Context, msg *pubsub.Message) bool {
-	bytes := msg.GetData()
-	collation := &pbmsg.Collation{}
-	err := proto.Unmarshal(bytes, collation)
-	if err != nil {
-		return false
-	}
-	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
-	validity, err := callEventRPCNewCollation(eventRPCAddr, collation)
-	if err != nil {
-		log.Println("!@# 123")
-		return false
-	}
-	return validity
-}
+// func TestSimpleValidator(t *testing.T) {
+// 	// t.Skip()
+// 	ctx, cancel := context.WithCancel(context.Background())
+// 	defer cancel()
+// 	nodes := makePartiallyConnected3Nodes(t, ctx)
+// 	shardID := ShardIDType(1)
+// 	nodes[0].ListenShard(shardID)
+// 	nodes[1].ListenShard(shardID)
+// 	nodes[2].ListenShard(shardID)
+// 	time.Sleep(time.Second * 2)
+// 	shardTopic := getCollationsTopic(shardID)
+// 	a, _ := NewRpcEventNotifier(ctx, eventRPCAddr)
+// 	ch
+// 	// TODO: should be sure when is the validator executed, and how it will affect relaying
+// 	nodes[1].pubsubService.RegisterTopicValidator(shardTopic, a.TestValidator)
+// 	nodes[2].pubsubService.RegisterTopicValidator(shardTopic, simpleValidator)
+// 	nodes[0].broadcastCollation(shardID, 1, []byte{})
 
-func TestSimpleValidator(t *testing.T) {
-	// t.Skip()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	nodes := makePartiallyConnected3Nodes(t, ctx)
-	shardID := ShardIDType(1)
-	nodes[0].ListenShard(shardID)
-	nodes[1].ListenShard(shardID)
-	nodes[2].ListenShard(shardID)
-	time.Sleep(time.Second * 2)
-	shardTopic := getCollationsTopic(shardID)
-	a, _ := NewRpcEventNotifier(ctx, eventRPCAddr)
-	// TODO: should be sure when is the validator executed, and how it will affect relaying
-	nodes[1].pubsubService.RegisterTopicValidator(shardTopic, a.TestValidator)
-	nodes[2].pubsubService.RegisterTopicValidator(shardTopic, simpleValidator)
-	nodes[0].broadcastCollation(shardID, 1, []byte{})
-
-	time.Sleep(time.Millisecond * 100)
-	// max #validators per topic: defaultValidateConcurrency = 100
-	// max #validators among all topics: defaultValidateThrottle = 8192
-	// for i := 0; i < 10000; i++ {
-	// 	node0.broadcastCollation(shardID, 1, []byte{})
-	// 	time.Sleep(time.Millisecond * 10)
-	// 	log.Printf("!@# %v loop\n", i)
-	// }
-}
+// 	time.Sleep(time.Millisecond * 100)
+// }

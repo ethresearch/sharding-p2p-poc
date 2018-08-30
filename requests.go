@@ -85,7 +85,7 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 	}
 	shardPeers := make(map[ShardIDType]*pbmsg.ShardPeerResponse_Peers)
 	for _, shardID := range req.ShardIDs {
-		peerIDs := p.node.GetNodesInShard(shardID)
+		peerIDs := p.node.shardPrefTable.GetPeersInShard(shardID)
 		peerIDStrings := []string{}
 		for _, peerID := range peerIDs {
 			peerIDStrings = append(peerIDStrings, peerID.Pretty())

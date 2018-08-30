@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
@@ -12,8 +11,7 @@ import (
 )
 
 var (
-	eventRPCPort = 15000
-	eventRPCAddr = fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
+	defulatEventRPCPort = 35566
 )
 
 type EventNotifier interface {
@@ -53,16 +51,4 @@ func (notifier *rpcEventNotifier) NotifyNewCollation(collation *pbmsg.Collation)
 		return false, err
 	}
 	return res.IsValid, nil
-}
-
-func callEventRPCNewCollation(eventRPCAddr string, collation *pbmsg.Collation) (bool, error) {
-	notifier, err := NewRpcEventNotifier(context.Background(), eventRPCAddr)
-	if err != nil {
-		return false, err
-	}
-	res, err := notifier.NotifyNewCollation(collation)
-	if err != nil {
-		return false, err
-	}
-	return res, nil
 }

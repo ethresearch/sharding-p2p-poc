@@ -59,6 +59,7 @@ func makeNode(
 	ctx context.Context,
 	listenPort int,
 	randseed int,
+	eventNotifier EventNotifier,
 	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) (*Node, error) {
 	// FIXME: should be set to localhost if we don't want to expose it to outside
@@ -97,12 +98,6 @@ func makeNode(
 		}
 	}
 
-	eventNotifier, err := NewRpcEventNotifier(ctx, eventRPCAddr)
-	if err != nil {
-		// TODO: don't use eventNotifier if it is not available
-		eventNotifier = nil
-	}
-
 	// Make a host that listens on the given multiaddress
 	node := NewNode(ctx, routedHost, int(randseed), eventNotifier)
 
@@ -129,12 +124,18 @@ func main() {
 		"port listened by the node for incoming connections",
 	)
 	rpcPort := flag.Int("rpcport", defaultRPCPort, "rpc port listened by the rpc server")
+	notifierPort := flag.Int(
+		"notifierport",
+		defulatEventRPCPort,
+		"notifier port listened by the event rpc server",
+	)
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
 	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
 	rpcAddr := fmt.Sprintf("127.0.0.1:%v", *rpcPort)
+	notifierAddr := fmt.Sprintf("127.0.0.1:%v", *notifierPort)
 
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
@@ -145,7 +146,7 @@ func main() {
 		} else {
 			bootnodes = convertPeers(strings.Split(*bootnodesStr, ","))
 		}
-		runServer(*listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr)
+		runServer(*listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr, notifierAddr)
 	}
 }
 
@@ -154,9 +155,15 @@ func runServer(
 	seed int,
 	doBootstrapping bool,
 	bootnodes []pstore.PeerInfo,
-	rpcAddr string) {
+	rpcAddr string,
+	notifierAddr string) {
 	ctx := context.Background()
-	node, err := makeNode(ctx, listenPort, seed, doBootstrapping, bootnodes)
+	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		// TODO: don't use eventNotifier if it is not available
+		eventNotifier = nil
+	}
+	node, err := makeNode(ctx, listenPort, seed, eventNotifier, doBootstrapping, bootnodes)
 	if err != nil {
 		log.Fatal(err)
 	}

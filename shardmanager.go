@@ -8,7 +8,6 @@ import (
 
 	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
-	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
@@ -26,7 +25,7 @@ type ShardManager struct {
 
 	eventNotifier EventNotifier
 
-	peerListeningShards map[peer.ID]*ListeningShards // TODO: handle the case when peer leave
+	shardPrefTable *ShardPrefTable
 }
 
 const listeningShardTopic = "listeningShard"
@@ -51,13 +50,13 @@ func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifi
 		log.Fatalln(err)
 	}
 	p := &ShardManager{
-		ctx:                 ctx,
-		host:                h,
-		subs:                make(map[string]*pubsub.Subscription),
-		pubsubService:       service,
-		subsLock:            sync.RWMutex{},
-		eventNotifier:       eventNotifier,
-		peerListeningShards: make(map[peer.ID]*ListeningShards),
+		ctx:            ctx,
+		host:           h,
+		subs:           make(map[string]*pubsub.Subscription),
+		pubsubService:  service,
+		subsLock:       sync.RWMutex{},
+		eventNotifier:  eventNotifier,
+		shardPrefTable: NewShardPrefTable(),
 	}
 	err = p.SubscribeListeningShards()
 	if err != nil {
@@ -66,67 +65,10 @@ func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifi
 	return p
 }
 
-// management for peers' listening shards
-
-func (n *ShardManager) AddPeerListeningShard(peerID peer.ID, shardID ShardIDType) {
-	if shardID >= numShards {
-		return
-	}
-	if n.IsPeerListeningShard(peerID, shardID) {
-		return
-	}
-	if _, prs := n.peerListeningShards[peerID]; !prs {
-		n.peerListeningShards[peerID] = NewListeningShards()
-	}
-	n.peerListeningShards[peerID].setShard(shardID)
-}
-
-func (n *ShardManager) RemovePeerListeningShard(peerID peer.ID, shardID ShardIDType) {
-	if !n.IsPeerListeningShard(peerID, shardID) {
-		return
-	}
-	n.peerListeningShards[peerID].unsetShard(shardID)
-}
-
-func (n *ShardManager) GetPeerListeningShard(peerID peer.ID) []ShardIDType {
-	if _, prs := n.peerListeningShards[peerID]; !prs {
-		return []ShardIDType{}
-	}
-	return n.peerListeningShards[peerID].getShards()
-}
-
-func (n *ShardManager) SetPeerListeningShard(peerID peer.ID, shardIDs []ShardIDType) {
-	listeningShards := n.GetPeerListeningShard(peerID)
-	for _, shardID := range listeningShards {
-		n.RemovePeerListeningShard(peerID, shardID)
-	}
-	for _, shardID := range shardIDs {
-		n.AddPeerListeningShard(peerID, shardID)
-	}
-}
-
-func (n *ShardManager) IsPeerListeningShard(peerID peer.ID, shardID ShardIDType) bool {
-	if _, prs := n.peerListeningShards[peerID]; !prs {
-		return false
-	}
-	shards := n.GetPeerListeningShard(peerID)
-	return inShards(shardID, shards)
-}
-
-func (n *ShardManager) GetNodesInShard(shardID ShardIDType) []peer.ID {
-	peers := []peer.ID{}
-	for peerID, listeningShards := range n.peerListeningShards {
-		if listeningShards.isShardSet(shardID) {
-			peers = append(peers, peerID)
-		}
-	}
-	return peers
-}
-
-// listen/unlisten shards
+// General
 
 func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
-	peerIDs := n.GetNodesInShard(shardID)
+	peerIDs := n.shardPrefTable.GetPeersInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
 	for _, peerID := range peerIDs {
 		// don't connect ourselves
@@ -173,7 +115,7 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 	if n.IsShardListened(shardID) {
 		return
 	}
-	n.AddPeerListeningShard(n.host.ID(), shardID)
+	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	n.connectShardNodes(shardID)
@@ -186,7 +128,7 @@ func (n *ShardManager) UnlistenShard(shardID ShardIDType) {
 	if !n.IsShardListened(shardID) {
 		return
 	}
-	n.RemovePeerListeningShard(n.host.ID(), shardID)
+	n.shardPrefTable.RemovePeerListeningShard(n.host.ID(), shardID)
 
 	// listeningShards protocol
 	// TODO: should we remove some peers in this shard?
@@ -196,7 +138,7 @@ func (n *ShardManager) UnlistenShard(shardID ShardIDType) {
 }
 
 func (n *ShardManager) GetListeningShards() []ShardIDType {
-	return n.GetPeerListeningShard(n.host.ID())
+	return n.shardPrefTable.GetPeerListeningShardSlice(n.host.ID())
 }
 
 func (n *ShardManager) IsShardListened(shardID ShardIDType) bool {
@@ -216,103 +158,7 @@ func inShards(shardID ShardIDType, shards []ShardIDType) bool {
 // PubSub related
 //
 
-// listeningShards notification
-
-func (n *ShardManager) makeShardPrefHandler() TopicHandler {
-	return func(ctx context.Context, msg *pubsub.Message) {
-		shardPref := NewListeningShards().fromBytes(msg.GetData())
-		peerID := msg.GetFrom()
-		// if peerID == n.host.ID() {
-		// 	return
-		// }
-		n.SetPeerListeningShard(peerID, shardPref.getShards())
-	}
-}
-
-func (n *ShardManager) makeShardPrefValidator() TopicValidator {
-	return func(ctx context.Context, msg *pubsub.Message) bool {
-		// do nothing now
-		return true
-	}
-}
-
-func (n *ShardManager) SubscribeListeningShards() error {
-	return n.SubscribeTopic(
-		listeningShardTopic,
-		n.makeShardPrefHandler(),
-		n.makeShardPrefValidator(),
-	)
-}
-
-func (n *ShardManager) UnsubscribeListeningShards() error {
-	return n.UnsubscribeTopic(listeningShardTopic)
-}
-
-func (n *ShardManager) PublishListeningShards() {
-	selfListeningShards, prs := n.peerListeningShards[n.host.ID()]
-	if !prs {
-		selfListeningShards = NewListeningShards()
-	}
-	bytes := selfListeningShards.toBytes()
-	n.pubsubService.Publish(listeningShardTopic, bytes)
-}
-
-// shard collations
-
-func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs []byte) error {
-	// create message data
-	data := &pbmsg.Collation{
-		ShardID: shardID,
-		Period:  PBInt(period),
-		Blobs:   blobs,
-	}
-	return n.broadcastCollationMessage(data)
-}
-
-func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
-	if !n.IsCollationSubscribed(collation.GetShardID()) {
-		return fmt.Errorf("broadcasting to a not subscribed shard")
-	}
-	collationsTopic := getCollationsTopic(collation.ShardID)
-	bytes, err := proto.Marshal(collation)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-	err = n.pubsubService.Publish(collationsTopic, bytes)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-	return nil
-}
-
-func extractProtoMsg(pubsubMsg *pubsub.Message, msg proto.Message) error {
-	bytes := pubsubMsg.GetData()
-	err := proto.Unmarshal(bytes, msg)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (n *ShardManager) makeCollationValidator() TopicValidator {
-	return func(ctx context.Context, msg *pubsub.Message) bool {
-		collation := &pbmsg.Collation{}
-		err := extractProtoMsg(msg, collation)
-		if err != nil {
-			return false
-		}
-		validity, err := n.eventNotifier.NotifyNewCollation(collation)
-		return validity
-	}
-}
-
-func (n *ShardManager) makeCollationHandler() TopicHandler {
-	return func(ctx context.Context, msg *pubsub.Message) {
-		// do nothing now
-	}
-}
+// Utils
 
 func (n *ShardManager) SubscribeTopic(
 	topic string,
@@ -359,6 +205,77 @@ func (n *ShardManager) UnsubscribeTopic(topic string) error {
 	return nil
 }
 
+// listeningShards notification
+
+func (n *ShardManager) makeShardPrefHandler() TopicHandler {
+	return func(ctx context.Context, msg *pubsub.Message) {
+		shardPref := NewListeningShards().fromBytes(msg.GetData())
+		peerID := msg.GetFrom()
+		// if peerID == n.host.ID() {
+		// 	return
+		// }
+		n.shardPrefTable.SetPeerListeningShard(peerID, shardPref)
+	}
+}
+
+func (n *ShardManager) makeShardPrefValidator() TopicValidator {
+	return func(ctx context.Context, msg *pubsub.Message) bool {
+		// do nothing now
+		return true
+	}
+}
+
+func (n *ShardManager) SubscribeListeningShards() error {
+	return n.SubscribeTopic(
+		listeningShardTopic,
+		n.makeShardPrefHandler(),
+		n.makeShardPrefValidator(),
+	)
+}
+
+func (n *ShardManager) UnsubscribeListeningShards() error {
+	return n.UnsubscribeTopic(listeningShardTopic)
+}
+
+func (n *ShardManager) PublishListeningShards() {
+	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
+	bytes := selfListeningShards.toBytes()
+	n.pubsubService.Publish(listeningShardTopic, bytes)
+}
+
+// Collations
+
+func extractProtoMsg(pubsubMsg *pubsub.Message, msg proto.Message) error {
+	bytes := pubsubMsg.GetData()
+	err := proto.Unmarshal(bytes, msg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (n *ShardManager) makeCollationValidator() TopicValidator {
+	return func(ctx context.Context, msg *pubsub.Message) bool {
+		collation := &pbmsg.Collation{}
+		err := extractProtoMsg(msg, collation)
+		if err != nil {
+			return false
+		}
+		// FIXME: if no eventNotifier, just skip the verification
+		if n.eventNotifier != nil {
+			validity, _ := n.eventNotifier.NotifyNewCollation(collation)
+			return validity
+		}
+		return true
+	}
+}
+
+func (n *ShardManager) makeCollationHandler() TopicHandler {
+	return func(ctx context.Context, msg *pubsub.Message) {
+		// do nothing now
+	}
+}
+
 func (n *ShardManager) SubscribeCollation(shardID ShardIDType) error {
 	topic := getCollationsTopic(shardID)
 	handler := n.makeCollationHandler()
@@ -378,3 +295,33 @@ func (n *ShardManager) IsCollationSubscribed(shardID ShardIDType) bool {
 	n.subsLock.RUnlock()
 	return prs
 }
+
+func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs []byte) error {
+	// create message data
+	data := &pbmsg.Collation{
+		ShardID: shardID,
+		Period:  PBInt(period),
+		Blobs:   blobs,
+	}
+	return n.broadcastCollationMessage(data)
+}
+
+func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
+	if !n.IsCollationSubscribed(collation.GetShardID()) {
+		return fmt.Errorf("broadcasting to a not subscribed shard")
+	}
+	collationsTopic := getCollationsTopic(collation.ShardID)
+	bytes, err := proto.Marshal(collation)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	err = n.pubsubService.Publish(collationsTopic, bytes)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	return nil
+}
+
+// TODO: beacon chain
