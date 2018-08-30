@@ -19,9 +19,8 @@ For more information, please check out the [document](https://github.com/ethrese
 
 ### Build
 ```bash
-$ go get github.com/ethresearch/sharding-p2p-poc
+$ go get github.com/ethresearch/sharding-p2p-poc/...
 $ cd $GOPATH/src/github.com/ethresearch/sharding-p2p-poc
-$ go get ./...  # This will recursively download all of the dependencies
 $ make deps
 $ go build
 ```
