@@ -20,11 +20,9 @@ type ShardManager struct {
 	ctx  context.Context
 	host host.Host // local host
 
-	pubsubService       *pubsub.PubSub
-	subs                map[string]*pubsub.Subscription
-	subsLock            sync.RWMutex
-	listeningShardsSub  *pubsub.Subscription
-	shardCollationsSubs map[ShardIDType]*pubsub.Subscription
+	pubsubService *pubsub.PubSub
+	subs          map[string]*pubsub.Subscription
+	subsLock      sync.RWMutex
 
 	eventNotifier EventNotifier
 
@@ -57,14 +55,14 @@ func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifi
 		host:                h,
 		subs:                make(map[string]*pubsub.Subscription),
 		pubsubService:       service,
-		listeningShardsSub:  nil,
-		shardCollationsSubs: make(map[ShardIDType]*pubsub.Subscription),
 		subsLock:            sync.RWMutex{},
 		eventNotifier:       eventNotifier,
 		peerListeningShards: make(map[peer.ID]*ListeningShards),
 	}
-	p.SubscribeListeningShards()
-	p.ListenListeningShards(ctx)
+	err = p.SubscribeListeningShards()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	return p
 }
 
@@ -92,7 +90,7 @@ func (n *ShardManager) RemovePeerListeningShard(peerID peer.ID, shardID ShardIDT
 
 func (n *ShardManager) GetPeerListeningShard(peerID peer.ID) []ShardIDType {
 	if _, prs := n.peerListeningShards[peerID]; !prs {
-		return make([]ShardIDType, 0)
+		return []ShardIDType{}
 	}
 	return n.peerListeningShards[peerID].getShards()
 }
@@ -220,44 +218,13 @@ func inShards(shardID ShardIDType, shards []ShardIDType) bool {
 
 // listeningShards notification
 
-func (n *ShardManager) ListenListeningShards(ctx context.Context) {
-	// this is necessary, because n.listeningShardsSub might be set to `nil`
-	// after `UnsubscribeListeningShards`
-	listeningShardsSub := n.listeningShardsSub
-	go func() {
-		for {
-			msg, err := listeningShardsSub.Next(ctx)
-			if err != nil {
-				// Will enter here if
-				// 	1. `sub.Cancel()` is called with
-				//		err="subscription cancelled by calling sub.Cancel()"
-				// 	2. ctx is cancelled with err="context canceled"
-				// log.Print("ListenListeningShards: ", err)
-				return
-			}
-			// TODO: check if `peerID` is the node itself
-			peerID := msg.GetFrom()
-			if peerID == n.host.ID() {
-				continue
-			}
-			listeningShards := NewListeningShards().fromBytes(msg.GetData())
-			n.SetPeerListeningShard(peerID, listeningShards.getShards())
-			// log.Printf(
-			// 	"%v: receive: peerID=%v, listeningShards=%v",
-			// 	n.node.Name(),
-			// 	peerID,
-			// 	listeningShards.getShards(),
-			// )
-		}
-	}()
-}
-
-// type TopicValidator = pubsub.Validator
-// type TopicHandler = func(ctx context.Context, msg *pubsub.Message)
 func (n *ShardManager) makeShardPrefHandler() TopicHandler {
 	return func(ctx context.Context, msg *pubsub.Message) {
 		shardPref := NewListeningShards().fromBytes(msg.GetData())
 		peerID := msg.GetFrom()
+		// if peerID == n.host.ID() {
+		// 	return
+		// }
 		n.SetPeerListeningShard(peerID, shardPref.getShards())
 	}
 }
@@ -362,14 +329,18 @@ func (n *ShardManager) SubscribeTopic(
 		n.pubsubService.RegisterTopicValidator(topic, validator)
 	}
 	go func() {
-		msg, err := sub.Next(n.ctx)
-		if n.ctx.Err() != nil {
-			return
+		for {
+			msg, err := sub.Next(n.ctx)
+			if n.ctx.Err() != nil {
+				log.Printf("%v: SubscribeTopic: n.ctx.Err()=%v", n.host.ID(), n.ctx.Err())
+				return
+			}
+			if err != nil {
+				log.Printf("%v: SubscribeTopic: err=%v", n.host.ID(), err)
+				return
+			}
+			handler(n.ctx, msg)
 		}
-		if err != nil {
-			return
-		}
-		handler(n.ctx, msg)
 	}()
 	return nil
 }

@@ -417,8 +417,8 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	}
 	nodes[1].ListenShard(42)
 	nodes[1].PublishListeningShards()
-
 	time.Sleep(time.Millisecond * 100)
+
 	shardPeers42 := nodes[2].GetNodesInShard(42)
 	if len(shardPeers42) != 2 {
 		t.Errorf(
