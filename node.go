@@ -9,25 +9,38 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-// node client version
-const clientVersion = "sharding-p2p-node/0.0.1"
-
-// Node type - a p2p host implementing one or more p2p protocols
 type Node struct {
 	host.Host        // lib-p2p host
 	*AddPeerProtocol // addpeer protocol impl
 	*RequestProtocol // for peers to request data
 	*ShardManager
 
+	ctx    context.Context
 	number int
 }
 
+// type NodeOption func(*Node)
+
+// func WithRPCEventHandler(eventRPCAddr string) NodeOption {
+// 	return func(n *Node) {
+// 		rpcEventNotifier, err := NewRpcEventNotifier(n.ctx, eventRPCAddr)
+// 		if err == nil {
+// 			n.eventNotifier = rpcEventNotifier
+// 		}
+// 	}
+// }
+
 // NewNode creates a new node with its implemented protocols
-func NewNode(ctx context.Context, host host.Host, number int) *Node {
-	node := &Node{Host: host, number: number}
+func NewNode(ctx context.Context, h host.Host, number int, eventNotifier EventNotifier) *Node {
+	node := &Node{
+		Host:   h,
+		number: number,
+		ctx:    ctx,
+	}
 	node.AddPeerProtocol = NewAddPeerProtocol(node)
 	node.RequestProtocol = NewRequestProtocol(node)
-	node.ShardManager = NewShardManager(ctx, node)
+	node.ShardManager = NewShardManager(ctx, node, eventNotifier)
+
 	return node
 }
 

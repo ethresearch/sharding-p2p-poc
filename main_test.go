@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -56,7 +57,7 @@ func TestNodeListeningShards(t *testing.T) {
 	if !node.IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been listened", testingShardID)
 	}
-	if !node.IsShardCollationsSubscribed(testingShardID) {
+	if !node.IsCollationSubscribed(testingShardID) {
 		t.Errorf(
 			"shardCollations in shard [%v] should be subscribed",
 			testingShardID,
@@ -78,7 +79,7 @@ func TestNodeListeningShards(t *testing.T) {
 	if node.IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been unlistened", testingShardID)
 	}
-	if node.IsShardCollationsSubscribed(testingShardID) {
+	if node.IsCollationSubscribed(testingShardID) {
 		t.Errorf(
 			"shardCollations in shard [%v] should be already unsubscribed",
 			testingShardID,
@@ -538,13 +539,13 @@ func TestDHTBootstrapping(t *testing.T) {
 
 func TestCallEventRPC(t *testing.T) {
 	t.Skip()
-	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", EVENT_RPC_PORT)
+	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
 	collation := &pbmsg.Collation{
 		ShardID: 42,
 		Period:  5566,
 		Blobs:   []byte("123"),
 	}
-	callEventRPC(eventRPCAddr, collation)
+	callEventRPCNewCollation(eventRPCAddr, collation)
 }
 
 func simpleValidator(ctx context.Context, msg *pubsub.Message) bool {
@@ -554,16 +555,17 @@ func simpleValidator(ctx context.Context, msg *pubsub.Message) bool {
 	if err != nil {
 		return false
 	}
-	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", EVENT_RPC_PORT)
-	validity, err := callEventRPC(eventRPCAddr, collation)
+	eventRPCAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
+	validity, err := callEventRPCNewCollation(eventRPCAddr, collation)
 	if err != nil {
+		log.Println("!@# 123")
 		return false
 	}
 	return validity
 }
 
 func TestSimpleValidator(t *testing.T) {
-	t.Skip()
+	// t.Skip()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	nodes := makePartiallyConnected3Nodes(t, ctx)
@@ -573,8 +575,9 @@ func TestSimpleValidator(t *testing.T) {
 	nodes[2].ListenShard(shardID)
 	time.Sleep(time.Second * 2)
 	shardTopic := getCollationsTopic(shardID)
+	a, _ := NewRpcEventNotifier(ctx, eventRPCAddr)
 	// TODO: should be sure when is the validator executed, and how it will affect relaying
-	nodes[1].pubsubService.RegisterTopicValidator(shardTopic, simpleValidator)
+	nodes[1].pubsubService.RegisterTopicValidator(shardTopic, a.TestValidator)
 	nodes[2].pubsubService.RegisterTopicValidator(shardTopic, simpleValidator)
 	nodes[0].broadcastCollation(shardID, 1, []byte{})
 

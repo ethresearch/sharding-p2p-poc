@@ -6,7 +6,8 @@ import (
 	"log"
 	"sync"
 
-	floodsub "github.com/libp2p/go-floodsub"
+	pubsub "github.com/libp2p/go-floodsub"
+	host "github.com/libp2p/go-libp2p-host"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 
@@ -16,19 +17,25 @@ import (
 )
 
 type ShardManager struct {
-	node *Node // local host
+	ctx  context.Context
+	host host.Host // local host
 
-	pubsubService       *floodsub.PubSub
-	listeningShardsSub  *floodsub.Subscription
-	shardCollationsSubs map[ShardIDType]*floodsub.Subscription
-	collations          map[string]struct{}
-	lock                sync.Mutex
+	pubsubService       *pubsub.PubSub
+	subs                map[string]*pubsub.Subscription
+	subsLock            sync.RWMutex
+	listeningShardsSub  *pubsub.Subscription
+	shardCollationsSubs map[ShardIDType]*pubsub.Subscription
+
+	eventNotifier EventNotifier
 
 	peerListeningShards map[peer.ID]*ListeningShards // TODO: handle the case when peer leave
 }
 
 const listeningShardTopic = "listeningShard"
 const collationTopicFmt = "shardCollations_%d"
+
+type TopicValidator = pubsub.Validator
+type TopicHandler = func(ctx context.Context, msg *pubsub.Message)
 
 func getCollationHash(msg *pbmsg.Collation) string {
 	hashBytes := keccak(msg)
@@ -40,18 +47,20 @@ func getCollationsTopic(shardID ShardIDType) string {
 	return fmt.Sprintf(collationTopicFmt, shardID)
 }
 
-func NewShardManager(ctx context.Context, node *Node) *ShardManager {
-	service, err := floodsub.NewGossipSub(ctx, node.Host)
+func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifier) *ShardManager {
+	service, err := pubsub.NewGossipSub(ctx, h)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	p := &ShardManager{
-		node:                node,
+		ctx:                 ctx,
+		host:                h,
+		subs:                make(map[string]*pubsub.Subscription),
 		pubsubService:       service,
 		listeningShardsSub:  nil,
-		shardCollationsSubs: make(map[ShardIDType]*floodsub.Subscription),
-		collations:          make(map[string]struct{}),
-		lock:                sync.Mutex{},
+		shardCollationsSubs: make(map[ShardIDType]*pubsub.Subscription),
+		subsLock:            sync.RWMutex{},
+		eventNotifier:       eventNotifier,
 		peerListeningShards: make(map[peer.ID]*ListeningShards),
 	}
 	p.SubscribeListeningShards()
@@ -123,15 +132,15 @@ func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
 	pinfos := []pstore.PeerInfo{}
 	for _, peerID := range peerIDs {
 		// don't connect ourselves
-		if peerID == n.node.ID() {
+		if peerID == n.host.ID() {
 			continue
 		}
 		// if already have conns, no need to add them
-		connsToPeer := n.node.Network().ConnsToPeer(peerID)
+		connsToPeer := n.host.Network().ConnsToPeer(peerID)
 		if len(connsToPeer) != 0 {
 			continue
 		}
-		pi := n.node.Peerstore().PeerInfo(peerID)
+		pi := n.host.Peerstore().PeerInfo(peerID)
 		pinfos = append(pinfos, pi)
 	}
 
@@ -143,7 +152,7 @@ func (n *ShardManager) connectShardNodes(shardID ShardIDType) error {
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
 			defer wg.Done()
-			if err := n.node.Connect(ctx, p); err != nil {
+			if err := n.host.Connect(ctx, p); err != nil {
 				log.Printf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,
@@ -166,31 +175,30 @@ func (n *ShardManager) ListenShard(shardID ShardIDType) {
 	if n.IsShardListened(shardID) {
 		return
 	}
-	n.AddPeerListeningShard(n.node.ID(), shardID)
+	n.AddPeerListeningShard(n.host.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	n.connectShardNodes(shardID)
 
 	// shardCollations protocol
-	n.SubscribeShardCollations(shardID)
-	n.ListenShardCollations(shardID)
+	n.SubscribeCollation(shardID)
 }
 
 func (n *ShardManager) UnlistenShard(shardID ShardIDType) {
 	if !n.IsShardListened(shardID) {
 		return
 	}
-	n.RemovePeerListeningShard(n.node.ID(), shardID)
+	n.RemovePeerListeningShard(n.host.ID(), shardID)
 
 	// listeningShards protocol
 	// TODO: should we remove some peers in this shard?
 
 	// shardCollations protocol
-	n.UnsubscribeShardCollations(shardID)
+	n.UnsubscribeCollation(shardID)
 }
 
 func (n *ShardManager) GetListeningShards() []ShardIDType {
-	return n.GetPeerListeningShard(n.node.ID())
+	return n.GetPeerListeningShard(n.host.ID())
 }
 
 func (n *ShardManager) IsShardListened(shardID ShardIDType) bool {
@@ -229,7 +237,7 @@ func (n *ShardManager) ListenListeningShards(ctx context.Context) {
 			}
 			// TODO: check if `peerID` is the node itself
 			peerID := msg.GetFrom()
-			if peerID == n.node.ID() {
+			if peerID == n.host.ID() {
 				continue
 			}
 			listeningShards := NewListeningShards().fromBytes(msg.GetData())
@@ -244,21 +252,37 @@ func (n *ShardManager) ListenListeningShards(ctx context.Context) {
 	}()
 }
 
-func (n *ShardManager) SubscribeListeningShards() {
-	listeningShardsSub, err := n.pubsubService.Subscribe(listeningShardTopic)
-	if err != nil {
-		log.Fatal(err)
+// type TopicValidator = pubsub.Validator
+// type TopicHandler = func(ctx context.Context, msg *pubsub.Message)
+func (n *ShardManager) makeShardPrefHandler() TopicHandler {
+	return func(ctx context.Context, msg *pubsub.Message) {
+		shardPref := NewListeningShards().fromBytes(msg.GetData())
+		peerID := msg.GetFrom()
+		n.SetPeerListeningShard(peerID, shardPref.getShards())
 	}
-	n.listeningShardsSub = listeningShardsSub
 }
 
-func (n *ShardManager) UnsubscribeListeningShards() {
-	n.listeningShardsSub.Cancel()
-	n.listeningShardsSub = nil
+func (n *ShardManager) makeShardPrefValidator() TopicValidator {
+	return func(ctx context.Context, msg *pubsub.Message) bool {
+		// do nothing now
+		return true
+	}
+}
+
+func (n *ShardManager) SubscribeListeningShards() error {
+	return n.SubscribeTopic(
+		listeningShardTopic,
+		n.makeShardPrefHandler(),
+		n.makeShardPrefValidator(),
+	)
+}
+
+func (n *ShardManager) UnsubscribeListeningShards() error {
+	return n.UnsubscribeTopic(listeningShardTopic)
 }
 
 func (n *ShardManager) PublishListeningShards() {
-	selfListeningShards, prs := n.peerListeningShards[n.node.ID()]
+	selfListeningShards, prs := n.peerListeningShards[n.host.ID()]
 	if !prs {
 		selfListeningShards = NewListeningShards()
 	}
@@ -267,72 +291,6 @@ func (n *ShardManager) PublishListeningShards() {
 }
 
 // shard collations
-
-func (n *ShardManager) ListenShardCollations(shardID ShardIDType) {
-	if !n.IsShardCollationsSubscribed(shardID) {
-		return
-	}
-	shardCollationsSub := n.shardCollationsSubs[shardID]
-	numCollationReceived := 0
-	go func() {
-		for {
-			// TODO: consider to pass the context from outside?
-			msg, err := shardCollationsSub.Next(context.Background())
-			if err != nil {
-				// log.Print(err)
-				return
-			}
-			// TODO: check if `peerID` is the node itself
-			peerID := msg.GetFrom()
-			if peerID == n.node.ID() {
-				continue
-			}
-			bytes := msg.GetData()
-			collation := pbmsg.Collation{}
-			err = proto.Unmarshal(bytes, &collation)
-			if err != nil {
-				// log.Fatal(err)
-				continue
-			}
-			// TODO: need some check against collations
-			collationHash := getCollationHash(&collation)
-			numCollationReceived++
-			// n.lock.Lock()
-			// n.collations[collationHash] = struct{}{}
-			// // log.Printf(
-			// // 	"%v: current numCollations=%d",
-			// // 	n.node.Name(),
-			// // 	len(n.collations),
-			// // )
-			// n.lock.Unlock()
-			log.Printf(
-				"%v: receive: collation: seqNo=%v, hash=%v, shardId=%v, number=%v",
-				n.node.Name(),
-				numCollationReceived,
-				collationHash[:8],
-				collation.GetShardID(),
-				collation.GetPeriod(),
-			)
-		}
-	}()
-}
-
-func (n *ShardManager) IsShardCollationsSubscribed(shardID ShardIDType) bool {
-	_, prs := n.shardCollationsSubs[shardID]
-	return prs && (n.shardCollationsSubs[shardID] != nil)
-}
-
-func (n *ShardManager) SubscribeShardCollations(shardID ShardIDType) {
-	if n.IsShardCollationsSubscribed(shardID) {
-		return
-	}
-	collationsTopic := getCollationsTopic(shardID)
-	collationsSub, err := n.pubsubService.Subscribe(collationsTopic)
-	if err != nil {
-		log.Fatal(err)
-	}
-	n.shardCollationsSubs[shardID] = collationsSub
-}
 
 func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs []byte) error {
 	// create message data
@@ -345,7 +303,7 @@ func (n *ShardManager) broadcastCollation(shardID ShardIDType, period int, blobs
 }
 
 func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
-	if !n.IsShardCollationsSubscribed(collation.GetShardID()) {
+	if !n.IsCollationSubscribed(collation.GetShardID()) {
 		return fmt.Errorf("broadcasting to a not subscribed shard")
 	}
 	collationsTopic := getCollationsTopic(collation.ShardID)
@@ -362,10 +320,90 @@ func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) err
 	return nil
 }
 
-func (n *ShardManager) UnsubscribeShardCollations(shardID ShardIDType) {
-	// TODO: unsubscribe in pubsub
-	if n.IsShardCollationsSubscribed(shardID) {
-		n.shardCollationsSubs[shardID].Cancel()
-		n.shardCollationsSubs[shardID] = nil
+func extractProtoMsg(pubsubMsg *pubsub.Message, msg proto.Message) error {
+	bytes := pubsubMsg.GetData()
+	err := proto.Unmarshal(bytes, msg)
+	if err != nil {
+		return err
 	}
+	return nil
+}
+
+func (n *ShardManager) makeCollationValidator() TopicValidator {
+	return func(ctx context.Context, msg *pubsub.Message) bool {
+		collation := &pbmsg.Collation{}
+		err := extractProtoMsg(msg, collation)
+		if err != nil {
+			return false
+		}
+		validity, err := n.eventNotifier.NotifyNewCollation(collation)
+		return validity
+	}
+}
+
+func (n *ShardManager) makeCollationHandler() TopicHandler {
+	return func(ctx context.Context, msg *pubsub.Message) {
+		// do nothing now
+	}
+}
+
+func (n *ShardManager) SubscribeTopic(
+	topic string,
+	handler TopicHandler,
+	validator TopicValidator) error {
+	sub, err := n.pubsubService.Subscribe(topic)
+	if err != nil {
+		return err
+	}
+	n.subsLock.Lock()
+	n.subs[topic] = sub
+	n.subsLock.Unlock()
+	if validator != nil {
+		n.pubsubService.RegisterTopicValidator(topic, validator)
+	}
+	go func() {
+		msg, err := sub.Next(n.ctx)
+		if n.ctx.Err() != nil {
+			return
+		}
+		if err != nil {
+			return
+		}
+		handler(n.ctx, msg)
+	}()
+	return nil
+}
+
+func (n *ShardManager) UnsubscribeTopic(topic string) error {
+	n.subsLock.RLock()
+	sub, prs := n.subs[topic]
+	n.subsLock.RUnlock()
+	if !prs {
+		return nil
+	}
+	sub.Cancel()
+	n.subsLock.Lock()
+	delete(n.subs, topic)
+	n.subsLock.Unlock()
+	return nil
+}
+
+func (n *ShardManager) SubscribeCollation(shardID ShardIDType) error {
+	topic := getCollationsTopic(shardID)
+	handler := n.makeCollationHandler()
+	validator := n.makeCollationValidator()
+	return n.SubscribeTopic(topic, handler, validator)
+}
+
+func (n *ShardManager) UnsubscribeCollation(shardID ShardIDType) error {
+	topic := getCollationsTopic(shardID)
+	return n.UnsubscribeTopic(topic)
+}
+
+func (n *ShardManager) IsCollationSubscribed(shardID ShardIDType) bool {
+	n.subsLock.RLock()
+	topic := getCollationsTopic(shardID)
+	_, prs := n.subs[topic]
+	n.subsLock.RUnlock()
+	return prs
 }

@@ -97,10 +97,14 @@ func makeNode(
 		}
 	}
 
-	// Make a host that listens on the given multiaddress
-	node := NewNode(ctx, routedHost, int(randseed))
+	eventNotifier, err := NewRpcEventNotifier(ctx, eventRPCAddr)
+	if err != nil {
+		// TODO: don't use eventNotifier if it is not available
+		eventNotifier = nil
+	}
 
-	log.Printf("I am %s\n", node.GetFullAddr())
+	// Make a host that listens on the given multiaddress
+	node := NewNode(ctx, routedHost, int(randseed), eventNotifier)
 
 	return node, nil
 }
