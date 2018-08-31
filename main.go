@@ -142,7 +142,6 @@ func main() {
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
-	// listenAddr := fmt.Sprintf("%s:%v", *listenIP, *listenPort)
 	rpcAddr := fmt.Sprintf("%s:%v", *rpcIP, *rpcPort)
 
 	if *isClient {
