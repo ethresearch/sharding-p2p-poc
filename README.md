@@ -9,7 +9,7 @@ For more information, please check out the [document](https://github.com/ethrese
 
 ## Install
 
-### Prequisites
+### Prerequisites
 - `go` is installed and properly configured on your machine.  
     - `$GOPATH` variable has been [specified](https://github.com/golang/go/wiki/GOPATH).
     - `$GOPATH/bin/` is part of your `$PATH`.
