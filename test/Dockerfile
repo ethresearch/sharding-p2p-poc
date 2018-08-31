@@ -2,10 +2,9 @@ FROM iron/go:dev as build-env
 
 ADD . /src
 
-RUN go get -d github.com/ethresearch/sharding-p2p-poc/...  
-    go get ./... &&\
+RUN go get -d github.com/ethresearch/sharding-p2p-poc/...
     make deps &&\
-    go build 
+    go build
 
 COPY .sharding-p2p-poc    .
 

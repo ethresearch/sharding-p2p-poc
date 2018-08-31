@@ -26,7 +26,7 @@ We will perform tests using the [Whiteblock](www.whiteblock.io) testing platform
   * High degrees of packet loss  
   * Bandwidth constraints (various bandwidth sizes)  
 * Introduce new nodes to network:  
-  * Add/ remove nodes at random.  
+  * Add/remove nodes at random.  
   * Add/remove nodes at set intervals.  
   * Introduce a high volume of nodes simultaneously.  
 * Partition tolerance  

@@ -1,6 +1,3 @@
-FROM alpine AS base
-RUN apk add --no-cache make gcc musl-dev linux-headers libc6-compat
-
 FROM golang:1.10.3-alpine AS go-builder
 WORKDIR /go/src/github.com/ethresearch/sharding-p2p-poc
 COPY . /go/src/github.com/ethresearch/sharding-p2p-poc
