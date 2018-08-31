@@ -29,7 +29,7 @@ func makeTestingNode(
 	//		2. Avoid reuse of listeningPort in the entire test, to avoid `dial error`s
 	listeningPort := 20000 + nodeCount
 	nodeCount++
-	node, err := makeNode(ctx, listeningPort, number, doBootstrapping, bootstrapPeers)
+	node, err := makeNode(ctx, defaultIP, listeningPort, number, doBootstrapping, bootstrapPeers)
 	if err != nil {
 		t.Error("Failed to create node")
 	}

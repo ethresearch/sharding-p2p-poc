@@ -57,12 +57,13 @@ func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
 // given multiaddress. It will use secio if secio is true.
 func makeNode(
 	ctx context.Context,
+	listenIP string,
 	listenPort int,
 	randseed int,
 	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) (*Node, error) {
 	// FIXME: should be set to localhost if we don't want to expose it to outside
-	listenAddrString := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", listenPort)
+	listenAddrString := fmt.Sprintf("/ip4/%v/tcp/%v", listenIP, listenPort)
 
 	priv, _, err := makeKey(randseed)
 	if err != nil {
@@ -108,7 +109,7 @@ func makeNode(
 const (
 	defaultListenPort = 10000
 	defaultRPCPort    = 13000
-	defaultRPCaddr    = "127.0.0.1"
+	defaultIP         = "127.0.0.1"
 )
 
 func main() {
@@ -120,19 +121,29 @@ func main() {
 	// Parse options from the command line
 
 	seed := flag.Int("seed", 0, "set random seed for id generation")
+	listenIP := flag.String(
+		"ip",
+		defaultIP,
+		"ip listened by the process for incoming connections",
+	)
 	listenPort := flag.Int(
 		"port",
 		defaultListenPort,
 		"port listened by the node for incoming connections",
 	)
+	rpcIP := flag.String(
+		"rpcip",
+		defaultIP,
+		"ip listened by the RPC server",
+	)
 	rpcPort := flag.Int("rpcport", defaultRPCPort, "RPC port listened by the RPC server")
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
 	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
 	isClient := flag.Bool("client", false, "is RPC client or server")
-	rpcAddr := flag.String("rpcaddr", defaultRPCaddr, "RPC address")
 	flag.Parse()
 
-	rpcAddr := fmt.Sprintf("%s:%v", rpcAddr, rpcPort)
+	// listenAddr := fmt.Sprintf("%s:%v", *listenIP, *listenPort)
+	rpcAddr := fmt.Sprintf("%s:%v", *rpcIP, *rpcPort)
 
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
@@ -143,18 +154,19 @@ func main() {
 		} else {
 			bootnodes = convertPeers(strings.Split(*bootnodesStr, ","))
 		}
-		runServer(*listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr)
+		runServer(*listenIP, *listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr)
 	}
 }
 
 func runServer(
+	listenIP string,
 	listenPort int,
 	seed int,
 	doBootstrapping bool,
 	bootnodes []pstore.PeerInfo,
 	rpcAddr string) {
 	ctx := context.Background()
-	node, err := makeNode(ctx, listenPort, seed, doBootstrapping, bootnodes)
+	node, err := makeNode(ctx, listenIP, listenPort, seed, doBootstrapping, bootnodes)
 	if err != nil {
 		log.Fatal(err)
 	}
