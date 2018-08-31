@@ -108,6 +108,7 @@ func makeNode(
 const (
 	defaultListenPort = 10000
 	defaultRPCPort    = 13000
+	defaultRPCaddr    = "127.0.0.1"
 )
 
 func main() {
@@ -124,13 +125,14 @@ func main() {
 		defaultListenPort,
 		"port listened by the node for incoming connections",
 	)
-	rpcPort := flag.Int("rpcport", defaultRPCPort, "rpc port listened by the rpc server")
+	rpcPort := flag.Int("rpcport", defaultRPCPort, "RPC port listened by the RPC server")
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
 	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
 	isClient := flag.Bool("client", false, "is RPC client or server")
+	rpcAddr := flag.String("rpcaddr", defaultRPCaddr, "RPC address")
 	flag.Parse()
 
-	rpcAddr := fmt.Sprintf("127.0.0.1:%v", *rpcPort)
+	rpcAddr := fmt.Sprintf("%s:%v", rpcAddr, rpcPort)
 
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
