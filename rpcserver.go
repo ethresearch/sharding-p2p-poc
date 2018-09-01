@@ -230,7 +230,10 @@ func (s *server) StopServer(
 	time.Sleep(time.Millisecond * 500)
 	span.Finish()
 	log.Printf("Closing RPC server by rpc call...")
-	s.rpcServer.Stop()
+	go func() {
+		time.Sleep(time.Second * 1)
+		s.rpcServer.Stop()
+	}()
 
 	replyMsg := fmt.Sprintf("Closed RPC server")
 	return makePlainResponse(true, replyMsg), nil
