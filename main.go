@@ -18,10 +18,10 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
-	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/appdash"
-	appdashtracer "sourcegraph.com/sourcegraph/appdash/opentracing"
+	opentracing "github.com/opentracing/opentracing-go"
+	jaeger "github.com/uber/jaeger-client-go"
+	jaegerconfig "github.com/uber/jaeger-client-go/config"
 
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
@@ -168,9 +168,22 @@ func runServer(
 		log.Fatal(err)
 	}
 
-	// Set up Opentracing and Appdash tracer
-	remoteCollector := appdash.NewRemoteCollector("localhost:8701")
-	tracer := appdashtracer.NewTracer(remoteCollector)
+	// Set up Opentracing and Jaeger tracer
+	cfg := &jaegerconfig.Configuration{
+		Sampler: &jaegerconfig.SamplerConfig{
+			Type:  "const",
+			Param: 1,
+		},
+		Reporter: &jaegerconfig.ReporterConfig{
+			LogSpans: true,
+		},
+	}
+	tracerName := fmt.Sprintf("RPC Server@%v", rpcAddr)
+	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
+	defer closer.Close()
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
+	}
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
 

@@ -9,6 +9,7 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+	opentracing "github.com/opentracing/opentracing-go"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 )
@@ -119,7 +120,11 @@ func (p *AddPeerProtocol) onResponse(s inet.Stream) {
 	p.done <- true
 }
 
-func (p *AddPeerProtocol) AddPeer(peerAddr string) bool {
+func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) bool {
+	// Add span for AddPeer of AddPeerProtocol
+	span, _ := opentracing.StartSpanFromContext(ctx, "AddPeerProtocol.AddPeer")
+	defer span.Finish()
+
 	peerid, targetAddr := parseAddr(peerAddr)
 	log.Printf("%s: Sending addPeer to: %s....", p.node.Name(), peerid)
 	p.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)

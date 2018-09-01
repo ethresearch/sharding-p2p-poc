@@ -46,8 +46,8 @@ func TestNodeListeningShards(t *testing.T) {
 		t.Errorf("Shard %v haven't been listened", testingShardID)
 	}
 	// test `ListenShard`
-	node.ListenShard(testingShardID)
-	node.PublishListeningShards()
+	node.ListenShard(ctx, testingShardID)
+	node.PublishListeningShards(ctx)
 	if !node.IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been listened", testingShardID)
 	}
@@ -58,8 +58,8 @@ func TestNodeListeningShards(t *testing.T) {
 		)
 	}
 	anotherShardID := testingShardID + 1
-	node.ListenShard(anotherShardID)
-	node.PublishListeningShards()
+	node.ListenShard(ctx, anotherShardID)
+	node.PublishListeningShards(ctx)
 	if !node.IsShardListened(anotherShardID) {
 		t.Errorf("Shard %v should have been listened", anotherShardID)
 	}
@@ -68,8 +68,8 @@ func TestNodeListeningShards(t *testing.T) {
 		t.Errorf("We should have 2 shards being listened, instead of %v", len(shardIDs))
 	}
 	// test `UnlistenShard`
-	node.UnlistenShard(testingShardID)
-	node.PublishListeningShards()
+	node.UnlistenShard(ctx, testingShardID)
+	node.PublishListeningShards(ctx)
 	if node.IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been unlistened", testingShardID)
 	}
@@ -79,8 +79,8 @@ func TestNodeListeningShards(t *testing.T) {
 			testingShardID,
 		)
 	}
-	node.UnlistenShard(testingShardID) // ensure no side effect
-	node.PublishListeningShards()
+	node.UnlistenShard(ctx, testingShardID) // ensure no side effect
+	node.PublishListeningShards(ctx)
 }
 
 func connect(t *testing.T, ctx context.Context, a, b host.Host) {
@@ -111,7 +111,7 @@ func makePeerNodes(t *testing.T, ctx context.Context) (*Node, *Node) {
 	// if node0.IsPeer(node1.ID()) || node1.IsPeer(node0.ID()) {
 	// 	t.Error("Two initial nodes should not be connected without `AddPeer`")
 	// }
-	node0.AddPeer(node1.GetFullAddr())
+	node0.AddPeer(ctx, node1.GetFullAddr())
 	// wait until node0 receive the response from node1
 	<-node0.AddPeerProtocol.done
 	if !node0.IsPeer(node1.ID()) || !node1.IsPeer(node0.ID()) {
@@ -134,17 +134,18 @@ func TestBroadcastCollation(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	node0, node1 := makePeerNodes(t, ctx)
 	var testingShardID ShardIDType = 42
-	node0.ListenShard(testingShardID)
-	node0.PublishListeningShards()
+	node0.ListenShard(ctx, testingShardID)
+	node0.PublishListeningShards(ctx)
 	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
 
-	node1.ListenShard(testingShardID)
-	node1.PublishListeningShards()
+	node1.ListenShard(ctx, testingShardID)
+	node1.PublishListeningShards(ctx)
 	// TODO: fail: if the collation's shardID does not correspond to the protocol's shardID,
 	//		 receiver should reject it
 
 	// success
 	err := node0.broadcastCollation(
+		ctx,
 		testingShardID,
 		1,
 		[]byte("123"),
@@ -158,7 +159,7 @@ func TestBroadcastCollation(t *testing.T) {
 func makePartiallyConnected3Nodes(t *testing.T, ctx context.Context) []*Node {
 	node0, node1 := makePeerNodes(t, ctx)
 	node2 := makeUnbootstrappedNode(t, ctx, 2)
-	node2.AddPeer(node1.GetFullAddr())
+	node2.AddPeer(ctx, node1.GetFullAddr())
 	<-node2.AddPeerProtocol.done
 	if !node1.IsPeer(node2.ID()) || !node2.IsPeer(node1.ID()) {
 		t.Error()
@@ -208,8 +209,8 @@ func TestRequestShardPeer(t *testing.T) {
 	if len(peerIDs) != 0 {
 		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs)
 	}
-	node1.ListenShard(1)
-	node1.ListenShard(2)
+	node1.ListenShard(ctx, 1)
+	node1.ListenShard(ctx, 2)
 	// node1 listens to [1, 2], but we only request shard [1]
 	shardPeers, err = node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1})
 	if err != nil {
@@ -253,8 +254,8 @@ func TestRouting(t *testing.T) {
 	node1 := makeUnbootstrappedNode(t, ctx, 1)
 	node2 := makeUnbootstrappedNode(t, ctx, 2)
 	// node0 <-> node1 <-> node2
-	node0.AddPeer(node1.GetFullAddr())
-	node1.AddPeer(node2.GetFullAddr())
+	node0.AddPeer(ctx, node1.GetFullAddr())
+	node1.AddPeer(ctx, node2.GetFullAddr())
 	time.Sleep(time.Millisecond * 100)
 	if node0.IsPeer(node2.ID()) {
 		t.Error("node0 should not be able to reach node2 before routing")
@@ -314,8 +315,8 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
 		t.Error()
 	}
-	nodes[0].ListenShard(42)
-	nodes[0].PublishListeningShards()
+	nodes[0].ListenShard(ctx, 42)
+	nodes[0].PublishListeningShards(ctx)
 	time.Sleep(time.Millisecond * 100)
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
 		t.Error()
@@ -323,8 +324,9 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	if len(nodes[2].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
 		t.Error()
 	}
-	nodes[1].ListenShard(42)
-	nodes[1].PublishListeningShards()
+	nodes[1].ListenShard(ctx, 42)
+	nodes[1].PublishListeningShards(ctx)
+
 	time.Sleep(time.Millisecond * 100)
 
 	shardPeers42 := nodes[2].shardPrefTable.GetPeersInShard(42)
@@ -338,8 +340,8 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	}
 
 	// test unsetShard with notifying
-	nodes[0].UnlistenShard(42)
-	nodes[0].PublishListeningShards()
+	nodes[0].UnlistenShard(ctx, 42)
+	nodes[0].PublishListeningShards(ctx)
 	time.Sleep(time.Millisecond * 100)
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
 		t.Error()
@@ -406,18 +408,18 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	// wait for mesh built
 	time.Sleep(time.Second * 2)
 	// 0 <-> 1 <-> 2
-	nodes[0].ListenShard(0)
-	nodes[0].PublishListeningShards()
+	nodes[0].ListenShard(ctx, 0)
+	nodes[0].PublishListeningShards(ctx)
 	time.Sleep(time.Millisecond * 100)
-	nodes[2].ListenShard(42)
-	nodes[2].PublishListeningShards()
+	nodes[2].ListenShard(ctx, 42)
+	nodes[2].PublishListeningShards(ctx)
 	time.Sleep(time.Millisecond * 100)
 	connWithNode2 := nodes[0].Network().ConnsToPeer(nodes[2].ID())
 	if len(connWithNode2) != 0 {
 		t.Error("Node 0 shouldn't have connection with node 2")
 	}
-	nodes[0].ListenShard(42)
-	nodes[0].PublishListeningShards()
+	nodes[0].ListenShard(ctx, 42)
+	nodes[0].PublishListeningShards(ctx)
 	time.Sleep(time.Second * 1)
 	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
 	if len(connWithNode2) == 0 {
