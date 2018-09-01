@@ -130,7 +130,7 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) bool {
 		Message: fmt.Sprintf("AddPeer from %s", p.node.Name()),
 	}
 
-	s, err := p.node.NewStream(context.Background(), peerid, addPeerRequest)
+	s, err := p.node.NewStream(ctx, peerid, addPeerRequest)
 	if err != nil {
 		log.Println(err)
 		return false

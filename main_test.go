@@ -84,6 +84,8 @@ func TestNodeListeningShards(t *testing.T) {
 }
 
 func connect(t *testing.T, ctx context.Context, a, b host.Host) {
+	a.Peerstore().AddAddrs(b.ID(), b.Addrs(), pstore.PermanentAddrTTL)
+	b.Peerstore().AddAddrs(a.ID(), a.Addrs(), pstore.PermanentAddrTTL)
 	pinfo := pstore.PeerInfo{
 		ID:    a.ID(),
 		Addrs: a.Addrs(),
@@ -92,9 +94,10 @@ func connect(t *testing.T, ctx context.Context, a, b host.Host) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(a.Network().ConnsToPeer(b.ID())) == 0 {
+	if len(a.Network().ConnsToPeer(b.ID())) == 0 || len(b.Network().ConnsToPeer(a.ID())) == 0 {
 		t.Errorf("Fail to connect %v with %v", a.ID(), b.ID())
 	}
+	time.Sleep(time.Millisecond * 100)
 }
 
 func makeNodes(t *testing.T, ctx context.Context, number int) []*Node {
@@ -131,7 +134,6 @@ func TestBroadcastCollation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	time.Sleep(time.Millisecond * 100)
 	node0, node1 := makePeerNodes(t, ctx)
 	var testingShardID ShardIDType = 42
 	node0.ListenShard(ctx, testingShardID)
@@ -153,7 +155,6 @@ func TestBroadcastCollation(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to send collation %v, %v, %v. reason=%v", testingShardID, 1, 123, err)
 	}
-	time.Sleep(time.Millisecond * 100)
 }
 
 func makePartiallyConnected3Nodes(t *testing.T, ctx context.Context) []*Node {
@@ -250,24 +251,19 @@ func TestRouting(t *testing.T) {
 	// we should be able to see something like
 	// "dht: FindPeer <peer.ID d3wzD2> true routed.go:76", if successfully found the desire peer
 	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
-	node0 := makeUnbootstrappedNode(t, ctx, 0)
-	node1 := makeUnbootstrappedNode(t, ctx, 1)
-	node2 := makeUnbootstrappedNode(t, ctx, 2)
-	// node0 <-> node1 <-> node2
-	node0.AddPeer(ctx, node1.GetFullAddr())
-	node1.AddPeer(ctx, node2.GetFullAddr())
+	nodes := makePartiallyConnected3Nodes(t, ctx)
 	time.Sleep(time.Millisecond * 100)
-	if node0.IsPeer(node2.ID()) {
+	if nodes[0].IsPeer(nodes[2].ID()) {
 		t.Error("node0 should not be able to reach node2 before routing")
 	}
-	node0.Connect(
-		context.Background(),
+	nodes[0].Connect(
+		ctx,
 		pstore.PeerInfo{
-			ID: node2.ID(),
+			ID: nodes[2].ID(),
 		},
 	)
 	time.Sleep(time.Millisecond * 100)
-	if !node2.IsPeer(node0.ID()) {
+	if !nodes[2].IsPeer(nodes[0].ID()) {
 		t.Error("node0 should be a peer of node2 now")
 	}
 }

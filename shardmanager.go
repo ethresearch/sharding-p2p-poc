@@ -92,7 +92,6 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
 	errs := make(chan error, len(pinfos))
 	var wg sync.WaitGroup
-	ctx = context.Background()
 	for _, p := range pinfos {
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
