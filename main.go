@@ -53,8 +53,6 @@ func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
 	return priv, pid, nil
 }
 
-// makeNode creates a LibP2P host with a random peer ID listening on the
-// given multiaddress. It will use secio if secio is true.
 func makeNode(
 	ctx context.Context,
 	listenPort int,

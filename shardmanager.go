@@ -175,7 +175,7 @@ func inShards(shardID ShardIDType, shards []ShardIDType) bool {
 // PubSub related
 //
 
-// Utils
+// General
 
 func (n *ShardManager) SubscribeTopic(
 	topic string,

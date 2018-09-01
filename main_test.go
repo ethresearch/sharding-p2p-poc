@@ -111,9 +111,9 @@ func makePeerNodes(t *testing.T, ctx context.Context) (*Node, *Node) {
 	// if node0.IsPeer(node1.ID()) || node1.IsPeer(node0.ID()) {
 	// 	t.Error("Two initial nodes should not be connected without `AddPeer`")
 	// }
+	time.Sleep(time.Millisecond * 100)
 	node0.AddPeer(ctx, node1.GetFullAddr())
 	// wait until node0 receive the response from node1
-	<-node0.AddPeerProtocol.done
 	if !node0.IsPeer(node1.ID()) || !node1.IsPeer(node0.ID()) {
 		t.Error("Failed to add peer")
 	}
@@ -159,8 +159,8 @@ func TestBroadcastCollation(t *testing.T) {
 func makePartiallyConnected3Nodes(t *testing.T, ctx context.Context) []*Node {
 	node0, node1 := makePeerNodes(t, ctx)
 	node2 := makeUnbootstrappedNode(t, ctx, 2)
+	time.Sleep(time.Millisecond * 100)
 	node2.AddPeer(ctx, node1.GetFullAddr())
-	<-node2.AddPeerProtocol.done
 	if !node1.IsPeer(node2.ID()) || !node2.IsPeer(node1.ID()) {
 		t.Error()
 	}

@@ -6,7 +6,6 @@ import (
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
-	pubsub "github.com/libp2p/go-floodsub"
 	"google.golang.org/grpc"
 )
 
@@ -35,10 +34,6 @@ func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier
 		ctx:    ctx,
 	}
 	return n, nil
-}
-
-func (notifier *rpcEventNotifier) TestValidator(ctx context.Context, msg *pubsub.Message) bool {
-	return false
 }
 
 func (notifier *rpcEventNotifier) NotifyNewCollation(collation *pbmsg.Collation) (bool, error) {

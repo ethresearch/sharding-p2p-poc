@@ -19,17 +19,6 @@ type Node struct {
 	number int
 }
 
-// type NodeOption func(*Node)
-
-// func WithRPCEventHandler(eventRPCAddr string) NodeOption {
-// 	return func(n *Node) {
-// 		rpcEventNotifier, err := NewRpcEventNotifier(n.ctx, eventRPCAddr)
-// 		if err == nil {
-// 			n.eventNotifier = rpcEventNotifier
-// 		}
-// 	}
-// }
-
 // NewNode creates a new node with its implemented protocols
 func NewNode(ctx context.Context, h host.Host, number int, eventNotifier EventNotifier) *Node {
 	node := &Node{

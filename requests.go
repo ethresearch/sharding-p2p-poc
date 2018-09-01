@@ -198,10 +198,6 @@ func (p *RequestProtocol) requestCollation(
 	}
 	data := &pbmsg.CollationResponse{}
 	if !readProtoMessage(data, s) {
-		log.Println(
-			"!@# connection after node1 `s.Reset`: ",
-			p.node.Network().ConnsToPeer(peerID),
-		)
 		return nil, fmt.Errorf("failed to read response proto")
 	}
 	return data.Collation, nil
