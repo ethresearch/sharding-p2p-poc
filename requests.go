@@ -174,12 +174,6 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 		log.Printf("onCollationRequest: failed to send proto message %v", collationResp)
 		return
 	}
-	log.Printf(
-		"%v: Sent %v to %v",
-		p.node.Name(),
-		collationResp,
-		s.Conn().RemotePeer(),
-	)
 }
 
 func (p *RequestProtocol) requestCollation(
@@ -187,10 +181,6 @@ func (p *RequestProtocol) requestCollation(
 	peerID peer.ID,
 	shardID ShardIDType,
 	period int) (*pbmsg.Collation, error) {
-	log.Println(
-		"!@# connection before `NewStream`: ",
-		p.node.Network().ConnsToPeer(peerID),
-	)
 	s, err := p.node.NewStream(
 		ctx,
 		peerID,

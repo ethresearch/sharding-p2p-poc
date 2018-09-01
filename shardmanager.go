@@ -195,11 +195,9 @@ func (n *ShardManager) SubscribeTopic(
 		for {
 			msg, err := sub.Next(n.ctx)
 			if n.ctx.Err() != nil {
-				log.Printf("%v: SubscribeTopic: n.ctx.Err()=%v", n.host.ID(), n.ctx.Err())
 				return
 			}
 			if err != nil {
-				log.Printf("%v: SubscribeTopic: err=%v", n.host.ID(), err)
 				return
 			}
 			handler(n.ctx, msg)
@@ -228,9 +226,6 @@ func (n *ShardManager) makeShardPrefHandler() TopicHandler {
 	return func(ctx context.Context, msg *pubsub.Message) {
 		shardPref := NewListeningShards().fromBytes(msg.GetData())
 		peerID := msg.GetFrom()
-		// if peerID == n.host.ID() {
-		// 	return
-		// }
 		n.shardPrefTable.SetPeerListeningShard(peerID, shardPref)
 	}
 }
