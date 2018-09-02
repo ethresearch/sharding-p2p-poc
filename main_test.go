@@ -2,12 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"net"
 	"testing"
 	"time"
 
+	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	host "github.com/libp2p/go-libp2p-host"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+	"google.golang.org/grpc"
 	// gologging "github.com/whyrusleeping/go-logging"
 )
 
@@ -440,21 +446,104 @@ func TestDHTBootstrapping(t *testing.T) {
 	}
 }
 
-// func TestNotifier(t *testing.T) {
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	defer cancel()
-// 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", defulatEventRPCPort)
-// 	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	collation, err := eventNotifier.GetCollation(1, 2, "123")
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	fmt.Printf("!@# collation=%v\n", collation)
+type eventTestServer struct {
+	pbevent.EventServer
+}
 
-// }
+func makeEventResponse(success bool) *pbevent.Response {
+	var status pbevent.Response_Status
+	if success {
+		status = pbevent.Response_SUCCESS
+	} else {
+		status = pbevent.Response_FAILURE
+	}
+	return &pbevent.Response{Status: status}
+}
+
+func (s *eventTestServer) NotifyCollation(
+	ctx context.Context,
+	req *pbevent.NotifyCollationRequest) (*pbevent.NotifyCollationResponse, error) {
+	res := &pbevent.NotifyCollationResponse{
+		Response: makeEventResponse(true),
+		IsValid:  true,
+	}
+	return res, nil
+}
+func (s *eventTestServer) GetCollation(
+	ctx context.Context,
+	req *pbevent.GetCollationRequest) (*pbevent.GetCollationResponse, error) {
+	collation := &pbmsg.Collation{
+		ShardID: req.ShardID,
+		Period:  req.Period,
+		Blobs:   []byte(fmt.Sprintf("shardID=%v, period=%v", req.ShardID, req.Period)),
+	}
+	res := &pbevent.GetCollationResponse{
+		Response:  makeEventResponse(true),
+		Collation: collation,
+		IsFound:   true,
+	}
+	return res, nil
+}
+
+func runEventServer(ctx context.Context, eventRPCAddr string) {
+	lis, err := net.Listen("tcp", eventRPCAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s := grpc.NewServer()
+	pbevent.RegisterEventServer(s, &eventTestServer{})
+	go s.Serve(lis)
+	go func() {
+		select {
+		case <-ctx.Done():
+			s.Stop()
+		}
+	}()
+}
+
+func TestNotifier(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	eventRPCPort := 55666
+	notifierAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
+	runEventServer(ctx, notifierAddr)
+	time.Sleep(time.Millisecond * 100)
+	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		t.Error(err)
+	}
+
+	shardID := ShardIDType(1)
+	period := 2
+
+	// NotifyCollation
+	collation := &pbmsg.Collation{
+		ShardID: shardID,
+		Period:  PBInt(period),
+		Blobs:   []byte("123"),
+	}
+	isValid, err := eventNotifier.NotifyCollation(collation)
+	if err != nil {
+		if err != nil {
+			t.Errorf("something wrong when calling `eventNotifier.NotifyCollation`: %v", err)
+		}
+	}
+	if !isValid {
+		t.Errorf("wrong reponse from `eventNotifier.NotifyCollation`")
+	}
+
+	// GetCollation
+	collationHash := "123"
+	collationReceived, err := eventNotifier.GetCollation(shardID, period, collationHash)
+	if err != nil {
+		t.Errorf("something wrong when calling `eventNotifier.GetCollation`: %v", err)
+	}
+	if ShardIDType(collationReceived.ShardID) != shardID &&
+		int(collationReceived.Period) != period {
+		t.Errorf("wrong response from `eventNotifier.GetCollation`")
+	}
+}
 
 // FIXME: tests below are just playing with event rpc server in python,
 //	and should be ignored by `go test` due to named without the prefix "Test"

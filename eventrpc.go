@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
@@ -62,6 +63,9 @@ func (notifier *rpcEventNotifier) GetCollation(
 	res, err := notifier.client.GetCollation(notifier.ctx, getCollationReq)
 	if err != nil {
 		return nil, err
+	}
+	if res.Response.Status != pbevent.Response_SUCCESS {
+		return nil, fmt.Errorf("request failed")
 	}
 	if !res.IsFound {
 		return nil, nil
