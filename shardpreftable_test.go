@@ -6,6 +6,35 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 )
 
+func TestListeningShards(t *testing.T) {
+	ls := NewListeningShards()
+	lsSlice := ls.getShards()
+	if len(lsSlice) != 0 {
+		t.Error()
+	}
+
+	ls.setShard(1)
+	lsSlice = ls.getShards()
+	if (len(lsSlice) != 1) || lsSlice[0] != ShardIDType(1) {
+		t.Error()
+	}
+	ls.setShard(42)
+	if len(ls.getShards()) != 2 {
+		t.Error()
+	}
+	// test `toBytes` and `fromBytes`
+	bytes := ls.toBytes()
+	lsNew := ls.fromBytes(bytes)
+	if len(ls.getShards()) != len(lsNew.getShards()) {
+		t.Error()
+	}
+	for index, value := range ls.getShards() {
+		if value != lsNew.getShards()[index] {
+			t.Error()
+		}
+	}
+}
+
 func TestShardPrefTable(t *testing.T) {
 	shardPrefTable := NewShardPrefTable()
 	arbitraryPeerID := peer.ID("123456")
