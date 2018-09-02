@@ -440,6 +440,22 @@ func TestDHTBootstrapping(t *testing.T) {
 	}
 }
 
+// func TestNotifier(t *testing.T) {
+// 	ctx, cancel := context.WithCancel(context.Background())
+// 	defer cancel()
+// 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", defulatEventRPCPort)
+// 	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	collation, err := eventNotifier.GetCollation(1, 2, "123")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	fmt.Printf("!@# collation=%v\n", collation)
+
+// }
+
 // FIXME: tests below are just playing with event rpc server in python,
 //	and should be ignored by `go test` due to named without the prefix "Test"
 

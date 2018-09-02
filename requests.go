@@ -34,21 +34,6 @@ func NewRequestProtocol(node *Node) *RequestProtocol {
 	return p
 }
 
-func getCollation(
-	shardID ShardIDType,
-	period int,
-	collationHash string) (*pbmsg.Collation, error) {
-	// FIXME: fake response for now. Shuld query from the saved data.
-	//	with
-	//    	case specifies `shardID`, `period`
-	//  and case specifies `collationHash`
-	return &pbmsg.Collation{
-		ShardID: PBInt(shardID),
-		Period:  PBInt(period),
-		Blobs:   []byte{},
-	}, nil
-}
-
 // helper method - reads a protobuf go data object from a network stream
 // data: reference of protobuf go data object(not the object itself)
 // s: network stream to read the data from
@@ -153,7 +138,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	}
 	// FIXME: add checks
 	var collation *pbmsg.Collation
-	collation, err := getCollation(
+	collation, err := p.node.getCollation(
 		ShardIDType(data.GetShardID()),
 		int(data.GetPeriod()),
 		data.GetHash(),

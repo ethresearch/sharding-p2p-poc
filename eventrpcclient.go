@@ -14,7 +14,8 @@ var (
 )
 
 type EventNotifier interface {
-	NotifyNewCollation(collation *pbmsg.Collation) (bool, error)
+	NotifyCollation(collation *pbmsg.Collation) (bool, error)
+	GetCollation(shardID ShardIDType, period int, hash string) (*pbmsg.Collation, error)
 }
 
 type rpcEventNotifier struct {
@@ -36,14 +37,37 @@ func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier
 	return n, nil
 }
 
-func (notifier *rpcEventNotifier) NotifyNewCollation(collation *pbmsg.Collation) (bool, error) {
-	newCollationNotifier := &pbevent.NewCollationNotifier{
+func (notifier *rpcEventNotifier) NotifyCollation(collation *pbmsg.Collation) (bool, error) {
+	notifyCollationReq := &pbevent.NotifyCollationRequest{
 		MetaMsg:   &pbevent.MetaMsg{},
 		Collation: collation,
 	}
-	res, err := notifier.client.NewCollation(notifier.ctx, newCollationNotifier)
+	res, err := notifier.client.NotifyCollation(notifier.ctx, notifyCollationReq)
 	if err != nil {
 		return false, err
 	}
 	return res.IsValid, nil
+}
+
+func (notifier *rpcEventNotifier) GetCollation(
+	shardID ShardIDType,
+	period int,
+	hash string) (*pbmsg.Collation, error) {
+	getCollationReq := &pbevent.GetCollationRequest{
+		MetaMsg: &pbevent.MetaMsg{},
+		ShardID: PBInt(shardID),
+		Period:  PBInt(period),
+		Hash:    hash,
+	}
+	res, err := notifier.client.GetCollation(notifier.ctx, getCollationReq)
+	if err != nil {
+		return nil, err
+	}
+	if !res.IsFound {
+		return nil, nil
+	}
+	if res.Collation == nil {
+		return nil, nil
+	}
+	return res.Collation, nil
 }

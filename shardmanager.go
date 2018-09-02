@@ -278,7 +278,7 @@ func (n *ShardManager) makeCollationValidator() TopicValidator {
 		}
 		// FIXME: if no eventNotifier, just skip the verification
 		if n.eventNotifier != nil {
-			validity, _ := n.eventNotifier.NotifyNewCollation(collation)
+			validity, _ := n.eventNotifier.NotifyCollation(collation)
 			return validity
 		}
 		return true
@@ -358,3 +358,25 @@ func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) err
 }
 
 // TODO: beacon chain
+
+// notifier related
+
+func (n *ShardManager) getCollation(
+	shardID ShardIDType,
+	period int,
+	collationHash string) (*pbmsg.Collation, error) {
+
+	if n.eventNotifier != nil {
+		collation, err := n.eventNotifier.GetCollation(shardID, period, collationHash)
+		if err != nil {
+			return nil, err
+		}
+		return collation, nil
+	}
+	// FIXME: currently we just return a fake one if we fail to get content from the `eventNotifier`
+	return &pbmsg.Collation{
+		ShardID: PBInt(shardID),
+		Period:  PBInt(period),
+		Blobs:   []byte{},
+	}, nil
+}
