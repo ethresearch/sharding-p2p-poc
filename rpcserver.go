@@ -225,10 +225,10 @@ func (s *server) StopServer(
 	req *pbrpc.RPCStopServerRequest) (*pbrpc.RPCPlainResponse, error) {
 	// Add span for StopServer
 	span := opentracing.StartSpan("RPCServer.StopServer", opentracing.ChildOf(s.parentSpan.Context()))
+	defer span.Finish()
 
 	log.Printf("rpcserver:StopServer: receive=%v", req)
 	time.Sleep(time.Millisecond * 500)
-	span.Finish()
 	log.Printf("Closing RPC server by rpc call...")
 	go func() {
 		time.Sleep(time.Second * 1)
@@ -243,6 +243,7 @@ func runRPCServer(n *Node, addr string) {
 	// Start a new trace
 	span := opentracing.StartSpan("RPCServer")
 	span.SetTag("Seed Number", n.number)
+	defer span.Finish()
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -262,5 +263,4 @@ func runRPCServer(n *Node, addr string) {
 
 	log.Printf("rpcserver: listening to %v", addr)
 	s.Serve(lis)
-	span.Finish()
 }
