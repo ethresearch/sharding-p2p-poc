@@ -20,9 +20,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmXxivgdXWBfkKPdKDhuRWkrugqEqhXuzyyiZ5DvAy9Zds",
+      "hash": "QmXScvRbYh9X9okLuX9YMnz1HR4WgRTU2hocjBs15nmCNG",
       "name": "go-libp2p-floodsub",
-      "version": "0.9.27"
+      "version": "0.9.21"
     },
     {
       "author": "jbenet",
@@ -31,9 +31,9 @@
       "version": "2.4.1"
     },
     {
-      "hash": "Qmbq7kGxgcpALGLPaWDyTa6KUq5kBUKdEvkvPZcBkJoLex",
+      "hash": "QmcVVHfdyv15GVPk7NrxdWjh2hLVccXnoD8j2tyQShiXJb",
       "name": "go-log",
-      "version": "1.5.6"
+      "version": "1.5.3"
     },
     {
       "author": "whyrusleeping",
