@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"testing"
 	"time"
@@ -448,6 +447,7 @@ func TestDHTBootstrapping(t *testing.T) {
 
 type eventTestServer struct {
 	pbevent.EventServer
+	collations chan *pbmsg.Collation
 }
 
 func makeEventResponse(success bool) *pbevent.Response {
@@ -463,6 +463,9 @@ func makeEventResponse(success bool) *pbevent.Response {
 func (s *eventTestServer) NotifyCollation(
 	ctx context.Context,
 	req *pbevent.NotifyCollationRequest) (*pbevent.NotifyCollationResponse, error) {
+	go func() {
+		s.collations <- req.Collation
+	}()
 	res := &pbevent.NotifyCollationResponse{
 		Response: makeEventResponse(true),
 		IsValid:  true,
@@ -485,13 +488,17 @@ func (s *eventTestServer) GetCollation(
 	return res, nil
 }
 
-func runEventServer(ctx context.Context, eventRPCAddr string) {
+func runEventServer(ctx context.Context, eventRPCAddr string) (*eventTestServer, error) {
 	lis, err := net.Listen("tcp", eventRPCAddr)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	s := grpc.NewServer()
-	pbevent.RegisterEventServer(s, &eventTestServer{})
+	ets := &eventTestServer{collations: make(chan *pbmsg.Collation)}
+	pbevent.RegisterEventServer(
+		s,
+		ets,
+	)
 	go s.Serve(lis)
 	go func() {
 		select {
@@ -499,15 +506,19 @@ func runEventServer(ctx context.Context, eventRPCAddr string) {
 			s.Stop()
 		}
 	}()
+	return ets, nil
 }
 
-func TestNotifier(t *testing.T) {
+func TestEventRPCNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	eventRPCPort := 55666
 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
-	runEventServer(ctx, notifierAddr)
+	_, err := runEventServer(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to run event server")
+	}
 	time.Sleep(time.Millisecond * 100)
 	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
 	if err != nil {
@@ -545,43 +556,56 @@ func TestNotifier(t *testing.T) {
 	}
 }
 
-// FIXME: tests below are just playing with event rpc server in python,
-//	and should be ignored by `go test` due to named without the prefix "Test"
+func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	nodes := makePartiallyConnected3Nodes(t, ctx)
+	shardID := ShardIDType(1)
+	nodes[0].ListenShard(ctx, shardID)
+	nodes[1].ListenShard(ctx, shardID)
+	nodes[2].ListenShard(ctx, shardID)
+	time.Sleep(time.Second * 2)
 
-// func simpleValidator(ctx context.Context, msg *pubsub.Message) bool {
-// 	bytes := msg.GetData()
-// 	collation := &pbmsg.Collation{}
-// 	err := proto.Unmarshal(bytes, collation)
-// 	if err != nil {
-// 		return false
-// 	}
-// 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", defulatEventRPCPort)
-// 	eventNotifier := NewRpcEventNotifier(ctx, )
-// 	validity, err :=
-// 	if err != nil {
-// 		log.Println("!@# 123")
-// 		return false
-// 	}
-// 	return validity
-// }
+	eventRPCPort := 55667
+	notifierAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
+	s1, err := runEventServer(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to run event server")
+	}
+	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to create event notifier")
+	}
+	nodes[1].eventNotifier = eventNotifier
 
-// func TestSimpleValidator(t *testing.T) {
-// 	// t.Skip()
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	defer cancel()
-// 	nodes := makePartiallyConnected3Nodes(t, ctx)
-// 	shardID := ShardIDType(1)
-// 	nodes[0].ListenShard(shardID)
-// 	nodes[1].ListenShard(shardID)
-// 	nodes[2].ListenShard(shardID)
-// 	time.Sleep(time.Second * 2)
-// 	shardTopic := getCollationsTopic(shardID)
-// 	a, _ := NewRpcEventNotifier(ctx, eventRPCAddr)
-// 	ch
-// 	// TODO: should be sure when is the validator executed, and how it will affect relaying
-// 	nodes[1].pubsubService.RegisterTopicValidator(shardTopic, a.TestValidator)
-// 	nodes[2].pubsubService.RegisterTopicValidator(shardTopic, simpleValidator)
-// 	nodes[0].broadcastCollation(shardID, 1, []byte{})
+	eventRPCPort++
+	notifierAddr = fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
+	s2, err := runEventServer(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to run event server")
+	}
+	eventNotifier, err = NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to create event notifier")
+	}
+	nodes[2].eventNotifier = eventNotifier
 
-// 	time.Sleep(time.Millisecond * 100)
-// }
+	// TODO: should be sure when is the validator executed, and how it will affect relaying
+	nodes[0].broadcastCollation(ctx, shardID, 1, []byte{})
+	select {
+	case collation := <-s1.collations:
+		if ShardIDType(collation.ShardID) != shardID || int(collation.Period) != 1 {
+			t.Error("node1 received wrong collations")
+		}
+	case <-time.After(time.Second * 5):
+		t.Error("timeout in node1")
+	}
+	select {
+	case collation := <-s2.collations:
+		if ShardIDType(collation.ShardID) != shardID || int(collation.Period) != 1 {
+			t.Error("node2 received wrong collations")
+		}
+	case <-time.After(time.Second * 5):
+		t.Error("timeout in node2")
+	}
+}
