@@ -70,8 +70,8 @@ func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifi
 
 func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDType) error {
 	// Add span for connectShardNodes of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.connectShardNodes")
-	defer span.Finish()
+	spanctx := logger.Start(ctx, "ShardManager.connectShardNodes")
+	defer logger.Finish(spanctx)
 
 	peerIDs := n.shardPrefTable.GetPeersInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
@@ -116,11 +116,11 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 
 // TODO: return error if it fails
 func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
-	// Add span for AddPeer of ShardManager
-	span, newctx := opentracing.StartSpanFromContext(ctx, "ShardManager.ListenShard")
-	defer span.Finish()
+	// Add span for ListenShard of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.ListenShard")
+	defer logger.Finish(spanctx)
 	// Set shardID info in Baggage
-	span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
+	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
 
 	if n.IsShardListened(shardID) {
 		return
@@ -128,18 +128,19 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
 	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
-	n.connectShardNodes(newctx, shardID)
+	n.connectShardNodes(spanctx, shardID)
 
 	// shardCollations protocol
-	n.SubscribeCollation(newctx, shardID)
+	n.SubscribeCollation(spanctx, shardID)
 }
 
 func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) {
 	// Add span for UnlistenShard of ShardManager
-	span, newctx := opentracing.StartSpanFromContext(ctx, "ShardManager.UnlistenShard")
-	defer span.Finish()
+	spanctx := logger.Start(ctx, "ShardManager.UnlistenShard")
+	defer logger.Finish(spanctx)
 	// Set shardID info in Baggage
-	span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
+	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
+	// span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
 
 	if !n.IsShardListened(shardID) {
 		return
@@ -150,7 +151,7 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) {
 	// TODO: should we remove some peers in this shard?
 
 	// shardCollations protocol
-	n.UnsubscribeCollation(newctx, shardID)
+	n.UnsubscribeCollation(spanctx, shardID)
 }
 
 func (n *ShardManager) GetListeningShards() []ShardIDType {
@@ -250,8 +251,8 @@ func (n *ShardManager) UnsubscribeListeningShards() error {
 
 func (n *ShardManager) PublishListeningShards(ctx context.Context) {
 	// Add span for PublishListeningShards of AddPeerProtocol
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.PublishListeningShards")
-	defer span.Finish()
+	spanctx := logger.Start(ctx, "ShardManager.PublishListeningShards")
+	defer logger.Finish(spanctx)
 
 	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
 	bytes := selfListeningShards.toBytes()
@@ -292,9 +293,9 @@ func (n *ShardManager) makeCollationHandler() TopicHandler {
 }
 
 func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDType) error {
-	// Add span for SubscribeShardCollations of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.SubscribeCollation")
-	defer span.Finish()
+	// Add span for SubscribeCollation of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.SubscribeCollation")
+	defer logger.Finish(spanctx)
 
 	topic := getCollationsTopic(shardID)
 	handler := n.makeCollationHandler()
@@ -303,7 +304,7 @@ func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDTy
 }
 
 func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) error {
-	// Add span for UnsubscribeShardCollations of ShardManager
+	// Add span for UnsubscribeCollation of ShardManager
 	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.UnsubscribeCollation")
 	defer span.Finish()
 
@@ -325,10 +326,10 @@ func (n *ShardManager) broadcastCollation(
 	period int,
 	blobs []byte) error {
 	// Add span for broadcastCollation of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.broadcastCollation")
-	defer span.Finish()
-	span.SetTag("Period", period)
-	span.SetTag("Blobs", blobs)
+	spanctx := logger.Start(ctx, "ShardManager.broadcastCollation")
+	defer logger.Finish(spanctx)
+	logger.SetTag(spanctx, "Period", period)
+	logger.SetTag(spanctx, "Blobs", blobs)
 
 	// create message data
 	data := &pbmsg.Collation{

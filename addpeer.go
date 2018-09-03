@@ -9,7 +9,6 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
-	opentracing "github.com/opentracing/opentracing-go"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 )
@@ -87,8 +86,8 @@ func (p *AddPeerProtocol) onRequest(s inet.Stream) {
 
 func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 	// Add span for AddPeer of AddPeerProtocol
-	span, _ := opentracing.StartSpanFromContext(ctx, "AddPeerProtocol.AddPeer")
-	defer span.Finish()
+	spanctx := logger.Start(ctx, "AddPeerProtocol.AddPeer")
+	defer logger.Finish(spanctx)
 
 	peerid, targetAddr := parseAddr(peerAddr)
 	p.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
