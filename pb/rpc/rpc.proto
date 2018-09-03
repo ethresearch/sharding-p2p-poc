@@ -5,7 +5,6 @@ package proto.rpc;
 import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 
 service Poc {
-  // Sends a greeting
   rpc AddPeer (RPCAddPeerRequest) returns (RPCPlainResponse) {}
   rpc SubscribeShard(RPCSubscribeShardRequest) returns (RPCPlainResponse) {}
   rpc UnsubscribeShard(RPCUnsubscribeShardRequest) returns (RPCPlainResponse) {}

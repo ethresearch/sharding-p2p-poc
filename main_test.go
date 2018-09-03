@@ -566,6 +566,7 @@ func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
 	nodes[2].ListenShard(ctx, shardID)
 	time.Sleep(time.Second * 2)
 
+	// setup 2 event server and notifier(stub), for node1 and node2 respectively
 	eventRPCPort := 55667
 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
 	s1, err := runEventServer(ctx, notifierAddr)
@@ -576,6 +577,7 @@ func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
 	if err != nil {
 		t.Error("failed to create event notifier")
 	}
+	// explicitly set the eventNotifier
 	nodes[1].eventNotifier = eventNotifier
 
 	eventRPCPort++
@@ -588,6 +590,7 @@ func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
 	if err != nil {
 		t.Error("failed to create event notifier")
 	}
+	// explicitly set the eventNotifier
 	nodes[2].eventNotifier = eventNotifier
 
 	// TODO: should be sure when is the validator executed, and how it will affect relaying

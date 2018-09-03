@@ -5,7 +5,6 @@ package proto.event;
 import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 
 service Event {
-    // Sends a greeting
     rpc NotifyCollation (NotifyCollationRequest) returns (NotifyCollationResponse) {}
     rpc GetCollation (GetCollationRequest) returns (GetCollationResponse) {}
   }
