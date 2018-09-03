@@ -259,5 +259,8 @@ func runRPCServer(n *Node, addr string) {
 	}()
 
 	log.Printf("rpcserver: listening to %v", addr)
-	s.Serve(lis)
+	if err := s.Serve(lis); err != nil {
+		logger.FinishWithErr(ctx, err)
+		log.Fatal(err)
+	}
 }

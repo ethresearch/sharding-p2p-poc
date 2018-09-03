@@ -19,22 +19,22 @@ type AddPeerProtocol struct {
 	node *Node // local host
 }
 
-func parseAddr(addrString string) (peerID peer.ID, protocolAddr ma.Multiaddr) {
+func parseAddr(addrString string) (peer.ID, ma.Multiaddr, error) {
 	// The following code extracts target's the peer ID from the
 	// given multiaddress
 	ipfsaddr, err := ma.NewMultiaddr(addrString) // ipfsaddr=/ip4/127.0.0.1/tcp/10000/ipfs/QmVmDaabYcS3pn23KaFjkdw6hkReUUma8sBKqSDHrPYPd2
 	if err != nil {
-		log.Fatalln(err)
+		return "", nil, err
 	}
 
 	pid, err := ipfsaddr.ValueForProtocol(ma.P_IPFS) // pid=QmVmDaabYcS3pn23KaFjkdw6hkReUUma8sBKqSDHrPYPd2
 	if err != nil {
-		log.Fatalln(err)
+		return "", nil, err
 	}
 
 	peerid, err := peer.IDB58Decode(pid) // peerid=<peer.ID VmDaab>
 	if err != nil {
-		log.Fatalln(err)
+		return "", nil, err
 	}
 
 	// Decapsulate the /ipfs/<peerID> part from the target
@@ -43,7 +43,7 @@ func parseAddr(addrString string) (peerID peer.ID, protocolAddr ma.Multiaddr) {
 		fmt.Sprintf("/ipfs/%s", peer.IDB58Encode(peerid)),
 	)
 	targetAddr := ipfsaddr.Decapsulate(targetPeerAddr)
-	return peerid, targetAddr
+	return peerid, targetAddr, nil
 }
 
 func NewAddPeerProtocol(node *Node) *AddPeerProtocol {
@@ -89,7 +89,13 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 	spanctx := logger.Start(ctx, "AddPeerProtocol.AddPeer")
 	defer logger.Finish(spanctx)
 
-	peerid, targetAddr := parseAddr(peerAddr)
+	peerid, targetAddr, err := parseAddr(peerAddr)
+	if err != nil {
+		logger.FinishWithErr(spanctx, err)
+		log.Println(err)
+		return err
+	}
+	log.Printf("%s: Sending addPeer to: %s....", p.node.Name(), peerid)
 	p.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 	// create message data
 	req := &pbmsg.AddPeerRequest{
