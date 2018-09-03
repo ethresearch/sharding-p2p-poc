@@ -97,6 +97,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 		go func(p pstore.PeerInfo) {
 			defer wg.Done()
 			if err := n.host.Connect(ctx, p); err != nil {
+				logger.FinishWithErr(spanctx, err)
 				log.Printf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,

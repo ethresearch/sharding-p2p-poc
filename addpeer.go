@@ -98,6 +98,8 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 
 	s, err := p.node.NewStream(ctx, peerid, addPeerRequest)
 	if err != nil {
+		logger.FinishWithErr(spanctx, err)
+		log.Println(err)
 		return err
 	}
 

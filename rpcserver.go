@@ -58,6 +58,7 @@ func (s *server) AddPeer(
 		targetPID.Pretty(),
 	)
 	if err != nil {
+		logger.FinishWithErr(spanctx, err)
 		log.Fatal(err)
 	}
 
@@ -242,6 +243,7 @@ func runRPCServer(n *Node, addr string) {
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
+		logger.FinishWithErr(ctx, err)
 		log.Fatal(err)
 	}
 	s := grpc.NewServer()
