@@ -27,7 +27,7 @@ type rpcEventNotifier struct {
 func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier, error) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Printf("failed to connect to the rpc server: %v", err)
 		return nil, err
 	}
 	client := pbevent.NewEventClient(conn)

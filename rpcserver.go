@@ -194,7 +194,7 @@ func (s *server) BroadcastCollation(
 func (s *server) SendCollation(
 	ctx context.Context,
 	req *pbrpc.RPCSendCollationRequest) (*pbrpc.RPCPlainResponse, error) {
-	// Add span for BroadcastCollation
+	// Add span for SendCollation
 	span := opentracing.StartSpan("SendCollation", opentracing.ChildOf(s.parentSpan.Context()))
 	defer span.Finish()
 
@@ -202,7 +202,7 @@ func (s *server) SendCollation(
 	collation := req.Collation
 	err := s.node.broadcastCollationMessage(collation)
 	if err != nil {
-		failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
+		failureMsg := fmt.Sprintf("broadcastcollation failed: %v", err)
 		log.Println(failureMsg)
 		return makePlainResponse(false, failureMsg), err
 	}
