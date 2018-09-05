@@ -12,18 +12,12 @@ message Response {
     }
 }
 
-// a protocol define a set of reuqest and responses
 message AddPeerRequest {
-    // method specific data
     string message = 1;
-    // add any data here....
 }
 
 message AddPeerResponse {
-    // response specific data
     Response response = 1;
-
-    // ... add any additional message data here
 }
 
 message Collation {

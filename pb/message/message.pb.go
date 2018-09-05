@@ -38,7 +38,7 @@ func (x Response_Status) String() string {
 	return proto.EnumName(Response_Status_name, int32(x))
 }
 func (Response_Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{0, 0}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{0, 0}
 }
 
 type Response struct {
@@ -53,7 +53,7 @@ func (m *Response) Reset()         { *m = Response{} }
 func (m *Response) String() string { return proto.CompactTextString(m) }
 func (*Response) ProtoMessage()    {}
 func (*Response) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{0}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{0}
 }
 func (m *Response) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Response.Unmarshal(m, b)
@@ -87,9 +87,7 @@ func (m *Response) GetMessage() string {
 	return ""
 }
 
-// a protocol define a set of reuqest and responses
 type AddPeerRequest struct {
-	// method specific data
 	Message              string   `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -100,7 +98,7 @@ func (m *AddPeerRequest) Reset()         { *m = AddPeerRequest{} }
 func (m *AddPeerRequest) String() string { return proto.CompactTextString(m) }
 func (*AddPeerRequest) ProtoMessage()    {}
 func (*AddPeerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{1}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{1}
 }
 func (m *AddPeerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AddPeerRequest.Unmarshal(m, b)
@@ -128,7 +126,6 @@ func (m *AddPeerRequest) GetMessage() string {
 }
 
 type AddPeerResponse struct {
-	// response specific data
 	Response             *Response `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
@@ -139,7 +136,7 @@ func (m *AddPeerResponse) Reset()         { *m = AddPeerResponse{} }
 func (m *AddPeerResponse) String() string { return proto.CompactTextString(m) }
 func (*AddPeerResponse) ProtoMessage()    {}
 func (*AddPeerResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{2}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{2}
 }
 func (m *AddPeerResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AddPeerResponse.Unmarshal(m, b)
@@ -179,7 +176,7 @@ func (m *Collation) Reset()         { *m = Collation{} }
 func (m *Collation) String() string { return proto.CompactTextString(m) }
 func (*Collation) ProtoMessage()    {}
 func (*Collation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{3}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{3}
 }
 func (m *Collation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Collation.Unmarshal(m, b)
@@ -233,7 +230,7 @@ func (m *CollationRequest) Reset()         { *m = CollationRequest{} }
 func (m *CollationRequest) String() string { return proto.CompactTextString(m) }
 func (*CollationRequest) ProtoMessage()    {}
 func (*CollationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{4}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{4}
 }
 func (m *CollationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CollationRequest.Unmarshal(m, b)
@@ -286,7 +283,7 @@ func (m *CollationResponse) Reset()         { *m = CollationResponse{} }
 func (m *CollationResponse) String() string { return proto.CompactTextString(m) }
 func (*CollationResponse) ProtoMessage()    {}
 func (*CollationResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{5}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{5}
 }
 func (m *CollationResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CollationResponse.Unmarshal(m, b)
@@ -331,7 +328,7 @@ func (m *ShardPeerRequest) Reset()         { *m = ShardPeerRequest{} }
 func (m *ShardPeerRequest) String() string { return proto.CompactTextString(m) }
 func (*ShardPeerRequest) ProtoMessage()    {}
 func (*ShardPeerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{6}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{6}
 }
 func (m *ShardPeerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ShardPeerRequest.Unmarshal(m, b)
@@ -370,7 +367,7 @@ func (m *ShardPeerResponse) Reset()         { *m = ShardPeerResponse{} }
 func (m *ShardPeerResponse) String() string { return proto.CompactTextString(m) }
 func (*ShardPeerResponse) ProtoMessage()    {}
 func (*ShardPeerResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{7}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{7}
 }
 func (m *ShardPeerResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ShardPeerResponse.Unmarshal(m, b)
@@ -415,7 +412,7 @@ func (m *ShardPeerResponse_Peers) Reset()         { *m = ShardPeerResponse_Peers
 func (m *ShardPeerResponse_Peers) String() string { return proto.CompactTextString(m) }
 func (*ShardPeerResponse_Peers) ProtoMessage()    {}
 func (*ShardPeerResponse_Peers) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{7, 0}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{7, 0}
 }
 func (m *ShardPeerResponse_Peers) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ShardPeerResponse_Peers.Unmarshal(m, b)
@@ -453,7 +450,7 @@ func (m *NotifyShardsRequest) Reset()         { *m = NotifyShardsRequest{} }
 func (m *NotifyShardsRequest) String() string { return proto.CompactTextString(m) }
 func (*NotifyShardsRequest) ProtoMessage()    {}
 func (*NotifyShardsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_message_74a463cc469a1a8e, []int{8}
+	return fileDescriptor_message_5fc4a6cecb6f8b39, []int{8}
 }
 func (m *NotifyShardsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NotifyShardsRequest.Unmarshal(m, b)
@@ -495,9 +492,9 @@ func init() {
 	proto.RegisterEnum("proto.message.Response_Status", Response_Status_name, Response_Status_value)
 }
 
-func init() { proto.RegisterFile("message.proto", fileDescriptor_message_74a463cc469a1a8e) }
+func init() { proto.RegisterFile("message.proto", fileDescriptor_message_5fc4a6cecb6f8b39) }
 
-var fileDescriptor_message_74a463cc469a1a8e = []byte{
+var fileDescriptor_message_5fc4a6cecb6f8b39 = []byte{
 	// 413 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x92, 0x41, 0xeb, 0xd3, 0x40,
 	0x10, 0xc5, 0xdd, 0xc4, 0xa6, 0xcd, 0xc4, 0xb6, 0xe9, 0x2a, 0x1a, 0x0a, 0x4a, 0xd8, 0x83, 0x04,

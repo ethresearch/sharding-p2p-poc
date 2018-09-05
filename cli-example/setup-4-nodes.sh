@@ -5,14 +5,16 @@ EXE_NAME="./sharding-p2p-poc"
 IP=127.0.0.1
 PORT=10000
 RPCPORT=13000
+EVENTRPCPORT=35566
 
 # spinup_node {seed} {other_params}
 spinup_node() {
     port=$((PORT+$1))
     rpcport=$((RPCPORT+$1))
+    eventrpcport=$((EVENTRPCPORT+$1))
     p=$@
     params=${p[@]:1}
-    $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport $params &
+    $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport -notifierport=$eventrpcport $params &
 }
 
 cli_prompt() {

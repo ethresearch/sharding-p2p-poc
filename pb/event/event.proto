@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package proto.event;
+
+import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
+
+service Event {
+    rpc NotifyCollation (NotifyCollationRequest) returns (NotifyCollationResponse) {}
+    rpc GetCollation (GetCollationRequest) returns (GetCollationResponse) {}
+  }
+
+message MetaMsg {
+}
+
+message NotifyCollationRequest {
+    MetaMsg metaMsg = 1;
+    proto.message.Collation collation = 2;
+}
+
+message NotifyCollationResponse {
+    Response response = 1;
+    bool isValid = 2;
+}
+
+message GetCollationRequest {
+    MetaMsg metaMsg = 1;
+    int64 shardID = 2;
+    int64 period = 3;
+    string hash = 4;
+}
+
+message GetCollationResponse {
+    Response response = 1;
+    proto.message.Collation collation = 3;
+}
+
+
+message Response {
+    Status status = 1;
+    string message = 2;
+
+    enum Status {
+        SUCCESS = 0;
+        FAILURE = 1;
+    }
+}

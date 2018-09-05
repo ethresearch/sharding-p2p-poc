@@ -34,21 +34,6 @@ func NewRequestProtocol(node *Node) *RequestProtocol {
 	return p
 }
 
-func getCollation(
-	shardID ShardIDType,
-	period int,
-	collationHash string) (*pbmsg.Collation, error) {
-	// FIXME: fake response for now. Shuld query from the saved data.
-	//	with
-	//    	case specifies `shardID`, `period`
-	//  and case specifies `collationHash`
-	return &pbmsg.Collation{
-		ShardID: PBInt(shardID),
-		Period:  PBInt(period),
-		Blobs:   []byte{},
-	}, nil
-}
-
 // helper method - reads a protobuf go data object from a network stream
 // data: reference of protobuf go data object(not the object itself)
 // s: network stream to read the data from
@@ -78,14 +63,14 @@ func sendProtoMessage(data proto.Message, s inet.Stream) bool {
 }
 
 func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
+	defer inet.FullClose(s)
 	req := &pbmsg.ShardPeerRequest{}
 	if !readProtoMessage(req, s) {
-		s.Close()
 		return
 	}
 	shardPeers := make(map[ShardIDType]*pbmsg.ShardPeerResponse_Peers)
 	for _, shardID := range req.ShardIDs {
-		peerIDs := p.node.GetNodesInShard(shardID)
+		peerIDs := p.node.shardPrefTable.GetPeersInShard(shardID)
 		peerIDStrings := []string{}
 		for _, peerID := range peerIDs {
 			peerIDStrings = append(peerIDStrings, peerID.Pretty())
@@ -101,7 +86,7 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 	}
 	if !sendProtoMessage(res, s) {
 		log.Printf("onShardPeerRequest: failed to send proto message %v", res)
-		s.Close()
+		return
 	}
 }
 
@@ -145,16 +130,15 @@ func (p *RequestProtocol) requestShardPeer(
 
 // collation request
 func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
-	// defer inet.FullClose(s)
+	defer inet.FullClose(s)
 	// reject if the sender is not a peer
 	data := &pbmsg.CollationRequest{}
 	if !readProtoMessage(data, s) {
-		s.Close()
 		return
 	}
 	// FIXME: add checks
 	var collation *pbmsg.Collation
-	collation, err := getCollation(
+	collation, err := p.node.getCollation(
 		ShardIDType(data.GetShardID()),
 		int(data.GetPeriod()),
 		data.GetHash(),
@@ -173,22 +157,15 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	}
 	if !sendProtoMessage(collationResp, s) {
 		log.Printf("onCollationRequest: failed to send proto message %v", collationResp)
-		s.Close()
+		return
 	}
-	log.Printf(
-		"%v: Sent %v to %v",
-		p.node.Name(),
-		collationResp,
-		s.Conn().RemotePeer(),
-	)
 }
 
 func (p *RequestProtocol) requestCollation(
 	ctx context.Context,
 	peerID peer.ID,
 	shardID ShardIDType,
-	period int,
-	blobs string) (*pbmsg.Collation, error) {
+	period int) (*pbmsg.Collation, error) {
 	s, err := p.node.NewStream(
 		ctx,
 		peerID,

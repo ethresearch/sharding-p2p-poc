@@ -106,6 +106,10 @@ make down-dev
 make test-dev
 ```
 
+### Setting up tracer
+
+See [tracer](./docs/tracer.md) in the document.
+
 ## Contributing
 
 Issues, PRs, or any kind of help are definitely welcomed.

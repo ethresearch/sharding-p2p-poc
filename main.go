@@ -18,10 +18,10 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
-	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/appdash"
-	appdashtracer "sourcegraph.com/sourcegraph/appdash/opentracing"
+	opentracing "github.com/opentracing/opentracing-go"
+	jaeger "github.com/uber/jaeger-client-go"
+	jaegerconfig "github.com/uber/jaeger-client-go/config"
 
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
@@ -53,13 +53,12 @@ func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
 	return priv, pid, nil
 }
 
-// makeNode creates a LibP2P host with a random peer ID listening on the
-// given multiaddress. It will use secio if secio is true.
 func makeNode(
 	ctx context.Context,
 	listenIP string,
 	listenPort int,
 	randseed int,
+	eventNotifier EventNotifier,
 	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) (*Node, error) {
 	// FIXME: should be set to localhost if we don't want to expose it to outside
@@ -99,9 +98,7 @@ func makeNode(
 	}
 
 	// Make a host that listens on the given multiaddress
-	node := NewNode(ctx, routedHost, int(randseed))
-
-	log.Printf("I am %s\n", node.GetFullAddr())
+	node := NewNode(ctx, routedHost, int(randseed), eventNotifier)
 
 	return node, nil
 }
@@ -137,12 +134,18 @@ func main() {
 		"ip listened by the RPC server",
 	)
 	rpcPort := flag.Int("rpcport", defaultRPCPort, "RPC port listened by the RPC server")
+	notifierPort := flag.Int(
+		"notifierport",
+		defulatEventRPCPort,
+		"notifier port listened by the event rpc server",
+	)
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
 	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
-	rpcAddr := fmt.Sprintf("%s:%v", *rpcIP, *rpcPort)
+	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
+	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
 
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
@@ -153,7 +156,7 @@ func main() {
 		} else {
 			bootnodes = convertPeers(strings.Split(*bootnodesStr, ","))
 		}
-		runServer(*listenIP, *listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr)
+		runServer(*listenIP, *listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr, notifierAddr)
 	}
 }
 
@@ -163,16 +166,43 @@ func runServer(
 	seed int,
 	doBootstrapping bool,
 	bootnodes []pstore.PeerInfo,
-	rpcAddr string) {
+	rpcAddr string,
+	notifierAddr string) {
 	ctx := context.Background()
-	node, err := makeNode(ctx, listenIP, listenPort, seed, doBootstrapping, bootnodes)
+	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		// TODO: don't use eventNotifier if it is not available
+		eventNotifier = nil
+	}
+	node, err := makeNode(
+		ctx,
+		listenIP,
+		listenPort,
+		seed,
+		eventNotifier,
+		doBootstrapping,
+		bootnodes,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Set up Opentracing and Appdash tracer
-	remoteCollector := appdash.NewRemoteCollector("localhost:8701")
-	tracer := appdashtracer.NewTracer(remoteCollector)
+	// Set up Opentracing and Jaeger tracer
+	cfg := &jaegerconfig.Configuration{
+		Sampler: &jaegerconfig.SamplerConfig{
+			Type:  "const",
+			Param: 1,
+		},
+		Reporter: &jaegerconfig.ReporterConfig{
+			LogSpans: true,
+		},
+	}
+	tracerName := fmt.Sprintf("RPC Server@%v", rpcAddr)
+	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
+	defer closer.Close()
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
+	}
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
 
