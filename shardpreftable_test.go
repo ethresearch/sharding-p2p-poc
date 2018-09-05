@@ -28,8 +28,9 @@ func TestListeningShards(t *testing.T) {
 	if len(ls.getShards()) != len(lsNew.getShards()) {
 		t.Error()
 	}
+	lsNewSlice := lsNew.getShards()
 	for index, value := range ls.getShards() {
-		if value != lsNew.getShards()[index] {
+		if value != lsNewSlice[index] {
 			t.Error()
 		}
 	}
