@@ -16,7 +16,7 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	addPeerReq := &pbrpc.RPCAddPeerReq{
+	addPeerReq := &pbrpc.RPCAddPeerRequest{
 		Ip:   ipAddr,
 		Port: PBInt(port),
 		Seed: PBInt(seed),
@@ -36,7 +36,7 @@ func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	subscribeShardReq := &pbrpc.RPCSubscribeShardReq{
+	subscribeShardReq := &pbrpc.RPCSubscribeShardRequest{
 		ShardIDs: shardIDs,
 	}
 	log.Printf("rpcclient:ShardReq: sending=%v", subscribeShardReq)
@@ -54,7 +54,7 @@ func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	unsubscribeShardReq := &pbrpc.RPCUnsubscribeShardReq{
+	unsubscribeShardReq := &pbrpc.RPCUnsubscribeShardRequest{
 		ShardIDs: shardIDs,
 	}
 	log.Printf("rpcclient:UnsubscribeShardReq: sending=%v", unsubscribeShardReq)
@@ -72,7 +72,7 @@ func callRPCGetSubscribedShard(rpcAddr string) {
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	getSubscribedShardReq := &pbrpc.RPCGetSubscribedShardReq{}
+	getSubscribedShardReq := &pbrpc.RPCGetSubscribedShardRequest{}
 	log.Printf("rpcclient:GetSubscribedShard: sending=%v", getSubscribedShardReq)
 	res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq)
 	if err != nil {
@@ -93,7 +93,7 @@ func callRPCBroadcastCollation(
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	broadcastCollationReq := &pbrpc.RPCBroadcastCollationReq{
+	broadcastCollationReq := &pbrpc.RPCBroadcastCollationRequest{
 		ShardID: shardID,
 		Number:  PBInt(numCollations),
 		Size:    PBInt(collationSize),
@@ -114,7 +114,7 @@ func callRPCStopServer(rpcAddr string) {
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	stopServerReq := &pbrpc.RPCStopServerReq{}
+	stopServerReq := &pbrpc.RPCStopServerRequest{}
 	log.Printf("rpcclient:StopServerReq: sending=%v", stopServerReq)
 	res, err := client.StopServer(context.Background(), stopServerReq)
 	if err != nil {

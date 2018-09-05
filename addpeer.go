@@ -20,8 +20,7 @@ const addPeerResponse = "/addPeer/response/0.0.1"
 
 // AddPeerProtocol type
 type AddPeerProtocol struct {
-	node *Node     // local host
-	done chan bool // only for demo purposes to stop main from terminating
+	node *Node // local host
 }
 
 func parseAddr(addrString string) (peerID peer.ID, protocolAddr ma.Multiaddr) {
@@ -54,7 +53,6 @@ func parseAddr(addrString string) (peerID peer.ID, protocolAddr ma.Multiaddr) {
 func NewAddPeerProtocol(node *Node) *AddPeerProtocol {
 	p := &AddPeerProtocol{
 		node: node,
-		done: make(chan bool),
 	}
 	node.SetStreamHandler(addPeerRequest, p.onRequest)
 	node.SetStreamHandler(addPeerResponse, p.onResponse)
@@ -94,7 +92,7 @@ func (p *AddPeerProtocol) onRequest(s inet.Stream) {
 		pstore.PermanentAddrTTL,
 	)
 
-	sResponse, err := p.node.NewStream(context.Background(), s.Conn().RemotePeer(), addPeerResponse)
+	sResponse, err := p.node.NewStream(p.node.ctx, s.Conn().RemotePeer(), addPeerResponse)
 	if err != nil {
 		log.Println(err)
 		return
@@ -117,7 +115,6 @@ func (p *AddPeerProtocol) onResponse(s inet.Stream) {
 		s.Conn().RemotePeer(),
 		data.Response.Status,
 	)
-	p.done <- true
 }
 
 func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) bool {
@@ -133,7 +130,7 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) bool {
 		Message: fmt.Sprintf("AddPeer from %s", p.node.Name()),
 	}
 
-	s, err := p.node.NewStream(context.Background(), peerid, addPeerRequest)
+	s, err := p.node.NewStream(ctx, peerid, addPeerRequest)
 	if err != nil {
 		log.Println(err)
 		return false

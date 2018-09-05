@@ -2,56 +2,58 @@ syntax = "proto3";
 
 package proto.rpc;
 
+import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
+
 service Poc {
-  // Sends a greeting
-  rpc AddPeer (RPCAddPeerReq) returns (RPCReply) {}
-  rpc SubscribeShard(RPCSubscribeShardReq) returns (RPCReply) {}
-  rpc UnsubscribeShard(RPCUnsubscribeShardReq) returns (RPCReply) {}
-  rpc GetSubscribedShard(RPCGetSubscribedShardReq) returns (RPCGetSubscribedShardReply) {}
-  rpc BroadcastCollation(RPCBroadcastCollationReq) returns (RPCReply) {}
-  rpc StopServer(RPCStopServerReq) returns (RPCReply) {}
+  rpc AddPeer (RPCAddPeerRequest) returns (RPCPlainResponse) {}
+  rpc SubscribeShard(RPCSubscribeShardRequest) returns (RPCPlainResponse) {}
+  rpc UnsubscribeShard(RPCUnsubscribeShardRequest) returns (RPCPlainResponse) {}
+  rpc GetSubscribedShard(RPCGetSubscribedShardRequest) returns (RPCGetSubscribedShardResponse) {}
+  rpc BroadcastCollation(RPCBroadcastCollationRequest) returns (RPCPlainResponse) {}
+  rpc SendCollation(RPCSendCollationRequest) returns (RPCPlainResponse) {}
+  rpc StopServer(RPCStopServerRequest) returns (RPCPlainResponse) {}
 }
 
-// AddPeer
-message RPCAddPeerReq {
+// Request
+message RPCAddPeerRequest {
   string ip = 1;
   int64 port = 2;
   int64 seed = 3;
 }
-
-// SubscribeShard
-message RPCSubscribeShardReq {
+message RPCSubscribeShardRequest {
   repeated int64 shardIDs = 1;
 }
-// UnsubscribeShard
-message RPCUnsubscribeShardReq {
+message RPCUnsubscribeShardRequest {
   repeated int64 shardIDs = 1;
 }
-// GetSubscribedShard
-message RPCGetSubscribedShardReq {
+message RPCGetSubscribedShardRequest {
 }
-message RPCGetSubscribedShardReply {
-  repeated int64 shardIDs = 1;
-  bool status = 2;
-}
-// BroadcastCollation
-message RPCBroadcastCollationReq {
+message RPCBroadcastCollationRequest {
   int64 shardID = 1;
   int64 number = 2;
   int64 size = 3;
   int64 period = 4;
 }
-// RequestCollation
-message RPCRequestCollationReq {
-  int64 shardID = 1;
-  int64 period = 4;
+message RPCSendCollationRequest {
+  proto.message.Collation collation = 1;
 }
-// StopServer
-message RPCStopServerReq {
+message RPCStopServerRequest {
 }
 
+// Response
+message Response {
+  Status status = 1;
+  string message = 2;
 
-message RPCReply {
-  string message = 1;
-  bool status = 2;
+  enum Status {
+      SUCCESS = 0;
+      FAILURE = 1;
+  }
+}
+message RPCPlainResponse {
+  Response response = 1;
+}
+message RPCGetSubscribedShardResponse {
+  Response response = 1;
+  repeated int64 shardIDs = 2;
 }
