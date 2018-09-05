@@ -31,13 +31,14 @@ message GetCollationRequest {
 
 message GetCollationResponse {
     Response response = 1;
-    bool isFound = 2;
     proto.message.Collation collation = 3;
 }
 
 
 message Response {
     Status status = 1;
+    string message = 2;
+
     enum Status {
         SUCCESS = 0;
         FAILURE = 1;

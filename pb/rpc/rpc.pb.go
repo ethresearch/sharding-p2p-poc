@@ -44,7 +44,7 @@ func (x Response_Status) String() string {
 	return proto.EnumName(Response_Status_name, int32(x))
 }
 func (Response_Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{7, 0}
+	return fileDescriptor_rpc_277a2f537a741991, []int{7, 0}
 }
 
 // Request
@@ -61,7 +61,7 @@ func (m *RPCAddPeerRequest) Reset()         { *m = RPCAddPeerRequest{} }
 func (m *RPCAddPeerRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCAddPeerRequest) ProtoMessage()    {}
 func (*RPCAddPeerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{0}
+	return fileDescriptor_rpc_277a2f537a741991, []int{0}
 }
 func (m *RPCAddPeerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCAddPeerRequest.Unmarshal(m, b)
@@ -113,7 +113,7 @@ func (m *RPCSubscribeShardRequest) Reset()         { *m = RPCSubscribeShardReque
 func (m *RPCSubscribeShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCSubscribeShardRequest) ProtoMessage()    {}
 func (*RPCSubscribeShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{1}
+	return fileDescriptor_rpc_277a2f537a741991, []int{1}
 }
 func (m *RPCSubscribeShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCSubscribeShardRequest.Unmarshal(m, b)
@@ -151,7 +151,7 @@ func (m *RPCUnsubscribeShardRequest) Reset()         { *m = RPCUnsubscribeShardR
 func (m *RPCUnsubscribeShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCUnsubscribeShardRequest) ProtoMessage()    {}
 func (*RPCUnsubscribeShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{2}
+	return fileDescriptor_rpc_277a2f537a741991, []int{2}
 }
 func (m *RPCUnsubscribeShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCUnsubscribeShardRequest.Unmarshal(m, b)
@@ -188,7 +188,7 @@ func (m *RPCGetSubscribedShardRequest) Reset()         { *m = RPCGetSubscribedSh
 func (m *RPCGetSubscribedShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCGetSubscribedShardRequest) ProtoMessage()    {}
 func (*RPCGetSubscribedShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{3}
+	return fileDescriptor_rpc_277a2f537a741991, []int{3}
 }
 func (m *RPCGetSubscribedShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCGetSubscribedShardRequest.Unmarshal(m, b)
@@ -222,7 +222,7 @@ func (m *RPCBroadcastCollationRequest) Reset()         { *m = RPCBroadcastCollat
 func (m *RPCBroadcastCollationRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCBroadcastCollationRequest) ProtoMessage()    {}
 func (*RPCBroadcastCollationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{4}
+	return fileDescriptor_rpc_277a2f537a741991, []int{4}
 }
 func (m *RPCBroadcastCollationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCBroadcastCollationRequest.Unmarshal(m, b)
@@ -281,7 +281,7 @@ func (m *RPCSendCollationRequest) Reset()         { *m = RPCSendCollationRequest
 func (m *RPCSendCollationRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCSendCollationRequest) ProtoMessage()    {}
 func (*RPCSendCollationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{5}
+	return fileDescriptor_rpc_277a2f537a741991, []int{5}
 }
 func (m *RPCSendCollationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCSendCollationRequest.Unmarshal(m, b)
@@ -318,7 +318,7 @@ func (m *RPCStopServerRequest) Reset()         { *m = RPCStopServerRequest{} }
 func (m *RPCStopServerRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCStopServerRequest) ProtoMessage()    {}
 func (*RPCStopServerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{6}
+	return fileDescriptor_rpc_277a2f537a741991, []int{6}
 }
 func (m *RPCStopServerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCStopServerRequest.Unmarshal(m, b)
@@ -351,7 +351,7 @@ func (m *Response) Reset()         { *m = Response{} }
 func (m *Response) String() string { return proto.CompactTextString(m) }
 func (*Response) ProtoMessage()    {}
 func (*Response) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{7}
+	return fileDescriptor_rpc_277a2f537a741991, []int{7}
 }
 func (m *Response) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Response.Unmarshal(m, b)
@@ -396,7 +396,7 @@ func (m *RPCPlainResponse) Reset()         { *m = RPCPlainResponse{} }
 func (m *RPCPlainResponse) String() string { return proto.CompactTextString(m) }
 func (*RPCPlainResponse) ProtoMessage()    {}
 func (*RPCPlainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{8}
+	return fileDescriptor_rpc_277a2f537a741991, []int{8}
 }
 func (m *RPCPlainResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCPlainResponse.Unmarshal(m, b)
@@ -435,7 +435,7 @@ func (m *RPCGetSubscribedShardResponse) Reset()         { *m = RPCGetSubscribedS
 func (m *RPCGetSubscribedShardResponse) String() string { return proto.CompactTextString(m) }
 func (*RPCGetSubscribedShardResponse) ProtoMessage()    {}
 func (*RPCGetSubscribedShardResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_e786918bce3d40d5, []int{9}
+	return fileDescriptor_rpc_277a2f537a741991, []int{9}
 }
 func (m *RPCGetSubscribedShardResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCGetSubscribedShardResponse.Unmarshal(m, b)
@@ -495,7 +495,6 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type PocClient interface {
-	// Sends a greeting
 	AddPeer(ctx context.Context, in *RPCAddPeerRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
 	SubscribeShard(ctx context.Context, in *RPCSubscribeShardRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
 	UnsubscribeShard(ctx context.Context, in *RPCUnsubscribeShardRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
@@ -578,7 +577,6 @@ func (c *pocClient) StopServer(ctx context.Context, in *RPCStopServerRequest, op
 
 // PocServer is the server API for Poc service.
 type PocServer interface {
-	// Sends a greeting
 	AddPeer(context.Context, *RPCAddPeerRequest) (*RPCPlainResponse, error)
 	SubscribeShard(context.Context, *RPCSubscribeShardRequest) (*RPCPlainResponse, error)
 	UnsubscribeShard(context.Context, *RPCUnsubscribeShardRequest) (*RPCPlainResponse, error)
@@ -755,9 +753,9 @@ var _Poc_serviceDesc = grpc.ServiceDesc{
 	Metadata: "rpc.proto",
 }
 
-func init() { proto.RegisterFile("rpc.proto", fileDescriptor_rpc_e786918bce3d40d5) }
+func init() { proto.RegisterFile("rpc.proto", fileDescriptor_rpc_277a2f537a741991) }
 
-var fileDescriptor_rpc_e786918bce3d40d5 = []byte{
+var fileDescriptor_rpc_277a2f537a741991 = []byte{
 	// 553 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x5d, 0x9b, 0xa9, 0x6b, 0xef, 0xf4, 0xab, 0xfa, 0x33, 0x68, 0x44, 0x61, 0x40, 0x65, 0x84,

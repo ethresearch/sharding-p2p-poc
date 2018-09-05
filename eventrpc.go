@@ -65,13 +65,7 @@ func (notifier *rpcEventNotifier) GetCollation(
 		return nil, err
 	}
 	if res.Response.Status != pbevent.Response_SUCCESS {
-		return nil, fmt.Errorf("request failed")
-	}
-	if !res.IsFound {
-		return nil, nil
-	}
-	if res.Collation == nil {
-		return nil, nil
+		return nil, fmt.Errorf("request failed: %v", res.Response.Message)
 	}
 	return res.Collation, nil
 }

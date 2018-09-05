@@ -452,12 +452,15 @@ type eventTestServer struct {
 
 func makeEventResponse(success bool) *pbevent.Response {
 	var status pbevent.Response_Status
+	var msg string
 	if success {
 		status = pbevent.Response_SUCCESS
+		msg = ""
 	} else {
 		status = pbevent.Response_FAILURE
+		msg = "failed"
 	}
-	return &pbevent.Response{Status: status}
+	return &pbevent.Response{Status: status, Message: msg}
 }
 
 func (s *eventTestServer) NotifyCollation(
@@ -483,7 +486,6 @@ func (s *eventTestServer) GetCollation(
 	res := &pbevent.GetCollationResponse{
 		Response:  makeEventResponse(true),
 		Collation: collation,
-		IsFound:   true,
 	}
 	return res, nil
 }
