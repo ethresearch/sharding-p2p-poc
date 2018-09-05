@@ -90,21 +90,19 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	}
 
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
-	errs := make(chan error, len(pinfos))
 	var wg sync.WaitGroup
 	for _, p := range pinfos {
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
 			defer wg.Done()
 			if err := n.host.Connect(ctx, p); err != nil {
-				logger.FinishWithErr(spanctx, err)
+				logger.SetErr(spanctx, err)
 				log.Printf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,
 					shardID,
 					err,
 				)
-				errs <- err
 				return
 			}
 			log.Printf("Successfully connected peer %v in shard %v", p.ID, shardID)
@@ -129,7 +127,9 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
 	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
-	n.connectShardNodes(spanctx, shardID)
+	if err := n.connectShardNodes(spanctx, shardID); err != nil {
+		logger.SetErr(spanctx, err)
+	}
 
 	// shardCollations protocol
 	n.SubscribeCollation(spanctx, shardID)
@@ -257,7 +257,9 @@ func (n *ShardManager) PublishListeningShards(ctx context.Context) {
 
 	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
 	bytes := selfListeningShards.toBytes()
-	n.pubsubService.Publish(listeningShardTopic, bytes)
+	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
+		logger.SetErr(spanctx, err)
+	}
 }
 
 // Collations
@@ -338,7 +340,11 @@ func (n *ShardManager) broadcastCollation(
 		Period:  PBInt(period),
 		Blobs:   blobs,
 	}
-	return n.broadcastCollationMessage(data)
+	err := n.broadcastCollationMessage(data)
+	if err != nil {
+		logger.SetErr(spanctx, err)
+	}
+	return err
 }
 
 func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
