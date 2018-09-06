@@ -59,11 +59,8 @@ func (s *server) AddPeer(
 	)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err))
-		log.Fatal(err)
+		log.Fatalf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
 	}
-
-	// Set peer info in Baggage
-	logger.SetTag(spanctx, "peerAddr", mAddr)
 
 	var replyMsg string
 	err = s.node.AddPeer(spanctx, mAddr)
@@ -71,11 +68,10 @@ func (s *server) AddPeer(
 	if success {
 		replyMsg = fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 		// Tag the span with peer info
-		logger.SetTag(spanctx, "Peer info", fmt.Sprintf("%v:%v", req.Ip, req.Port))
+		logger.SetTag(spanctx, "Added peer", fmt.Sprintf("%v:%v", req.Ip, req.Port))
 	} else {
 		replyMsg = fmt.Sprintf("Failed to add Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 	}
-	logger.SetTag(spanctx, "Status", success)
 	return makePlainResponse(success, replyMsg), nil
 }
 
@@ -85,12 +81,16 @@ func (s *server) SubscribeShard(
 	// Add span for SubscribeShard
 	spanctx := logger.Start(s.ctx, "RPCServer.SubscribeShard")
 	defer logger.Finish(spanctx)
-	// Tag the span with shardIDs to be subscribed to
-	logger.SetTag(spanctx, "req.ShardIDs", fmt.Sprintf("%v", req.ShardIDs))
 
+	subscribedShardID := make([]int64, 0)
 	log.Printf("rpcserver:SubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.ListenShard(spanctx, shardID)
+		if err := s.node.ListenShard(spanctx, shardID); err != nil {
+			logger.SetErr(spanctx, fmt.Errorf("Failed to listen to shard %v", shardID))
+			log.Printf("Failed to listen to shard %v", shardID)
+		} else {
+			subscribedShardID = append(subscribedShardID, shardID)
+		}
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards(spanctx)
@@ -98,6 +98,9 @@ func (s *server) SubscribeShard(
 		"Subscribed shard %v",
 		req.ShardIDs,
 	)
+
+	// Tag the shardIDs which are successfully subscribed to
+	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("%v", subscribedShardID))
 	return makePlainResponse(true, replyMsg), nil
 }
 
@@ -108,9 +111,15 @@ func (s *server) UnsubscribeShard(
 	spanctx := logger.Start(s.ctx, "RPCServer.UnsubscribeShard")
 	defer logger.Finish(spanctx)
 
+	unsubscribedShardID := make([]int64, 0)
 	log.Printf("rpcserver:UnsubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.UnlistenShard(spanctx, shardID)
+		if err := s.node.UnlistenShard(spanctx, shardID); err != nil {
+			logger.SetErr(spanctx, fmt.Errorf("Failed to unlisten shard %v", shardID))
+			log.Printf("Failed to unlisten shard %v", shardID)
+		} else {
+			unsubscribedShardID = append(unsubscribedShardID, shardID)
+		}
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards(spanctx)
@@ -119,7 +128,7 @@ func (s *server) UnsubscribeShard(
 		req.ShardIDs,
 	)
 	// Tag the span with shard info
-	logger.SetTag(spanctx, "Shard info", fmt.Sprintf("shard %v", req.ShardIDs))
+	logger.SetTag(spanctx, "Shard info", fmt.Sprintf("shard %v", unsubscribedShardID))
 	return makePlainResponse(true, replyMsg), nil
 }
 
@@ -172,6 +181,7 @@ func (s *server) BroadcastCollation(
 		if err != nil {
 			failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
 			log.Println(failureMsg)
+			logger.FinishWithErr(spanctx, fmt.Errorf("Failed to broadcast collation"))
 			return makePlainResponse(false, failureMsg), err
 		}
 	}
@@ -181,7 +191,7 @@ func (s *server) BroadcastCollation(
 		sizeInBytes,
 		shardID,
 	)
-	// Tag the span with collations info
+	// Tag collations info if nothing goes wrong
 	logger.SetTag(spanctx, "numCollations", numCollations)
 	logger.SetTag(spanctx, "sizeInBytes", sizeInBytes)
 	return makePlainResponse(true, replyMsg), nil
@@ -200,6 +210,7 @@ func (s *server) SendCollation(
 	if err != nil {
 		failureMsg := fmt.Sprintf("broadcastcollation failed: %v", err)
 		log.Println(failureMsg)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
 		return makePlainResponse(false, failureMsg), err
 	}
 	replyMsg := fmt.Sprintf(
@@ -208,7 +219,7 @@ func (s *server) SendCollation(
 		collation.Period,
 		len(collation.Blobs),
 	)
-	// Tag the span with collations info
+	// Tag collation info if nothing goes wrong
 	logger.SetTag(spanctx, "Shard", collation.ShardID)
 	logger.SetTag(spanctx, "Period of collation", collation.Period)
 	logger.SetTag(spanctx, "Blobs of collation", collation.Blobs)
@@ -244,7 +255,7 @@ func runRPCServer(n *Node, addr string) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to set up a service listening on %s, err: %v", addr, err))
-		log.Fatal(err)
+		log.Fatalf("Failed to set up a service listening on %s, err: %v", addr, err)
 	}
 	s := grpc.NewServer()
 	pbrpc.RegisterPocServer(s, &server{node: n, ctx: ctx, rpcServer: s})
@@ -261,6 +272,6 @@ func runRPCServer(n *Node, addr string) {
 	log.Printf("rpcserver: listening to %v", addr)
 	if err := s.Serve(lis); err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serve the RPC server, err: %v", err))
-		log.Fatal(err)
+		log.Fatalf("Failed to serve the RPC server, err: %v", err)
 	}
 }

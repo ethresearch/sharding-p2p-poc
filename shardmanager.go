@@ -119,36 +119,42 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	return nil
 }
 
-// TODO: return error if it fails
-func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
+func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) error {
 	// Add span for ListenShard of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.ListenShard")
 	defer logger.Finish(spanctx)
-	// Set shardID info in Baggage
-	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
 
 	if n.IsShardListened(shardID) {
-		return
+		return nil
 	}
 	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
-	n.connectShardNodes(spanctx, shardID)
+	if err := n.connectShardNodes(spanctx, shardID); err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
+		log.Printf("Failed to connect to nodes in shard %v", shardID)
+		return err
+	}
 
 	// shardCollations protocol
-	n.SubscribeCollation(spanctx, shardID)
+	if err := n.SubscribeCollation(spanctx, shardID); err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to subscribe to collation in shard %v", shardID))
+		log.Printf("Failed to subscribe to collation in shard %v", shardID)
+		return err
+	}
+
+	// Tag shardID info if nothing goes wrong
+	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
+	return nil
 }
 
-func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) {
+func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) error {
 	// Add span for UnlistenShard of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.UnlistenShard")
 	defer logger.Finish(spanctx)
-	// Set shardID info in Baggage
-	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
-	// span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
 
 	if !n.IsShardListened(shardID) {
-		return
+		return nil
 	}
 	n.shardPrefTable.RemovePeerListeningShard(n.host.ID(), shardID)
 
@@ -156,7 +162,15 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) {
 	// TODO: should we remove some peers in this shard?
 
 	// shardCollations protocol
-	n.UnsubscribeCollation(spanctx, shardID)
+	if err := n.UnsubscribeCollation(spanctx, shardID); err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to unsubscribe to collation in shard %v", shardID))
+		log.Printf("Failed to unsubscribe to collation in shard %v", shardID)
+		return err
+	}
+
+	// Tag shardID info if nothing goes wrong
+	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
+	return nil
 }
 
 func (n *ShardManager) GetListeningShards() []ShardIDType {
@@ -263,6 +277,7 @@ func (n *ShardManager) PublishListeningShards(ctx context.Context) {
 	bytes := selfListeningShards.toBytes()
 	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards, err: %v", err))
+		log.Println("Failed to publish listening shards")
 	}
 }
 
@@ -335,8 +350,6 @@ func (n *ShardManager) broadcastCollation(
 	// Add span for broadcastCollation of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.broadcastCollation")
 	defer logger.Finish(spanctx)
-	logger.SetTag(spanctx, "Period", period)
-	logger.SetTag(spanctx, "Blobs", blobs)
 
 	// create message data
 	data := &pbmsg.Collation{
@@ -347,8 +360,14 @@ func (n *ShardManager) broadcastCollation(
 	err := n.broadcastCollationMessage(data)
 	if err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
+		log.Println("Failed to broadcast collation message")
+		return err
 	}
-	return err
+
+	// Tag collation period and blobs if nothing goes wrong
+	logger.SetTag(spanctx, "Period", period)
+	logger.SetTag(spanctx, "Blobs", blobs)
+	return nil
 }
 
 func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
