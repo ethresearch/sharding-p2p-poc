@@ -59,7 +59,8 @@ func (s *server) AddPeer(
 	)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err))
-		log.Fatalf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
+		log.Printf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
+		return makePlainResponse(false, fmt.Sprintf("Failed to generate peer key/ID with seed: %v", req.Seed)), nil
 	}
 
 	var replyMsg string

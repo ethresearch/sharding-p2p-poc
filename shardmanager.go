@@ -377,12 +377,12 @@ func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) err
 	collationsTopic := getCollationsTopic(collation.ShardID)
 	bytes, err := proto.Marshal(collation)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 	err = n.pubsubService.Publish(collationsTopic, bytes)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 	return nil
