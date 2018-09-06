@@ -101,7 +101,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 
 			defer wg.Done()
 			if err := n.host.Connect(ctx, p); err != nil {
-				logger.SetErr(childSpanctx, err)
+				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v", p.ID, shardID))
 				log.Printf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,
@@ -133,9 +133,7 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
 	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
-	if err := n.connectShardNodes(spanctx, shardID); err != nil {
-		logger.SetErr(spanctx, err)
-	}
+	n.connectShardNodes(spanctx, shardID)
 
 	// shardCollations protocol
 	n.SubscribeCollation(spanctx, shardID)
@@ -264,7 +262,7 @@ func (n *ShardManager) PublishListeningShards(ctx context.Context) {
 	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
 	bytes := selfListeningShards.toBytes()
 	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
-		logger.SetErr(spanctx, err)
+		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards"))
 	}
 }
 
@@ -348,7 +346,7 @@ func (n *ShardManager) broadcastCollation(
 	}
 	err := n.broadcastCollationMessage(data)
 	if err != nil {
-		logger.SetErr(spanctx, err)
+		logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation message"))
 	}
 	return err
 }
