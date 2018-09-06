@@ -66,7 +66,7 @@ func (p *AddPeerProtocol) onRequest(s inet.Stream) {
 
 	log.Printf(
 		"%s: Received addPeer request from %s. Message: %s",
-		p.node.Name(),
+		p.node.ID(),
 		s.Conn().RemotePeer(),
 		data.Message,
 	)
@@ -94,7 +94,7 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 	p.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 	// create message data
 	req := &pbmsg.AddPeerRequest{
-		Message: fmt.Sprintf("AddPeer from %s", p.node.Name()),
+		Message: fmt.Sprintf("AddPeer from %s", p.node.ID()),
 	}
 
 	s, err := p.node.NewStream(ctx, peerid, addPeerRequest)
