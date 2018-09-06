@@ -91,7 +91,7 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 
 	peerid, targetAddr, err := parseAddr(peerAddr)
 	if err != nil {
-		logger.FinishWithErr(spanctx, err)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to parse peer address: %s, err: %v", peerAddr, err))
 		log.Println(err)
 		return err
 	}
@@ -104,7 +104,7 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 
 	s, err := p.node.NewStream(ctx, peerid, addPeerRequest)
 	if err != nil {
-		logger.FinishWithErr(spanctx, err)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to open a new stream with peer %v, err: %v", peerid, err))
 		log.Println(err)
 		return err
 	}

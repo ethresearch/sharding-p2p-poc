@@ -58,7 +58,7 @@ func (s *server) AddPeer(
 		targetPID.Pretty(),
 	)
 	if err != nil {
-		logger.FinishWithErr(spanctx, err)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err))
 		log.Fatal(err)
 	}
 
@@ -243,7 +243,7 @@ func runRPCServer(n *Node, addr string) {
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		logger.FinishWithErr(ctx, err)
+		logger.FinishWithErr(ctx, fmt.Errorf("Failed to set up a service listening on %s, err: %v", addr, err))
 		log.Fatal(err)
 	}
 	s := grpc.NewServer()
@@ -260,7 +260,7 @@ func runRPCServer(n *Node, addr string) {
 
 	log.Printf("rpcserver: listening to %v", addr)
 	if err := s.Serve(lis); err != nil {
-		logger.FinishWithErr(ctx, err)
+		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serve the RPC server, err: %v", err))
 		log.Fatal(err)
 	}
 }

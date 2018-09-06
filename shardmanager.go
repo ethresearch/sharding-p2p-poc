@@ -101,7 +101,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 
 			defer wg.Done()
 			if err := n.host.Connect(ctx, p); err != nil {
-				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v", p.ID, shardID))
+				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v, err: %v", p.ID, shardID, err))
 				log.Printf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,
@@ -262,7 +262,7 @@ func (n *ShardManager) PublishListeningShards(ctx context.Context) {
 	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
 	bytes := selfListeningShards.toBytes()
 	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
-		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards"))
+		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards, err: %v", err))
 	}
 }
 
@@ -346,7 +346,7 @@ func (n *ShardManager) broadcastCollation(
 	}
 	err := n.broadcastCollationMessage(data)
 	if err != nil {
-		logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation message"))
+		logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
 	}
 	return err
 }
