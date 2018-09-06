@@ -8,7 +8,7 @@ COPY --from=base /go/bin/sharding-p2p-poc /go/bin/
 
 ENV PATH=$PATH:/go/bin
 
-EXPOSE 8369 8370 6831 6831/udp
+EXPOSE 8369 8370 13000 6831 6831/udp
 
 CMD ["sharding-p2p-poc"]
 
