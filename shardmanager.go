@@ -72,6 +72,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	// Add span for connectShardNodes of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.connectShardNodes")
 	defer logger.Finish(spanctx)
+	logger.SetTag(spanctx, "shard", shardID)
 
 	peerIDs := n.shardPrefTable.GetPeersInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
@@ -93,10 +94,14 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	var wg sync.WaitGroup
 	for _, p := range pinfos {
 		wg.Add(1)
-		go func(p pstore.PeerInfo) {
+		go func(ctx context.Context, p pstore.PeerInfo) {
+			// Add span for Connect of ShardManager.connectShardNodes
+			childSpanctx := logger.Start(ctx, "ShardManager.connectShardNodes.Connect")
+			defer logger.Finish(childSpanctx)
+
 			defer wg.Done()
 			if err := n.host.Connect(ctx, p); err != nil {
-				logger.SetErr(spanctx, err)
+				logger.SetErr(childSpanctx, err)
 				log.Printf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,
@@ -106,7 +111,8 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 				return
 			}
 			log.Printf("Successfully connected peer %v in shard %v", p.ID, shardID)
-		}(p)
+			logger.SetTag(childSpanctx, "peer", p.ID)
+		}(spanctx, p)
 	}
 	wg.Wait()
 	// FIXME: ignore the errors when connecting shard peers for now
