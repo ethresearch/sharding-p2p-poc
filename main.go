@@ -55,13 +55,14 @@ func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
 
 func makeNode(
 	ctx context.Context,
+	listenIP string,
 	listenPort int,
 	randseed int,
 	eventNotifier EventNotifier,
 	doBootstrapping bool,
 	bootstrapPeers []pstore.PeerInfo) (*Node, error) {
 	// FIXME: should be set to localhost if we don't want to expose it to outside
-	listenAddrString := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", listenPort)
+	listenAddrString := fmt.Sprintf("/ip4/%v/tcp/%v", listenIP, listenPort)
 
 	priv, _, err := makeKey(randseed)
 	if err != nil {
@@ -105,6 +106,7 @@ func makeNode(
 const (
 	defaultListenPort = 10000
 	defaultRPCPort    = 13000
+	defaultIP         = "127.0.0.1"
 )
 
 func main() {
@@ -116,12 +118,22 @@ func main() {
 	// Parse options from the command line
 
 	seed := flag.Int("seed", 0, "set random seed for id generation")
+	listenIP := flag.String(
+		"ip",
+		defaultIP,
+		"ip listened by the process for incoming connections",
+	)
 	listenPort := flag.Int(
 		"port",
 		defaultListenPort,
 		"port listened by the node for incoming connections",
 	)
-	rpcPort := flag.Int("rpcport", defaultRPCPort, "rpc port listened by the rpc server")
+	rpcIP := flag.String(
+		"rpcip",
+		defaultIP,
+		"ip listened by the RPC server",
+	)
+	rpcPort := flag.Int("rpcport", defaultRPCPort, "RPC port listened by the RPC server")
 	notifierPort := flag.Int(
 		"notifierport",
 		defulatEventRPCPort,
@@ -132,8 +144,8 @@ func main() {
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
-	rpcAddr := fmt.Sprintf("127.0.0.1:%v", *rpcPort)
-	notifierAddr := fmt.Sprintf("127.0.0.1:%v", *notifierPort)
+	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
+	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
 
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
@@ -144,11 +156,12 @@ func main() {
 		} else {
 			bootnodes = convertPeers(strings.Split(*bootnodesStr, ","))
 		}
-		runServer(*listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr, notifierAddr)
+		runServer(*listenIP, *listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr, notifierAddr)
 	}
 }
 
 func runServer(
+	listenIP string,
 	listenPort int,
 	seed int,
 	doBootstrapping bool,
@@ -161,7 +174,15 @@ func runServer(
 		// TODO: don't use eventNotifier if it is not available
 		eventNotifier = nil
 	}
-	node, err := makeNode(ctx, listenPort, seed, eventNotifier, doBootstrapping, bootnodes)
+	node, err := makeNode(
+		ctx,
+		listenIP,
+		listenPort,
+		seed,
+		eventNotifier,
+		doBootstrapping,
+		bootnodes,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
