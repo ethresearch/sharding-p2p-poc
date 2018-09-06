@@ -1,7 +1,7 @@
 FROM golang:1.10.3-alpine as base
 
-RUN apk add --no-cache git python3 make
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go get -v github.com/ethresearch/sharding-p2p-poc
+RUN apk add git python3 make && \
+    CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go get -v github.com/ethresearch/sharding-p2p-poc
 
 FROM iron/go:latest
 COPY --from=base /go/bin/sharding-p2p-poc /go/bin/
