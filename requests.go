@@ -37,35 +37,29 @@ func NewRequestProtocol(node *Node) *RequestProtocol {
 // helper method - reads a protobuf go data object from a network stream
 // data: reference of protobuf go data object(not the object itself)
 // s: network stream to read the data from
-func readProtoMessage(data proto.Message, s inet.Stream) bool {
+func readProtoMessage(data proto.Message, s inet.Stream) error {
 	decoder := protobufCodec.Multicodec(nil).Decoder(bufio.NewReader(s))
-	err := decoder.Decode(data)
-	if err != nil {
-		log.Println("readProtoMessage: ", err)
-		return false
-	}
-	return true
+	return decoder.Decode(data)
 }
 
 // helper method - writes a protobuf go data object to a network stream
 // data: reference of protobuf go data object to send (not the object itself)
 // s: network stream to write the data to
-func sendProtoMessage(data proto.Message, s inet.Stream) bool {
+func sendProtoMessage(data proto.Message, s inet.Stream) error {
 	writer := bufio.NewWriter(s)
 	enc := protobufCodec.Multicodec(nil).Encoder(writer)
 	err := enc.Encode(data)
 	if err != nil {
-		log.Println(err)
-		return false
+		return err
 	}
 	writer.Flush()
-	return true
+	return nil
 }
 
 func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 	defer inet.FullClose(s)
 	req := &pbmsg.ShardPeerRequest{}
-	if !readProtoMessage(req, s) {
+	if err := readProtoMessage(req, s); err != nil {
 		return
 	}
 	shardPeers := make(map[ShardIDType]*pbmsg.ShardPeerResponse_Peers)
@@ -84,8 +78,8 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 		Response:   &pbmsg.Response{Status: pbmsg.Response_SUCCESS},
 		ShardPeers: shardPeers,
 	}
-	if !sendProtoMessage(res, s) {
-		log.Printf("onShardPeerRequest: failed to send proto message %v", res)
+	if err := sendProtoMessage(res, s); err != nil {
+		log.Printf("onShardPeerRequest: failed to send proto message %v, reason=%v", res, err)
 		return
 	}
 }
@@ -105,11 +99,11 @@ func (p *RequestProtocol) requestShardPeer(
 	req := &pbmsg.ShardPeerRequest{
 		ShardIDs: shardIDs,
 	}
-	if !sendProtoMessage(req, s) {
-		return nil, fmt.Errorf("failed to send request")
+	if err := sendProtoMessage(req, s); err != nil {
+		return nil, fmt.Errorf("failed to send request: %v", err)
 	}
 	res := &pbmsg.ShardPeerResponse{}
-	if !readProtoMessage(res, s) {
+	if err := readProtoMessage(res, s); err != nil {
 		s.Close()
 		return nil, fmt.Errorf("failed to read response proto")
 	}
@@ -133,7 +127,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	defer inet.FullClose(s)
 	// reject if the sender is not a peer
 	data := &pbmsg.CollationRequest{}
-	if !readProtoMessage(data, s) {
+	if err := readProtoMessage(data, s); err != nil {
 		return
 	}
 	// FIXME: add checks
@@ -155,8 +149,12 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 			Collation: collation,
 		}
 	}
-	if !sendProtoMessage(collationResp, s) {
-		log.Printf("onCollationRequest: failed to send proto message %v", collationResp)
+	if err := sendProtoMessage(collationResp, s); err != nil {
+		log.Printf(
+			"onCollationRequest: failed to send proto message %v, reason=%v",
+			collationResp,
+			err,
+		)
 		return
 	}
 }
@@ -178,11 +176,11 @@ func (p *RequestProtocol) requestCollation(
 		ShardID: PBInt(shardID),
 		Period:  PBInt(period),
 	}
-	if !sendProtoMessage(req, s) {
-		return nil, fmt.Errorf("failed to send request")
+	if err := sendProtoMessage(req, s); err != nil {
+		return nil, fmt.Errorf("failed to send request: %v", err)
 	}
 	data := &pbmsg.CollationResponse{}
-	if !readProtoMessage(data, s) {
+	if err := readProtoMessage(data, s); err != nil {
 		return nil, fmt.Errorf("failed to read response proto")
 	}
 	return data.Collation, nil
