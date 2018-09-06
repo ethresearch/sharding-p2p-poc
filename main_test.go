@@ -9,7 +9,6 @@ import (
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
-	host "github.com/libp2p/go-libp2p-host"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	"google.golang.org/grpc"
@@ -38,6 +37,10 @@ func makeTestingNode(
 		t.Error("Failed to create node")
 	}
 	return node
+}
+
+func waitForPubSubMeshBuilt() {
+	time.Sleep(time.Second * 2)
 }
 
 func TestNodeListeningShards(t *testing.T) {
@@ -88,70 +91,79 @@ func TestNodeListeningShards(t *testing.T) {
 	node.PublishListeningShards(ctx)
 }
 
-func connect(t *testing.T, ctx context.Context, a, b host.Host) {
-	a.Peerstore().AddAddrs(b.ID(), b.Addrs(), pstore.PermanentAddrTTL)
-	b.Peerstore().AddAddrs(a.ID(), a.Addrs(), pstore.PermanentAddrTTL)
+func connect(t *testing.T, ctx context.Context, a, b *Node) {
+	err := a.AddPeer(ctx, b.GetFullAddr())
+	if err != nil {
+		t.Errorf("%v failed to `AddPeer` %v : %v", a.ID(), b.ID(), err)
+	}
+	if !a.IsPeer(b.ID()) || !b.IsPeer(a.ID()) {
+		t.Error("AddPeer failed")
+	}
 	pinfo := pstore.PeerInfo{
 		ID:    a.ID(),
 		Addrs: a.Addrs(),
 	}
-	err := b.Connect(ctx, pinfo)
+	err = b.Connect(ctx, pinfo)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(a.Network().ConnsToPeer(b.ID())) == 0 || len(b.Network().ConnsToPeer(a.ID())) == 0 {
-		t.Errorf("Fail to connect %v with %v", a.ID(), b.ID())
+		t.Errorf("failed to connect %v with %v", a.ID(), b.ID())
 	}
 	time.Sleep(time.Millisecond * 100)
 }
 
 func makeNodes(t *testing.T, ctx context.Context, number int) []*Node {
-	nodes := make([]*Node, number)
+	nodes := []*Node{}
 	for i := 0; i < number; i++ {
 		nodes = append(nodes, makeUnbootstrappedNode(t, ctx, i))
 	}
+	time.Sleep(time.Millisecond * 100)
 	return nodes
 }
 
-func makePeerNodes(t *testing.T, ctx context.Context) (*Node, *Node) {
-	node0 := makeUnbootstrappedNode(t, ctx, 0)
-	node1 := makeUnbootstrappedNode(t, ctx, 1)
-	// if node0.IsPeer(node1.ID()) || node1.IsPeer(node0.ID()) {
-	// 	t.Error("Two initial nodes should not be connected without `AddPeer`")
-	// }
-	time.Sleep(time.Millisecond * 100)
-	node0.AddPeer(ctx, node1.GetFullAddr())
-	// wait until node0 receive the response from node1
-	if !node0.IsPeer(node1.ID()) || !node1.IsPeer(node0.ID()) {
-		t.Error("Failed to add peer")
+func connectBarbell(t *testing.T, ctx context.Context, nodes []*Node) {
+	for i := 0; i < len(nodes)-1; i++ {
+		connect(t, ctx, nodes[i], nodes[i+1])
 	}
-	connect(t, ctx, node0, node1)
-	return node0, node1
+}
+
+func connectAll(t *testing.T, ctx context.Context, nodes []*Node) {
+	for i, nodei := range nodes {
+		for j, nodej := range nodes {
+			if i < j {
+				connect(t, ctx, nodei, nodej)
+			}
+		}
+	}
 }
 
 func TestAddPeer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	makePeerNodes(t, ctx)
+	nodes := makeNodes(t, ctx, 2)
+	connect(t, ctx, nodes[0], nodes[1])
 }
+
 func TestBroadcastCollation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	node0, node1 := makePeerNodes(t, ctx)
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
+
 	var testingShardID ShardIDType = 42
-	node0.ListenShard(ctx, testingShardID)
-	node0.PublishListeningShards(ctx)
+	nodes[0].ListenShard(ctx, testingShardID)
+	nodes[0].PublishListeningShards(ctx)
 	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
 
-	node1.ListenShard(ctx, testingShardID)
-	node1.PublishListeningShards(ctx)
+	nodes[1].ListenShard(ctx, testingShardID)
+	nodes[1].PublishListeningShards(ctx)
 	// TODO: fail: if the collation's shardID does not correspond to the protocol's shardID,
 	//		 receiver should reject it
 
 	// success
-	err := node0.broadcastCollation(
+	err := nodes[0].broadcastCollation(
 		ctx,
 		testingShardID,
 		1,
@@ -162,25 +174,15 @@ func TestBroadcastCollation(t *testing.T) {
 	}
 }
 
-func makePartiallyConnected3Nodes(t *testing.T, ctx context.Context) []*Node {
-	node0, node1 := makePeerNodes(t, ctx)
-	node2 := makeUnbootstrappedNode(t, ctx, 2)
-	time.Sleep(time.Millisecond * 100)
-	node2.AddPeer(ctx, node1.GetFullAddr())
-	if !node1.IsPeer(node2.ID()) || !node2.IsPeer(node1.ID()) {
-		t.Error()
-	}
-	connect(t, ctx, node1, node2)
-	return [](*Node){node0, node1, node2}
-}
-
 func TestRequestCollation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	node0, node1 := makePeerNodes(t, ctx)
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
+
 	shardID := ShardIDType(1)
 	period := 42
-	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period)
+	collation, err := nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
 	if err != nil {
 		t.Errorf("request collation failed: %v", err)
 	}
@@ -198,9 +200,9 @@ func TestRequestCollation(t *testing.T) {
 func TestRequestShardPeer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	node0, node1 := makePeerNodes(t, ctx)
-	time.Sleep(time.Millisecond * 100)
-	shardPeers, err := node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1})
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
+	shardPeers, err := nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1})
 	if err != nil {
 		t.Errorf("Error occurred when requesting shard peer: %v", err)
 	}
@@ -211,29 +213,29 @@ func TestRequestShardPeer(t *testing.T) {
 	if len(peerIDs) != 0 {
 		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs)
 	}
-	node1.ListenShard(ctx, 1)
-	node1.ListenShard(ctx, 2)
+	nodes[1].ListenShard(ctx, 1)
+	nodes[1].ListenShard(ctx, 2)
 	// node1 listens to [1, 2], but we only request shard [1]
-	shardPeers, err = node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1})
+	shardPeers, err = nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1})
 	if err != nil {
 		t.Errorf("Error occurred when requesting shard peer: %v", err)
 	}
 	peerIDs1, prs := shardPeers[1]
-	if len(peerIDs1) != 1 || peerIDs1[0] != node1.ID() {
-		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs1)
+	if len(peerIDs1) != 1 || peerIDs1[0] != nodes[1].ID() {
+		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs1)
 	}
 	// node1 only listens to [1, 2], but we request shard [1, 2, 3]
-	shardPeers, err = node0.requestShardPeer(ctx, node1.ID(), []ShardIDType{1, 2, 3})
+	shardPeers, err = nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1, 2, 3})
 	if err != nil {
 		t.Errorf("Error occurred when requesting shard peer: %v", err)
 	}
 	peerIDs1, prs = shardPeers[1]
-	if len(peerIDs1) != 1 || peerIDs1[0] != node1.ID() {
-		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs1)
+	if len(peerIDs1) != 1 || peerIDs1[0] != nodes[1].ID() {
+		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs1)
 	}
 	peerIDs2, prs := shardPeers[2]
-	if len(peerIDs2) != 1 || peerIDs2[0] != node1.ID() {
-		t.Errorf("Wrong shard peer response %v, should be node1.ID() only", peerIDs2)
+	if len(peerIDs2) != 1 || peerIDs2[0] != nodes[1].ID() {
+		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs2)
 	}
 	peerIDs3, prs := shardPeers[3]
 	if !prs {
@@ -252,8 +254,8 @@ func TestRouting(t *testing.T) {
 	// we should be able to see something like
 	// "dht: FindPeer <peer.ID d3wzD2> true routed.go:76", if successfully found the desire peer
 	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
-	nodes := makePartiallyConnected3Nodes(t, ctx)
-	time.Sleep(time.Millisecond * 100)
+	nodes := makeNodes(t, ctx, 3)
+	connectBarbell(t, ctx, nodes)
 	if nodes[0].IsPeer(nodes[2].ID()) {
 		t.Error("node0 should not be able to reach node2 before routing")
 	}
@@ -273,7 +275,8 @@ func TestPubSub(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	nodes := makePartiallyConnected3Nodes(t, ctx)
+	nodes := makeNodes(t, ctx, 3)
+	connectBarbell(t, ctx, nodes)
 
 	topic := "iamtopic"
 
@@ -303,10 +306,10 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	nodes := makePartiallyConnected3Nodes(t, ctx)
+	nodes := makeNodes(t, ctx, 3)
+	connectBarbell(t, ctx, nodes)
 
-	// wait for heartbeats to build mesh
-	time.Sleep(time.Second * 2)
+	waitForPubSubMeshBuilt()
 
 	// ensure notifyShards message is propagated through node1
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
@@ -364,36 +367,36 @@ func TestWithIPFSNodesRouting(t *testing.T) {
 	ipfsPeer0 := ipfsPeers[0]
 	ipfsPeer1 := ipfsPeers[1]
 
-	node0 := makeUnbootstrappedNode(t, ctx, 0)
-	node0.Peerstore().AddAddrs(ipfsPeer0.ID, ipfsPeer0.Addrs, pstore.PermanentAddrTTL)
-	node0.Connect(context.Background(), ipfsPeer0)
-	if len(node0.Network().ConnsToPeer(ipfsPeer0.ID)) == 0 {
+	nodes := makeNodes(t, ctx, 2)
+
+	nodes[0].Peerstore().AddAddrs(ipfsPeer0.ID, ipfsPeer0.Addrs, pstore.PermanentAddrTTL)
+	nodes[0].Connect(context.Background(), ipfsPeer0)
+	if len(nodes[0].Network().ConnsToPeer(ipfsPeer0.ID)) == 0 {
 		t.Error()
 	}
-	node1 := makeUnbootstrappedNode(t, ctx, 1)
-	node1.Peerstore().AddAddrs(ipfsPeer1.ID, ipfsPeer1.Addrs, pstore.PermanentAddrTTL)
-	node1.Connect(context.Background(), ipfsPeer1)
-	if len(node1.Network().ConnsToPeer(ipfsPeer1.ID)) == 0 {
+	nodes[1].Peerstore().AddAddrs(ipfsPeer1.ID, ipfsPeer1.Addrs, pstore.PermanentAddrTTL)
+	nodes[1].Connect(context.Background(), ipfsPeer1)
+	if len(nodes[1].Network().ConnsToPeer(ipfsPeer1.ID)) == 0 {
 		t.Error()
 	}
 	node0PeerInfo := pstore.PeerInfo{
-		ID:    node0.ID(),
+		ID:    nodes[0].ID(),
 		Addrs: []ma.Multiaddr{},
 	}
 	// ensure connection: node0 <-> ipfsPeer0 <-> ipfsPeer1 <-> node1
-	if len(node0.Network().ConnsToPeer(ipfsPeer1.ID)) != 0 {
+	if len(nodes[0].Network().ConnsToPeer(ipfsPeer1.ID)) != 0 {
 		t.Error()
 	}
-	if len(node1.Network().ConnsToPeer(ipfsPeer0.ID)) != 0 {
+	if len(nodes[1].Network().ConnsToPeer(ipfsPeer0.ID)) != 0 {
 		t.Error()
 	}
-	if len(node1.Network().ConnsToPeer(node0.ID())) != 0 {
+	if len(nodes[1].Network().ConnsToPeer(nodes[0].ID())) != 0 {
 		t.Error()
 	}
 
-	node1.Connect(context.Background(), node0PeerInfo)
+	nodes[1].Connect(context.Background(), node0PeerInfo)
 
-	if len(node1.Network().ConnsToPeer(node0.ID())) == 0 {
+	if len(nodes[1].Network().ConnsToPeer(nodes[0].ID())) == 0 {
 		t.Error()
 	}
 }
@@ -401,9 +404,9 @@ func TestWithIPFSNodesRouting(t *testing.T) {
 func TestListenShardConnectingPeers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	nodes := makePartiallyConnected3Nodes(t, ctx)
-	// wait for mesh built
-	time.Sleep(time.Second * 2)
+	nodes := makeNodes(t, ctx, 3)
+	connectBarbell(t, ctx, nodes)
+	waitForPubSubMeshBuilt()
 	// 0 <-> 1 <-> 2
 	nodes[0].ListenShard(ctx, 0)
 	nodes[0].PublishListeningShards(ctx)
@@ -563,12 +566,13 @@ func TestEventRPCNotifier(t *testing.T) {
 func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	nodes := makePartiallyConnected3Nodes(t, ctx)
+	nodes := makeNodes(t, ctx, 3)
+	connectBarbell(t, ctx, nodes)
 	shardID := ShardIDType(1)
 	nodes[0].ListenShard(ctx, shardID)
 	nodes[1].ListenShard(ctx, shardID)
 	nodes[2].ListenShard(ctx, shardID)
-	time.Sleep(time.Second * 2)
+	waitForPubSubMeshBuilt()
 
 	// setup 2 event server and notifier(stub), for node1 and node2 respectively
 	eventRPCPort := 55667
@@ -620,10 +624,11 @@ func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
 func TestRequestCollationWithEventNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	node0, node1 := makePeerNodes(t, ctx)
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
 	shardID := ShardIDType(1)
 	period := 2
-	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period)
+	collation, err := nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
 	if err != nil {
 		t.Errorf("request collation failed: %v", err)
 	}
@@ -638,7 +643,7 @@ func TestRequestCollationWithEventNotifier(t *testing.T) {
 		t.Error("failed to create event notifier")
 	}
 	// explicitly set the eventNotifier
-	node1.eventNotifier = eventNotifier
+	nodes[1].eventNotifier = eventNotifier
 
 	if collation.ShardID != shardID || int(collation.Period) != period {
 		t.Errorf(
@@ -650,7 +655,7 @@ func TestRequestCollationWithEventNotifier(t *testing.T) {
 		)
 	}
 	periodNotFound := 42
-	collation, err = node0.requestCollation(ctx, node1.ID(), shardID, periodNotFound)
+	collation, err = nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, periodNotFound)
 	if err != nil {
 		t.Errorf("request collation failed: %v", err)
 	}
