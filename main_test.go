@@ -195,10 +195,6 @@ func TestRequestCollation(t *testing.T) {
 	}
 }
 
-func TestRequestCollationNotFound(t *testing.T) {
-	// TODO:
-}
-
 func TestRequestShardPeer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -478,10 +474,16 @@ func (s *eventTestServer) NotifyCollation(
 func (s *eventTestServer) GetCollation(
 	ctx context.Context,
 	req *pbevent.GetCollationRequest) (*pbevent.GetCollationResponse, error) {
-	collation := &pbmsg.Collation{
-		ShardID: req.ShardID,
-		Period:  req.Period,
-		Blobs:   []byte(fmt.Sprintf("shardID=%v, period=%v", req.ShardID, req.Period)),
+	var collation *pbmsg.Collation
+	// simulate the case when collation is not found
+	if int(req.ShardID) == 1 && int(req.Period) == 42 {
+		collation = nil
+	} else {
+		collation = &pbmsg.Collation{
+			ShardID: req.ShardID,
+			Period:  req.Period,
+			Blobs:   []byte(fmt.Sprintf("shardID=%v, period=%v", req.ShardID, req.Period)),
+		}
 	}
 	res := &pbevent.GetCollationResponse{
 		Response:  makeEventResponse(true),
@@ -612,5 +614,47 @@ func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
 		}
 	case <-time.After(time.Second * 5):
 		t.Error("timeout in node2")
+	}
+}
+
+func TestRequestCollationWithEventNotifier(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	node0, node1 := makePeerNodes(t, ctx)
+	shardID := ShardIDType(1)
+	period := 2
+	collation, err := node0.requestCollation(ctx, node1.ID(), shardID, period)
+	if err != nil {
+		t.Errorf("request collation failed: %v", err)
+	}
+
+	notifierAddr := fmt.Sprintf("127.0.0.1:%v", 55669)
+	_, err = runEventServer(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to run event server")
+	}
+	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to create event notifier")
+	}
+	// explicitly set the eventNotifier
+	node1.eventNotifier = eventNotifier
+
+	if collation.ShardID != shardID || int(collation.Period) != period {
+		t.Errorf(
+			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
+			collation.ShardID,
+			shardID,
+			collation.Period,
+			period,
+		)
+	}
+	periodNotFound := 42
+	collation, err = node0.requestCollation(ctx, node1.ID(), shardID, periodNotFound)
+	if err != nil {
+		t.Errorf("request collation failed: %v", err)
+	}
+	if collation != nil {
+		t.Errorf("collation should be nil because it it not found in the mock event server")
 	}
 }

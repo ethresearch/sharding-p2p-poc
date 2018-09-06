@@ -366,6 +366,7 @@ func (n *ShardManager) getCollation(
 	period int,
 	collationHash string) (*pbmsg.Collation, error) {
 
+	// get collations from remote clients only when `n.eventNotifier` is set
 	if n.eventNotifier != nil {
 		collation, err := n.eventNotifier.GetCollation(shardID, period, collationHash)
 		if err != nil {
@@ -373,7 +374,7 @@ func (n *ShardManager) getCollation(
 		}
 		return collation, nil
 	}
-	// FIXME: currently we just return a fake one if we fail to get content from the `eventNotifier`
+	// FIXME: else we just return a fake one if we fail to get content from the `eventNotifier`
 	return &pbmsg.Collation{
 		ShardID: PBInt(shardID),
 		Period:  PBInt(period),
