@@ -195,7 +195,7 @@ func (s *server) BroadcastCollation(
 		if err != nil {
 			failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
 			log.Println(failureMsg)
-			logger.FinishWithErr(spanctx, fmt.Errorf("Failed to broadcast collation"))
+			logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation"))
 			return makePlainResponse(false, failureMsg), err
 		}
 	}
@@ -255,7 +255,6 @@ func (s *server) StopServer(
 	defer logger.Finish(spanctx)
 
 	log.Printf("rpcserver:StopServer: receive=%v", req)
-	time.Sleep(time.Millisecond * 500)
 	log.Printf("Closing RPC server by rpc call...")
 	go func() {
 		time.Sleep(time.Second * 1)

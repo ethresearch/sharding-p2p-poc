@@ -9,7 +9,6 @@ import (
 	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	opentracing "github.com/opentracing/opentracing-go"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
@@ -197,11 +196,18 @@ func inShards(shardID ShardIDType, shards []ShardIDType) bool {
 // General
 
 func (n *ShardManager) SubscribeTopic(
+	ctx context.Context,
 	topic string,
 	handler TopicHandler,
 	validator TopicValidator) error {
+	// Add span for SubscribeTopic of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.SubscribeTopic")
+	defer logger.Finish(spanctx)
+
 	sub, err := n.pubsubService.Subscribe(topic)
 	if err != nil {
+		log.Printf("Failed to subscribe to topic: %s", topic)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to subscribe to topic: %s, err: %v", topic, err))
 		return err
 	}
 	n.subsLock.Lock()
@@ -222,16 +228,25 @@ func (n *ShardManager) SubscribeTopic(
 			handler(n.ctx, msg)
 		}
 	}()
+	// Tag topic to subscribe to if nothing goes wrong
+	logger.SetTag(spanctx, "Topic", topic)
 	return nil
 }
 
-func (n *ShardManager) UnsubscribeTopic(topic string) error {
+func (n *ShardManager) UnsubscribeTopic(ctx context.Context, topic string) error {
+	// Add span for UnsubscribeTopic of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.UnsubscribeTopic")
+	defer logger.Finish(spanctx)
+
 	n.subsLock.RLock()
 	sub, prs := n.subs[topic]
 	n.subsLock.RUnlock()
 	if !prs {
 		return nil
 	}
+	// Tag topic to unsubscribe to
+	logger.SetTag(spanctx, "Topic", topic)
+
 	sub.Cancel()
 	n.subsLock.Lock()
 	delete(n.subs, topic)
@@ -258,6 +273,7 @@ func (n *ShardManager) makeShardPrefValidator() TopicValidator {
 
 func (n *ShardManager) SubscribeListeningShards() error {
 	return n.SubscribeTopic(
+		context.Background(),
 		listeningShardTopic,
 		n.makeShardPrefHandler(),
 		n.makeShardPrefValidator(),
@@ -265,11 +281,11 @@ func (n *ShardManager) SubscribeListeningShards() error {
 }
 
 func (n *ShardManager) UnsubscribeListeningShards() error {
-	return n.UnsubscribeTopic(listeningShardTopic)
+	return n.UnsubscribeTopic(context.Background(), listeningShardTopic)
 }
 
 func (n *ShardManager) PublishListeningShards(ctx context.Context) {
-	// Add span for PublishListeningShards of AddPeerProtocol
+	// Add span for PublishListeningShards of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.PublishListeningShards")
 	defer logger.Finish(spanctx)
 
@@ -322,16 +338,16 @@ func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDTy
 	topic := getCollationsTopic(shardID)
 	handler := n.makeCollationHandler()
 	validator := n.makeCollationValidator()
-	return n.SubscribeTopic(topic, handler, validator)
+	return n.SubscribeTopic(spanctx, topic, handler, validator)
 }
 
 func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) error {
 	// Add span for UnsubscribeCollation of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.UnsubscribeCollation")
-	defer span.Finish()
+	spanctx := logger.Start(ctx, "ShardManager.UnsubscribeCollation")
+	defer logger.Finish(spanctx)
 
 	topic := getCollationsTopic(shardID)
-	return n.UnsubscribeTopic(topic)
+	return n.UnsubscribeTopic(spanctx, topic)
 }
 
 func (n *ShardManager) IsCollationSubscribed(shardID ShardIDType) bool {
