@@ -62,22 +62,48 @@ func sendProtoMessage(data proto.Message, s inet.Stream) bool {
 	return true
 }
 
+func peerIDToString(peerID peer.ID) string {
+	return peerID.Pretty()
+}
+
+func stringToPeerID(peerIDStr string) (peer.ID, error) {
+	peerID, err := peer.IDB58Decode(peerIDStr)
+	if err != nil {
+		return "", err
+	}
+	return peerID, nil
+}
+
+func pbPeersToPeerIDs(msg *pbmsg.Peers) ([]peer.ID, error) {
+	peerIDs := []peer.ID{}
+	for _, peerStr := range msg.Peers {
+		peerID, err := stringToPeerID(peerStr)
+		if err != nil {
+			return nil, err
+		}
+		peerIDs = append(peerIDs, peerID)
+	}
+	return peerIDs, nil
+}
+
+func peerIDsToPBPeers(peerIDs []peer.ID) *pbmsg.Peers {
+	peerStrs := []string{}
+	for _, peerID := range peerIDs {
+		peerStrs = append(peerStrs, peerIDToString(peerID))
+	}
+	return &pbmsg.Peers{Peers: peerStrs}
+}
+
 func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 	defer inet.FullClose(s)
 	req := &pbmsg.ShardPeerRequest{}
 	if !readProtoMessage(req, s) {
 		return
 	}
-	shardPeers := make(map[ShardIDType]*pbmsg.ShardPeerResponse_Peers)
+	shardPeers := make(map[ShardIDType]*pbmsg.Peers)
 	for _, shardID := range req.ShardIDs {
 		peerIDs := p.node.shardPrefTable.GetPeersInShard(shardID)
-		peerIDStrings := []string{}
-		for _, peerID := range peerIDs {
-			peerIDStrings = append(peerIDStrings, peerID.Pretty())
-		}
-		shardPeers[shardID] = &pbmsg.ShardPeerResponse_Peers{
-			Peers: peerIDStrings,
-		}
+		shardPeers[shardID] = peerIDsToPBPeers(peerIDs)
 	}
 
 	res := &pbmsg.ShardPeerResponse{
@@ -115,13 +141,9 @@ func (p *RequestProtocol) requestShardPeer(
 	}
 	shardPeers := make(map[ShardIDType][]peer.ID)
 	for shardID, peers := range res.ShardPeers {
-		peerIDs := []peer.ID{}
-		for _, peerString := range peers.Peers {
-			peerID, err := peer.IDB58Decode(peerString)
-			if err != nil {
-				return nil, fmt.Errorf("error occurred when parsing peerIDs")
-			}
-			peerIDs = append(peerIDs, peerID)
+		peerIDs, err := pbPeersToPeerIDs(peers)
+		if err != nil {
+			return nil, fmt.Errorf("peerID in wrong format: %v", err)
 		}
 		shardPeers[shardID] = peerIDs
 	}

@@ -41,14 +41,11 @@ message ShardPeerRequest {
     repeated int64 shardIDs = 1;
 }
 
-message ShardPeerResponse {
-    Response response = 1;
-    message Peers {
-        repeated string peers = 1;
-    }
-    map<int64, Peers> shardPeers = 2;
+message Peers {
+    repeated string peers = 1;
 }
 
-message NotifyShardsRequest {
-    repeated int64 shardIDs = 1;
+message ShardPeerResponse {
+    Response response = 1;
+    map<int64, Peers> shardPeers = 2;
 }

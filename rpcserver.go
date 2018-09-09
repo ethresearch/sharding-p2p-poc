@@ -11,7 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"google.golang.org/grpc"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -91,7 +93,6 @@ func (s *server) SubscribeShard(
 	log.Printf("rpcserver:SubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
 		s.node.ListenShard(spanctx, shardID)
-		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards(spanctx)
 	replyMsg := fmt.Sprintf(
@@ -113,7 +114,6 @@ func (s *server) UnsubscribeShard(
 	log.Printf("rpcserver:UnsubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
 		s.node.UnlistenShard(spanctx, shardID)
-		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards(spanctx)
 	replyMsg := fmt.Sprintf(
@@ -233,6 +233,107 @@ func (s *server) StopServer(
 
 	replyMsg := fmt.Sprintf("Closed RPC server")
 	return makePlainResponse(true, replyMsg), nil
+}
+
+func (s *server) GetConnection(
+	ctx context.Context,
+	req *pbrpc.RPCGetConnectionRequest) (*pbrpc.RPCGetConnectionResponse, error) {
+	span := opentracing.StartSpan(
+		"RPCServer.GetConnection",
+		opentracing.ChildOf(s.parentSpan.Context()),
+	)
+	defer span.Finish()
+	conns := s.node.host.Network().Conns()
+	connStrs := []string{}
+	for _, conn := range conns {
+		connStr := fmt.Sprintf(
+			"%v (%v) <-> %v (%v)",
+			conn.LocalMultiaddr(),
+			conn.LocalPeer().Pretty(),
+			conn.RemoteMultiaddr(),
+			conn.RemotePeer().Pretty(),
+		)
+		connStrs = append(connStrs, connStr)
+	}
+	return &pbrpc.RPCGetConnectionResponse{
+		Response:    makeResponse(true, ""),
+		Connections: connStrs,
+	}, nil
+}
+
+func (s *server) GetPeer(
+	ctx context.Context,
+	req *pbrpc.RPCGetPeerRequest) (*pbrpc.RPCGetPeerResponse, error) {
+	span := opentracing.StartSpan(
+		"RPCServer.GetPeer",
+		opentracing.ChildOf(s.parentSpan.Context()),
+	)
+	defer span.Finish()
+	var peerIDs []peer.ID
+	if req.Topic == "" {
+		peerIDs = s.node.Peerstore().Peers()
+	} else {
+		peerIDs = s.node.pubsubService.ListPeers(req.Topic)
+	}
+	peerIDStrs := []string{}
+	for _, peerID := range peerIDs {
+		peerIDStrs = append(peerIDStrs, peerID.Pretty())
+	}
+	return &pbrpc.RPCGetPeerResponse{
+		Response: makeResponse(true, ""),
+		PeerIDs:  peerIDStrs,
+	}, nil
+}
+
+func (s *server) SyncShardPeer(
+	ctx context.Context,
+	req *pbrpc.RPCSyncShardPeerRequest) (*pbrpc.RPCSyncShardPeerResponse, error) {
+	span := opentracing.StartSpan(
+		"RPCServer.SyncShardPeer",
+		opentracing.ChildOf(s.parentSpan.Context()),
+	)
+	defer span.Finish()
+	peerID, err := stringToPeerID(req.PeerID)
+	if err != nil {
+		return &pbrpc.RPCSyncShardPeerResponse{
+			Response: makeResponse(false, fmt.Sprintf("%v", err)),
+		}, nil
+	}
+	res, err := s.node.requestShardPeer(ctx, peerID, req.SharIDs)
+	shardPeers := make(map[ShardIDType]*pbmsg.Peers)
+	for shardID, peerIDs := range res {
+		// set shard peers to shardPrefTable
+		for _, peerID := range peerIDs {
+			s.node.shardPrefTable.AddPeerListeningShard(peerID, shardID)
+		}
+		shardPeers[shardID] = peerIDsToPBPeers(peerIDs)
+	}
+	return &pbrpc.RPCSyncShardPeerResponse{
+		Response:   makeResponse(true, ""),
+		ShardPeers: shardPeers,
+	}, nil
+}
+
+func (s *server) SyncCollation(
+	ctx context.Context,
+	req *pbrpc.RPCSyncCollationRequest) (*pbrpc.RPCSyncCollationResponse, error) {
+	span := opentracing.StartSpan(
+		"RPCServer.SyncCollation",
+		opentracing.ChildOf(s.parentSpan.Context()),
+	)
+	defer span.Finish()
+	peerID, err := stringToPeerID(req.PeerID)
+	collation, err := s.node.requestCollation(ctx, peerID, req.ShardID, int(req.Period))
+	if err != nil {
+		return &pbrpc.RPCSyncCollationResponse{
+			Response: makeResponse(false, fmt.Sprintf("%v", err)),
+		}, nil
+	}
+	// TODO: callback to Python through eventNotifier?
+	return &pbrpc.RPCSyncCollationResponse{
+		Response:  makeResponse(true, ""),
+		Collation: collation,
+	}, nil
 }
 
 func runRPCServer(n *Node, addr string) {
