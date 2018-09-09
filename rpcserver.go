@@ -299,7 +299,7 @@ func (s *server) SyncShardPeer(
 			Response: makeResponse(false, fmt.Sprintf("%v", err)),
 		}, nil
 	}
-	res, err := s.node.requestShardPeer(ctx, peerID, req.SharIDs)
+	res, err := s.node.requestShardPeer(ctx, peerID, req.ShardIDs)
 	shardPeers := make(map[ShardIDType]*pbmsg.Peers)
 	for shardID, peerIDs := range res {
 		// set shard peers to shardPrefTable

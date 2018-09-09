@@ -64,7 +64,7 @@ message RPCGetPeerResponse {
 
 message RPCSyncShardPeerRequest {
   string peerID = 1;
-  repeated int64 sharIDs = 2;
+  repeated int64 shardIDs = 2;
 }
 message RPCSyncShardPeerResponse {
   Response response = 1;

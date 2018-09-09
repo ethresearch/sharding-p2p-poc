@@ -209,6 +209,18 @@ func runServer(
 	runRPCServer(node, rpcAddr)
 }
 
+func parseArgsShardIDs(rpcArgs []string) ([]ShardIDType, error) {
+	shardIDs := []ShardIDType{}
+	for _, shardIDString := range rpcArgs {
+		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+	return shardIDs, nil
+}
+
 func runClient(rpcAddr string, cliArgs []string) {
 	if len(cliArgs) <= 0 {
 		log.Fatalf("Client: wrong args")
@@ -231,26 +243,18 @@ func runClient(rpcAddr string, cliArgs []string) {
 		if len(rpcArgs) == 0 {
 			log.Fatalf("Client: usage: subshard shard0 shard1 ...")
 		}
-		shardIDs := []ShardIDType{}
-		for _, shardIDString := range rpcArgs {
-			shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			shardIDs = append(shardIDs, shardID)
+		shardIDs, err := parseArgsShardIDs(rpcArgs)
+		if err != nil {
+			panic(err)
 		}
 		callRPCSubscribeShard(rpcAddr, shardIDs)
 	} else if rpcCmd == "unsubshard" {
 		if len(rpcArgs) == 0 {
 			log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
 		}
-		shardIDs := []ShardIDType{}
-		for _, shardIDString := range rpcArgs {
-			shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			shardIDs = append(shardIDs, shardID)
+		shardIDs, err := parseArgsShardIDs(rpcArgs)
+		if err != nil {
+			panic(err)
 		}
 		callRPCUnsubscribeShard(rpcAddr, shardIDs)
 	} else if rpcCmd == "getsubshard" {
@@ -263,7 +267,7 @@ func runClient(rpcAddr string, cliArgs []string) {
 		}
 		shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
 		if err != nil {
-			log.Fatalf("wrong shard: %v", rpcArgs)
+			log.Fatalf("wrong shardID: %v", rpcArgs)
 		}
 		numCollations, err := strconv.Atoi(rpcArgs[1])
 		if err != nil {
@@ -286,6 +290,58 @@ func runClient(rpcAddr string, cliArgs []string) {
 		)
 	} else if rpcCmd == "stop" {
 		callRPCStopServer(rpcAddr)
+	} else if rpcCmd == "getconn" {
+		callRPCGetConnection(rpcAddr)
+	} else if rpcCmd == "getpeer" {
+		var topic string
+		if len(rpcArgs) > 1 {
+			log.Fatalf(
+				"usage: getpeer (topic)",
+			)
+		} else if len(rpcArgs) == 1 {
+			topic = rpcArgs[0]
+		} else {
+			topic = ""
+		}
+		callRPCGetPeer(rpcAddr, topic)
+	} else if rpcCmd == "syncshardpeer" {
+		if len(rpcArgs) < 2 {
+			log.Fatalf(
+				"usage: syncshardpeer peerID shardID0 shardID1 ...",
+			)
+		}
+		peerID, err := stringToPeerID(rpcArgs[0])
+		if err != nil {
+			log.Fatalf("wrong peerID format: %v", err)
+		}
+		shardIDs, err := parseArgsShardIDs(rpcArgs[1:])
+		if err != nil {
+			log.Fatalf("wrong shardIDs format: %v", err)
+		}
+		callRPCSyncShardPeer(rpcAddr, peerID, shardIDs)
+	} else if rpcCmd == "synccollation" {
+		if len(rpcArgs) < 3 {
+			log.Fatalf(
+				"usage: synccollation peerID shardID period (collationHash)",
+			)
+		}
+		peerID, err := stringToPeerID(rpcArgs[0])
+		if err != nil {
+			log.Fatalf("wrong peerID: %v, reason: %v", rpcArgs, err)
+		}
+		shardID, err := strconv.ParseInt(rpcArgs[1], 10, 64)
+		if err != nil {
+			log.Fatalf("wrong shardID: %v, reason: %v", rpcArgs, err)
+		}
+		period, err := strconv.Atoi(rpcArgs[2])
+		if err != nil {
+			log.Fatalf("wrong period: %v, reason: %v", rpcArgs, err)
+		}
+		collationHash := ""
+		if len(rpcArgs) == 4 {
+			collationHash = rpcArgs[3]
+		}
+		callRPCSyncCollation(rpcAddr, peerID, shardID, period, collationHash)
 	} else {
 		log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
 	}
