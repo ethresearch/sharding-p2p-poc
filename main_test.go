@@ -188,7 +188,7 @@ func TestRequestCollation(t *testing.T) {
 	}
 	if collation != nil {
 		t.Errorf(
-			"collation should not be returned since we didn't set an eventNotifier in nodes[1]"
+			"collation should not be returned since we didn't set an eventNotifier in nodes[1]",
 		)
 	}
 }
