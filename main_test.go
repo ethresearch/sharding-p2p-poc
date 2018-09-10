@@ -186,13 +186,9 @@ func TestRequestCollation(t *testing.T) {
 	if err != nil {
 		t.Errorf("request collation failed: %v", err)
 	}
-	if collation.ShardID != shardID || int(collation.Period) != period {
+	if collation != nil {
 		t.Errorf(
-			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
-			collation.ShardID,
-			shardID,
-			collation.Period,
-			period,
+			"collation should not be returned since we didn't set an eventNotifier in nodes[1]"
 		)
 	}
 }
@@ -563,7 +559,7 @@ func TestEventRPCNotifier(t *testing.T) {
 	}
 }
 
-func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
+func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	nodes := makeNodes(t, ctx, 3)
@@ -621,18 +617,24 @@ func TestSubscribeCollationWithRPCNotifier(t *testing.T) {
 	}
 }
 
-func TestRequestCollationWithEventNotifier(t *testing.T) {
+func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	nodes := makeNodes(t, ctx, 2)
 	connectBarbell(t, ctx, nodes)
+
+	// case: without RPCEventNotifier set
 	shardID := ShardIDType(1)
 	period := 2
 	collation, err := nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
 	if err != nil {
 		t.Errorf("request collation failed: %v", err)
 	}
+	if collation != nil {
+		t.Errorf("collation should be nil because nodes[1] haven't setup a eventNotifier")
+	}
 
+	// case: with RPCEventNotifier set, db in the event server has the collation
 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", 55669)
 	_, err = runEventServer(ctx, notifierAddr)
 	if err != nil {
@@ -644,7 +646,10 @@ func TestRequestCollationWithEventNotifier(t *testing.T) {
 	}
 	// explicitly set the eventNotifier
 	nodes[1].eventNotifier = eventNotifier
-
+	collation, err = nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
+	if err != nil {
+		t.Errorf("request collation failed: %v", err)
+	}
 	if collation.ShardID != shardID || int(collation.Period) != period {
 		t.Errorf(
 			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
@@ -654,6 +659,8 @@ func TestRequestCollationWithEventNotifier(t *testing.T) {
 			period,
 		)
 	}
+
+	// case: with RPCEventNotifier set, db in the event server doesn't have the collation
 	periodNotFound := 42
 	collation, err = nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, periodNotFound)
 	if err != nil {
