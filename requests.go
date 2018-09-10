@@ -93,6 +93,7 @@ func (p *RequestProtocol) requestShardPeer(
 		peerID,
 		shardPeerRequestProtocol,
 	)
+	defer s.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open new stream")
 	}
@@ -104,7 +105,6 @@ func (p *RequestProtocol) requestShardPeer(
 	}
 	res := &pbmsg.ShardPeerResponse{}
 	if err := readProtoMessage(res, s); err != nil {
-		s.Close()
 		return nil, fmt.Errorf("failed to read response proto")
 	}
 	shardPeers := make(map[ShardIDType][]peer.ID)
@@ -169,6 +169,7 @@ func (p *RequestProtocol) requestCollation(
 		peerID,
 		collationRequestProtocol,
 	)
+	defer s.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open new stream %v", err)
 	}
