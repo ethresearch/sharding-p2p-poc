@@ -160,11 +160,7 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) e
 	// TODO: should we remove some peers in this shard?
 
 	// shardCollations protocol
-	if err := n.UnsubscribeCollation(spanctx, shardID); err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to unsubscribe to collation in shard %v", shardID))
-		log.Printf("Failed to unsubscribe to collation in shard %v", shardID)
-		return err
-	}
+	n.UnsubscribeCollation(spanctx, shardID)
 
 	// Tag shardID info if nothing goes wrong
 	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
@@ -232,7 +228,7 @@ func (n *ShardManager) SubscribeTopic(
 	return nil
 }
 
-func (n *ShardManager) UnsubscribeTopic(ctx context.Context, topic string) error {
+func (n *ShardManager) UnsubscribeTopic(ctx context.Context, topic string) {
 	// Add span for UnsubscribeTopic of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.UnsubscribeTopic")
 	defer logger.Finish(spanctx)
@@ -241,7 +237,7 @@ func (n *ShardManager) UnsubscribeTopic(ctx context.Context, topic string) error
 	sub, prs := n.subs[topic]
 	n.subsLock.RUnlock()
 	if !prs {
-		return nil
+		return
 	}
 	// Tag topic to unsubscribe to
 	logger.SetTag(spanctx, "Topic", topic)
@@ -250,7 +246,7 @@ func (n *ShardManager) UnsubscribeTopic(ctx context.Context, topic string) error
 	n.subsLock.Lock()
 	delete(n.subs, topic)
 	n.subsLock.Unlock()
-	return nil
+	return
 }
 
 // listeningShards notification
@@ -279,8 +275,8 @@ func (n *ShardManager) SubscribeListeningShards() error {
 	)
 }
 
-func (n *ShardManager) UnsubscribeListeningShards() error {
-	return n.UnsubscribeTopic(context.Background(), listeningShardTopic)
+func (n *ShardManager) UnsubscribeListeningShards() {
+	n.UnsubscribeTopic(context.Background(), listeningShardTopic)
 }
 
 func (n *ShardManager) PublishListeningShards(ctx context.Context) {
@@ -340,13 +336,13 @@ func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDTy
 	return n.SubscribeTopic(spanctx, topic, handler, validator)
 }
 
-func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) error {
+func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) {
 	// Add span for UnsubscribeCollation of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.UnsubscribeCollation")
 	defer logger.Finish(spanctx)
 
 	topic := getCollationsTopic(shardID)
-	return n.UnsubscribeTopic(spanctx, topic)
+	n.UnsubscribeTopic(spanctx, topic)
 }
 
 func (n *ShardManager) IsCollationSubscribed(shardID ShardIDType) bool {
