@@ -26,10 +26,213 @@ import (
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
 
-type ShardIDType = int64
-type PBInt = int64
+type (
+	ShardIDType = int64
+	PBInt = int64
+)
 
-const numShards ShardIDType = 100
+const (
+	numShards ShardIDType = 100
+	defaultListenPort = 10000
+	defaultRPCPort    = 13000
+	defaultIP         = "127.0.0.1"
+)
+
+func main() {
+	// Parse options from the command line
+
+	seed := flag.Int("seed", 0, "set random seed for id generation")
+	listenIP := flag.String(
+		"ip",
+		defaultIP,
+		"ip listened by the process for incoming connections",
+	)
+	listenPort := flag.Int(
+		"port",
+		defaultListenPort,
+		"port listened by the node for incoming connections",
+	)
+	rpcIP := flag.String(
+		"rpcip",
+		defaultIP,
+		"ip listened by the RPC server",
+	)
+	rpcPort := flag.Int("rpcport", defaultRPCPort, "RPC port listened by the RPC server")
+	notifierPort := flag.Int(
+		"notifierport",
+		defulatEventRPCPort,
+		"notifier port listened by the event rpc server",
+	)
+	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
+	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
+	isClient := flag.Bool("client", false, "is RPC client or server")
+	flag.Parse()
+
+	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
+	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
+
+	if *isClient {
+		runClient(rpcAddr, flag.Args())
+	} else {
+		runServer(*listenIP, *listenPort, *seed, *doBootstrapping, *bootnodesStr, rpcAddr, notifierAddr)
+	}
+}
+
+
+func runClient(rpcAddr string, cliArgs []string) {
+	if len(cliArgs) <= 0 {
+		log.Fatalf("Client: wrong args")
+		return
+	}
+	rpcCmd := cliArgs[0]
+	rpcArgs := cliArgs[1:]
+	switch rpcCmd {
+	case "addpeer":
+		doAddPeer(rpcArgs, rpcAddr)
+	case "subshard":
+		doSubShard(rpcArgs, rpcAddr)
+	case "unsubshard":
+		doUnsubShard(rpcArgs, rpcAddr)
+	case "getsubshard":
+		callRPCGetSubscribedShard(rpcAddr)
+	case "broadcastcollation":
+		doBroadcastCollation(rpcArgs, rpcAddr)
+	case "stop":
+		callRPCStopServer(rpcAddr)
+	default:
+		log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
+	}
+}
+
+func runServer(
+	listenIP string,
+	listenPort int,
+	seed int,
+	doBootstrapping bool,
+	bootnodesStr string,
+	rpcAddr string,
+	notifierAddr string) {
+	ctx := context.Background()
+	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		// TODO: don't use eventNotifier if it is not available
+		eventNotifier = nil
+	}
+	var bootnodes  = []pstore.PeerInfo{}
+	if bootnodesStr != "" {
+		bootnodes = convertPeers(strings.Split(bootnodesStr, ","))
+	}
+
+	node, err := makeNode(
+		ctx,
+		listenIP,
+		listenPort,
+		seed,
+		eventNotifier,
+		doBootstrapping,
+		bootnodes,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Set up Opentracing and Jaeger tracer
+	cfg := &jaegerconfig.Configuration{
+		Sampler: &jaegerconfig.SamplerConfig{
+			Type:  "const",
+			Param: 1,
+		},
+		Reporter: &jaegerconfig.ReporterConfig{
+			LogSpans: true,
+		},
+	}
+	tracerName := fmt.Sprintf("RPC Server@%v", rpcAddr)
+	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
+	defer closer.Close()
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
+	}
+	opentracing.SetGlobalTracer(tracer)
+	// End of tracer setup
+
+	runRPCServer(node, rpcAddr)
+}
+
+
+func doAddPeer(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 3 {
+		log.Fatalf("Client: usage: addpeer ip port seed")
+	}
+	targetIP := rpcArgs[0]
+	targetPort, err := strconv.Atoi(rpcArgs[1])
+	targetSeed, err := strconv.Atoi(rpcArgs[2])
+	if err != nil {
+		panic(err)
+	}
+	callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
+}
+
+func doSubShard(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 {
+		log.Fatalf("Client: usage: subshard shard0 shard1 ...")
+	}
+	shardIDs := []ShardIDType{}
+	for _, shardIDString := range rpcArgs {
+		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+	callRPCSubscribeShard(rpcAddr, shardIDs)
+}
+
+func doUnsubShard(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 {
+		log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
+	}
+	shardIDs := []ShardIDType{}
+	for _, shardIDString := range rpcArgs {
+		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+	callRPCUnsubscribeShard(rpcAddr, shardIDs)
+}
+
+func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 4 {
+		log.Fatalf(
+			"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
+		)
+	}
+	shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
+	if err != nil {
+		log.Fatalf("wrong shard: %v", rpcArgs)
+	}
+	numCollations, err := strconv.Atoi(rpcArgs[1])
+	if err != nil {
+		log.Fatalf("wrong numCollations: %v", rpcArgs)
+	}
+	collationSize, err := strconv.Atoi(rpcArgs[2])
+	if err != nil {
+		log.Fatalf("wrong collationSize: %v", rpcArgs)
+	}
+	timeInMs, err := strconv.Atoi(rpcArgs[3])
+	if err != nil {
+		log.Fatalf("wrong timeInMs: %v", rpcArgs)
+	}
+	callRPCBroadcastCollation(
+		rpcAddr,
+		shardID,
+		numCollations,
+		collationSize,
+		timeInMs,
+	)
+}
+
 
 func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
 	// If the seed is zero, use real cryptographic randomness. Otherwise, use a
@@ -101,192 +304,4 @@ func makeNode(
 	node := NewNode(ctx, routedHost, int(randseed), eventNotifier)
 
 	return node, nil
-}
-
-const (
-	defaultListenPort = 10000
-	defaultRPCPort    = 13000
-	defaultIP         = "127.0.0.1"
-)
-
-func main() {
-	// LibP2P code uses golog to log messages. They log with different
-	// string IDs (i.e. "swarm"). We can control the verbosity level for
-	// all loggers with:
-	// golog.SetAllLoggers(gologging.INFO) // Change to DEBUG for extra info
-
-	// Parse options from the command line
-
-	seed := flag.Int("seed", 0, "set random seed for id generation")
-	listenIP := flag.String(
-		"ip",
-		defaultIP,
-		"ip listened by the process for incoming connections",
-	)
-	listenPort := flag.Int(
-		"port",
-		defaultListenPort,
-		"port listened by the node for incoming connections",
-	)
-	rpcIP := flag.String(
-		"rpcip",
-		defaultIP,
-		"ip listened by the RPC server",
-	)
-	rpcPort := flag.Int("rpcport", defaultRPCPort, "RPC port listened by the RPC server")
-	notifierPort := flag.Int(
-		"notifierport",
-		defulatEventRPCPort,
-		"notifier port listened by the event rpc server",
-	)
-	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
-	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
-	isClient := flag.Bool("client", false, "is RPC client or server")
-	flag.Parse()
-
-	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
-	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
-
-	if *isClient {
-		runClient(rpcAddr, flag.Args())
-	} else {
-		var bootnodes []pstore.PeerInfo
-		if *bootnodesStr == "" {
-			bootnodes = []pstore.PeerInfo{}
-		} else {
-			bootnodes = convertPeers(strings.Split(*bootnodesStr, ","))
-		}
-		runServer(*listenIP, *listenPort, *seed, *doBootstrapping, bootnodes, rpcAddr, notifierAddr)
-	}
-}
-
-func runServer(
-	listenIP string,
-	listenPort int,
-	seed int,
-	doBootstrapping bool,
-	bootnodes []pstore.PeerInfo,
-	rpcAddr string,
-	notifierAddr string) {
-	ctx := context.Background()
-	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
-	if err != nil {
-		// TODO: don't use eventNotifier if it is not available
-		eventNotifier = nil
-	}
-	node, err := makeNode(
-		ctx,
-		listenIP,
-		listenPort,
-		seed,
-		eventNotifier,
-		doBootstrapping,
-		bootnodes,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Set up Opentracing and Jaeger tracer
-	cfg := &jaegerconfig.Configuration{
-		Sampler: &jaegerconfig.SamplerConfig{
-			Type:  "const",
-			Param: 1,
-		},
-		Reporter: &jaegerconfig.ReporterConfig{
-			LogSpans: true,
-		},
-	}
-	tracerName := fmt.Sprintf("RPC Server@%v", rpcAddr)
-	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
-	defer closer.Close()
-	if err != nil {
-		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
-	}
-	opentracing.SetGlobalTracer(tracer)
-	// End of tracer setup
-
-	runRPCServer(node, rpcAddr)
-}
-
-func runClient(rpcAddr string, cliArgs []string) {
-	if len(cliArgs) <= 0 {
-		log.Fatalf("Client: wrong args")
-		return
-	}
-	rpcCmd := cliArgs[0]
-	rpcArgs := cliArgs[1:]
-	if rpcCmd == "addpeer" {
-		if len(rpcArgs) != 3 {
-			log.Fatalf("Client: usage: addpeer ip port seed")
-		}
-		targetIP := rpcArgs[0]
-		targetPort, err := strconv.Atoi(rpcArgs[1])
-		targetSeed, err := strconv.Atoi(rpcArgs[2])
-		if err != nil {
-			panic(err)
-		}
-		callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
-	} else if rpcCmd == "subshard" {
-		if len(rpcArgs) == 0 {
-			log.Fatalf("Client: usage: subshard shard0 shard1 ...")
-		}
-		shardIDs := []ShardIDType{}
-		for _, shardIDString := range rpcArgs {
-			shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			shardIDs = append(shardIDs, shardID)
-		}
-		callRPCSubscribeShard(rpcAddr, shardIDs)
-	} else if rpcCmd == "unsubshard" {
-		if len(rpcArgs) == 0 {
-			log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
-		}
-		shardIDs := []ShardIDType{}
-		for _, shardIDString := range rpcArgs {
-			shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			shardIDs = append(shardIDs, shardID)
-		}
-		callRPCUnsubscribeShard(rpcAddr, shardIDs)
-	} else if rpcCmd == "getsubshard" {
-		callRPCGetSubscribedShard(rpcAddr)
-	} else if rpcCmd == "broadcastcollation" {
-		if len(rpcArgs) != 4 {
-			log.Fatalf(
-				"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
-			)
-		}
-		shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
-		if err != nil {
-			log.Fatalf("wrong shard: %v", rpcArgs)
-		}
-		numCollations, err := strconv.Atoi(rpcArgs[1])
-		if err != nil {
-			log.Fatalf("wrong numCollations: %v", rpcArgs)
-		}
-		collationSize, err := strconv.Atoi(rpcArgs[2])
-		if err != nil {
-			log.Fatalf("wrong collationSize: %v", rpcArgs)
-		}
-		timeInMs, err := strconv.Atoi(rpcArgs[3])
-		if err != nil {
-			log.Fatalf("wrong timeInMs: %v", rpcArgs)
-		}
-		callRPCBroadcastCollation(
-			rpcAddr,
-			shardID,
-			numCollations,
-			collationSize,
-			timeInMs,
-		)
-	} else if rpcCmd == "stop" {
-		callRPCStopServer(rpcAddr)
-	} else {
-		log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
-	}
 }
