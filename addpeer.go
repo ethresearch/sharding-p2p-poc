@@ -95,7 +95,6 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 		log.Println(err)
 		return err
 	}
-	log.Printf("%s: Sending addPeer to: %s....", p.node.Name(), peerid)
 	p.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 	// create message data
 	req := &pbmsg.AddPeerRequest{

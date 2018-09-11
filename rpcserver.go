@@ -270,7 +270,7 @@ func runRPCServer(n *Node, addr string) {
 	ctx := context.Background()
 	ctx = logger.Start(ctx, "RPCServer")
 	defer logger.Finish(ctx)
-	logger.SetTag(ctx, "Seed Number", n.number)
+	logger.SetTag(ctx, "Node ID %s", n.host.ID().Pretty())
 	serializedSpanCtx, err := logger.SerializeContext(ctx)
 	if err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serialize span context, err: %v", err))

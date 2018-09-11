@@ -15,16 +15,14 @@ type Node struct {
 	*RequestProtocol // for peers to request data
 	*ShardManager
 
-	ctx    context.Context
-	number int
+	ctx context.Context
 }
 
 // NewNode creates a new node with its implemented protocols
-func NewNode(ctx context.Context, h host.Host, number int, eventNotifier EventNotifier) *Node {
+func NewNode(ctx context.Context, h host.Host, eventNotifier EventNotifier) *Node {
 	node := &Node{
-		Host:   h,
-		number: number,
-		ctx:    ctx,
+		Host: h,
+		ctx:  ctx,
 	}
 	node.AddPeerProtocol = NewAddPeerProtocol(node)
 	node.RequestProtocol = NewRequestProtocol(node)
