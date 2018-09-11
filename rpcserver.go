@@ -65,7 +65,8 @@ func (s *server) AddPeer(
 	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	var replyMsg string
-	success := s.node.AddPeer(spanctx, mAddr)
+	err = s.node.AddPeer(spanctx, mAddr)
+	success := (err == nil)
 	if success {
 		replyMsg = fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 		// Tag the span with peer info

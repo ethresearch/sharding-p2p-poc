@@ -33,11 +33,6 @@ func NewNode(ctx context.Context, h host.Host, number int, eventNotifier EventNo
 	return node
 }
 
-func (n *Node) Name() string {
-	id := n.ID().Pretty()
-	return fmt.Sprintf("<Node %d %s>", n.number, id[2:8])
-}
-
 func (n *Node) GetFullAddr() string {
 	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", n.ID().Pretty()))
 

@@ -14,11 +14,8 @@ import (
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 )
 
-// pattern: /protocol-name/request-or-response-message/version
 const addPeerRequest = "/addPeer/request/0.0.1"
-const addPeerResponse = "/addPeer/response/0.0.1"
 
-// AddPeerProtocol type
 type AddPeerProtocol struct {
 	node *Node // local host
 }
@@ -55,33 +52,27 @@ func NewAddPeerProtocol(node *Node) *AddPeerProtocol {
 		node: node,
 	}
 	node.SetStreamHandler(addPeerRequest, p.onRequest)
-	node.SetStreamHandler(addPeerResponse, p.onResponse)
 	return p
 }
 
 // remote peer requests handler
 func (p *AddPeerProtocol) onRequest(s inet.Stream) {
+	defer inet.FullClose(s)
 	// get request data
 	data := &pbmsg.AddPeerRequest{}
-	if !readProtoMessage(data, s) {
-		s.Close()
+	if err := readProtoMessage(data, s); err != nil {
 		return
 	}
 
 	log.Printf(
 		"%s: Received addPeer request from %s. Message: %s",
-		p.node.Name(),
+		p.node.ID(),
 		s.Conn().RemotePeer(),
 		data.Message,
 	)
 
-	// generate response message
-	log.Printf(
-		"%s: Sending addPeer response to %s",
-		p.node.Name(),
-		s.Conn().RemotePeer(),
-	)
-
+	// TODO: add logics for handshake and initialization, e.g. asking for shard peers
+	//		 if nothing is wrong, accept this peer.
 	resp := &pbmsg.AddPeerResponse{
 		Response: &pbmsg.Response{Status: pbmsg.Response_SUCCESS},
 	}
@@ -91,49 +82,24 @@ func (p *AddPeerProtocol) onRequest(s inet.Stream) {
 		s.Conn().RemoteMultiaddr(),
 		pstore.PermanentAddrTTL,
 	)
-
-	sResponse, err := p.node.NewStream(p.node.ctx, s.Conn().RemotePeer(), addPeerResponse)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	if !sendProtoMessage(resp, sResponse) {
-		sResponse.Close()
-	}
+	sendProtoMessage(resp, s)
 }
 
-// remote addPeer response handler
-func (p *AddPeerProtocol) onResponse(s inet.Stream) {
-	data := &pbmsg.AddPeerResponse{}
-	if !readProtoMessage(data, s) {
-		s.Close()
-		return
-	}
-	log.Printf(
-		"%s: Received addPeer response from %s, result=%v",
-		p.node.Name(),
-		s.Conn().RemotePeer(),
-		data.Response.Status,
-	)
-}
-
-func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) bool {
+func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 	// Add span for AddPeer of AddPeerProtocol
 	span, _ := opentracing.StartSpanFromContext(ctx, "AddPeerProtocol.AddPeer")
 	defer span.Finish()
 
 	peerid, targetAddr := parseAddr(peerAddr)
-	log.Printf("%s: Sending addPeer to: %s....", p.node.Name(), peerid)
 	p.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 	// create message data
 	req := &pbmsg.AddPeerRequest{
-		Message: fmt.Sprintf("AddPeer from %s", p.node.Name()),
+		Message: fmt.Sprintf("AddPeer from %s", p.node.ID()),
 	}
 
 	s, err := p.node.NewStream(ctx, peerid, addPeerRequest)
 	if err != nil {
-		log.Println(err)
-		return false
+		return err
 	}
 
 	return sendProtoMessage(req, s)
