@@ -6,8 +6,15 @@ import (
 	"log"
 
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"google.golang.org/grpc"
 )
+
+func exitIfNotSucceed(res *pbrpc.Response) {
+	if res == nil || res.Status != pbrpc.Response_SUCCESS {
+		log.Fatal()
+	}
+}
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
@@ -26,6 +33,7 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	exitIfNotSucceed(res.Response)
 	log.Printf("rpcclient:AddPeer: result=%v", res)
 }
 
@@ -44,6 +52,7 @@ func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	exitIfNotSucceed(res.Response)
 	log.Printf("rpcclient:ShardReq: result=%v", res)
 }
 
@@ -62,6 +71,7 @@ func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	exitIfNotSucceed(res.Response)
 	log.Printf("rpcclient:UnsubscribeShardReq: result=%v", res)
 }
 
@@ -78,6 +88,7 @@ func callRPCGetSubscribedShard(rpcAddr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	exitIfNotSucceed(res.Response)
 	log.Printf("rpcclient:GetSubscribedShard: result=%v", res.ShardIDs)
 }
 
@@ -104,6 +115,7 @@ func callRPCBroadcastCollation(
 	if err != nil {
 		log.Fatal(err)
 	}
+	exitIfNotSucceed(res.Response)
 	log.Printf("rpcclient:BroadcastCollation: result=%v", res)
 }
 
@@ -120,5 +132,90 @@ func callRPCStopServer(rpcAddr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	exitIfNotSucceed(res.Response)
 	fmt.Print(res)
+}
+
+// rpc GetConnection(RPCGetConnectionRequest) returns (RPCGetConnectionResponse) {}
+// rpc GetPeer(RPCGetPeerRequest) returns (RPCGetPeerResponse) {}
+// rpc SyncShardPeer(RPCSyncShardPeerRequest) returns (RPCSyncShardPeerResponse) {}
+// rpc SyncCollation(RPCSyncCollationRequest) returns (RPCSyncCollationResponse) {}
+
+func callRPCGetConnection(rpcAddr string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+	req := &pbrpc.RPCGetConnectionRequest{}
+	res, err := client.GetConnection(context.Background(), req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	exitIfNotSucceed(res.Response)
+	fmt.Println(res)
+}
+
+func callRPCGetPeer(rpcAddr string, topic string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+	req := &pbrpc.RPCGetPeerRequest{
+		Topic: topic,
+	}
+	res, err := client.GetPeer(context.Background(), req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	exitIfNotSucceed(res.Response)
+	fmt.Println(res)
+}
+
+func callRPCSyncShardPeer(rpcAddr string, peerID peer.ID, shardIDs []ShardIDType) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+	req := &pbrpc.RPCSyncShardPeerRequest{
+		PeerID:   peerIDToString(peerID),
+		ShardIDs: shardIDs,
+	}
+	res, err := client.SyncShardPeer(context.Background(), req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	exitIfNotSucceed(res.Response)
+	fmt.Println(res)
+}
+
+func callRPCSyncCollation(
+	rpcAddr string,
+	peerID peer.ID,
+	shardID ShardIDType,
+	period int,
+	collationHash string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+	req := &pbrpc.RPCSyncCollationRequest{
+		PeerID:        peerIDToString(peerID),
+		ShardID:       shardID,
+		Period:        PBInt(period),
+		CollationHash: collationHash,
+	}
+	res, err := client.SyncCollation(context.Background(), req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	exitIfNotSucceed(res.Response)
+	fmt.Println(res)
 }

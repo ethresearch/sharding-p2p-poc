@@ -44,10 +44,9 @@ func (x Response_Status) String() string {
 	return proto.EnumName(Response_Status_name, int32(x))
 }
 func (Response_Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{7, 0}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{16, 0}
 }
 
-// Request
 type RPCAddPeerRequest struct {
 	Ip                   string   `protobuf:"bytes,1,opt,name=ip,proto3" json:"ip,omitempty"`
 	Port                 int64    `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
@@ -61,7 +60,7 @@ func (m *RPCAddPeerRequest) Reset()         { *m = RPCAddPeerRequest{} }
 func (m *RPCAddPeerRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCAddPeerRequest) ProtoMessage()    {}
 func (*RPCAddPeerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{0}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{0}
 }
 func (m *RPCAddPeerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCAddPeerRequest.Unmarshal(m, b)
@@ -113,7 +112,7 @@ func (m *RPCSubscribeShardRequest) Reset()         { *m = RPCSubscribeShardReque
 func (m *RPCSubscribeShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCSubscribeShardRequest) ProtoMessage()    {}
 func (*RPCSubscribeShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{1}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{1}
 }
 func (m *RPCSubscribeShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCSubscribeShardRequest.Unmarshal(m, b)
@@ -151,7 +150,7 @@ func (m *RPCUnsubscribeShardRequest) Reset()         { *m = RPCUnsubscribeShardR
 func (m *RPCUnsubscribeShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCUnsubscribeShardRequest) ProtoMessage()    {}
 func (*RPCUnsubscribeShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{2}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{2}
 }
 func (m *RPCUnsubscribeShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCUnsubscribeShardRequest.Unmarshal(m, b)
@@ -188,7 +187,7 @@ func (m *RPCGetSubscribedShardRequest) Reset()         { *m = RPCGetSubscribedSh
 func (m *RPCGetSubscribedShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCGetSubscribedShardRequest) ProtoMessage()    {}
 func (*RPCGetSubscribedShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{3}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{3}
 }
 func (m *RPCGetSubscribedShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCGetSubscribedShardRequest.Unmarshal(m, b)
@@ -208,6 +207,52 @@ func (m *RPCGetSubscribedShardRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RPCGetSubscribedShardRequest proto.InternalMessageInfo
 
+type RPCGetSubscribedShardResponse struct {
+	Response             *Response `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	ShardIDs             []int64   `protobuf:"varint,2,rep,packed,name=shardIDs,proto3" json:"shardIDs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *RPCGetSubscribedShardResponse) Reset()         { *m = RPCGetSubscribedShardResponse{} }
+func (m *RPCGetSubscribedShardResponse) String() string { return proto.CompactTextString(m) }
+func (*RPCGetSubscribedShardResponse) ProtoMessage()    {}
+func (*RPCGetSubscribedShardResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{4}
+}
+func (m *RPCGetSubscribedShardResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCGetSubscribedShardResponse.Unmarshal(m, b)
+}
+func (m *RPCGetSubscribedShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCGetSubscribedShardResponse.Marshal(b, m, deterministic)
+}
+func (dst *RPCGetSubscribedShardResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCGetSubscribedShardResponse.Merge(dst, src)
+}
+func (m *RPCGetSubscribedShardResponse) XXX_Size() int {
+	return xxx_messageInfo_RPCGetSubscribedShardResponse.Size(m)
+}
+func (m *RPCGetSubscribedShardResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCGetSubscribedShardResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCGetSubscribedShardResponse proto.InternalMessageInfo
+
+func (m *RPCGetSubscribedShardResponse) GetResponse() *Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *RPCGetSubscribedShardResponse) GetShardIDs() []int64 {
+	if m != nil {
+		return m.ShardIDs
+	}
+	return nil
+}
+
 type RPCBroadcastCollationRequest struct {
 	ShardID              int64    `protobuf:"varint,1,opt,name=shardID,proto3" json:"shardID,omitempty"`
 	Number               int64    `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
@@ -222,7 +267,7 @@ func (m *RPCBroadcastCollationRequest) Reset()         { *m = RPCBroadcastCollat
 func (m *RPCBroadcastCollationRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCBroadcastCollationRequest) ProtoMessage()    {}
 func (*RPCBroadcastCollationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{4}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{5}
 }
 func (m *RPCBroadcastCollationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCBroadcastCollationRequest.Unmarshal(m, b)
@@ -281,7 +326,7 @@ func (m *RPCSendCollationRequest) Reset()         { *m = RPCSendCollationRequest
 func (m *RPCSendCollationRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCSendCollationRequest) ProtoMessage()    {}
 func (*RPCSendCollationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{5}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{6}
 }
 func (m *RPCSendCollationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCSendCollationRequest.Unmarshal(m, b)
@@ -318,7 +363,7 @@ func (m *RPCStopServerRequest) Reset()         { *m = RPCStopServerRequest{} }
 func (m *RPCStopServerRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCStopServerRequest) ProtoMessage()    {}
 func (*RPCStopServerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{6}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{7}
 }
 func (m *RPCStopServerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCStopServerRequest.Unmarshal(m, b)
@@ -338,6 +383,366 @@ func (m *RPCStopServerRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RPCStopServerRequest proto.InternalMessageInfo
 
+type RPCGetConnectionRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RPCGetConnectionRequest) Reset()         { *m = RPCGetConnectionRequest{} }
+func (m *RPCGetConnectionRequest) String() string { return proto.CompactTextString(m) }
+func (*RPCGetConnectionRequest) ProtoMessage()    {}
+func (*RPCGetConnectionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{8}
+}
+func (m *RPCGetConnectionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCGetConnectionRequest.Unmarshal(m, b)
+}
+func (m *RPCGetConnectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCGetConnectionRequest.Marshal(b, m, deterministic)
+}
+func (dst *RPCGetConnectionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCGetConnectionRequest.Merge(dst, src)
+}
+func (m *RPCGetConnectionRequest) XXX_Size() int {
+	return xxx_messageInfo_RPCGetConnectionRequest.Size(m)
+}
+func (m *RPCGetConnectionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCGetConnectionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCGetConnectionRequest proto.InternalMessageInfo
+
+type RPCGetConnectionResponse struct {
+	Response             *Response `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	Connections          []string  `protobuf:"bytes,2,rep,name=connections,proto3" json:"connections,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *RPCGetConnectionResponse) Reset()         { *m = RPCGetConnectionResponse{} }
+func (m *RPCGetConnectionResponse) String() string { return proto.CompactTextString(m) }
+func (*RPCGetConnectionResponse) ProtoMessage()    {}
+func (*RPCGetConnectionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{9}
+}
+func (m *RPCGetConnectionResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCGetConnectionResponse.Unmarshal(m, b)
+}
+func (m *RPCGetConnectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCGetConnectionResponse.Marshal(b, m, deterministic)
+}
+func (dst *RPCGetConnectionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCGetConnectionResponse.Merge(dst, src)
+}
+func (m *RPCGetConnectionResponse) XXX_Size() int {
+	return xxx_messageInfo_RPCGetConnectionResponse.Size(m)
+}
+func (m *RPCGetConnectionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCGetConnectionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCGetConnectionResponse proto.InternalMessageInfo
+
+func (m *RPCGetConnectionResponse) GetResponse() *Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *RPCGetConnectionResponse) GetConnections() []string {
+	if m != nil {
+		return m.Connections
+	}
+	return nil
+}
+
+type RPCGetPeerRequest struct {
+	Topic                string   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RPCGetPeerRequest) Reset()         { *m = RPCGetPeerRequest{} }
+func (m *RPCGetPeerRequest) String() string { return proto.CompactTextString(m) }
+func (*RPCGetPeerRequest) ProtoMessage()    {}
+func (*RPCGetPeerRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{10}
+}
+func (m *RPCGetPeerRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCGetPeerRequest.Unmarshal(m, b)
+}
+func (m *RPCGetPeerRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCGetPeerRequest.Marshal(b, m, deterministic)
+}
+func (dst *RPCGetPeerRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCGetPeerRequest.Merge(dst, src)
+}
+func (m *RPCGetPeerRequest) XXX_Size() int {
+	return xxx_messageInfo_RPCGetPeerRequest.Size(m)
+}
+func (m *RPCGetPeerRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCGetPeerRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCGetPeerRequest proto.InternalMessageInfo
+
+func (m *RPCGetPeerRequest) GetTopic() string {
+	if m != nil {
+		return m.Topic
+	}
+	return ""
+}
+
+type RPCGetPeerResponse struct {
+	Response             *Response `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	PeerIDs              []string  `protobuf:"bytes,2,rep,name=peerIDs,proto3" json:"peerIDs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *RPCGetPeerResponse) Reset()         { *m = RPCGetPeerResponse{} }
+func (m *RPCGetPeerResponse) String() string { return proto.CompactTextString(m) }
+func (*RPCGetPeerResponse) ProtoMessage()    {}
+func (*RPCGetPeerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{11}
+}
+func (m *RPCGetPeerResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCGetPeerResponse.Unmarshal(m, b)
+}
+func (m *RPCGetPeerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCGetPeerResponse.Marshal(b, m, deterministic)
+}
+func (dst *RPCGetPeerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCGetPeerResponse.Merge(dst, src)
+}
+func (m *RPCGetPeerResponse) XXX_Size() int {
+	return xxx_messageInfo_RPCGetPeerResponse.Size(m)
+}
+func (m *RPCGetPeerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCGetPeerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCGetPeerResponse proto.InternalMessageInfo
+
+func (m *RPCGetPeerResponse) GetResponse() *Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *RPCGetPeerResponse) GetPeerIDs() []string {
+	if m != nil {
+		return m.PeerIDs
+	}
+	return nil
+}
+
+type RPCSyncShardPeerRequest struct {
+	PeerID               string   `protobuf:"bytes,1,opt,name=peerID,proto3" json:"peerID,omitempty"`
+	ShardIDs             []int64  `protobuf:"varint,2,rep,packed,name=shardIDs,proto3" json:"shardIDs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RPCSyncShardPeerRequest) Reset()         { *m = RPCSyncShardPeerRequest{} }
+func (m *RPCSyncShardPeerRequest) String() string { return proto.CompactTextString(m) }
+func (*RPCSyncShardPeerRequest) ProtoMessage()    {}
+func (*RPCSyncShardPeerRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{12}
+}
+func (m *RPCSyncShardPeerRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCSyncShardPeerRequest.Unmarshal(m, b)
+}
+func (m *RPCSyncShardPeerRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCSyncShardPeerRequest.Marshal(b, m, deterministic)
+}
+func (dst *RPCSyncShardPeerRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCSyncShardPeerRequest.Merge(dst, src)
+}
+func (m *RPCSyncShardPeerRequest) XXX_Size() int {
+	return xxx_messageInfo_RPCSyncShardPeerRequest.Size(m)
+}
+func (m *RPCSyncShardPeerRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCSyncShardPeerRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCSyncShardPeerRequest proto.InternalMessageInfo
+
+func (m *RPCSyncShardPeerRequest) GetPeerID() string {
+	if m != nil {
+		return m.PeerID
+	}
+	return ""
+}
+
+func (m *RPCSyncShardPeerRequest) GetShardIDs() []int64 {
+	if m != nil {
+		return m.ShardIDs
+	}
+	return nil
+}
+
+type RPCSyncShardPeerResponse struct {
+	Response             *Response                `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	ShardPeers           map[int64]*message.Peers `protobuf:"bytes,2,rep,name=shardPeers,proto3" json:"shardPeers,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
+}
+
+func (m *RPCSyncShardPeerResponse) Reset()         { *m = RPCSyncShardPeerResponse{} }
+func (m *RPCSyncShardPeerResponse) String() string { return proto.CompactTextString(m) }
+func (*RPCSyncShardPeerResponse) ProtoMessage()    {}
+func (*RPCSyncShardPeerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{13}
+}
+func (m *RPCSyncShardPeerResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCSyncShardPeerResponse.Unmarshal(m, b)
+}
+func (m *RPCSyncShardPeerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCSyncShardPeerResponse.Marshal(b, m, deterministic)
+}
+func (dst *RPCSyncShardPeerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCSyncShardPeerResponse.Merge(dst, src)
+}
+func (m *RPCSyncShardPeerResponse) XXX_Size() int {
+	return xxx_messageInfo_RPCSyncShardPeerResponse.Size(m)
+}
+func (m *RPCSyncShardPeerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCSyncShardPeerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCSyncShardPeerResponse proto.InternalMessageInfo
+
+func (m *RPCSyncShardPeerResponse) GetResponse() *Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *RPCSyncShardPeerResponse) GetShardPeers() map[int64]*message.Peers {
+	if m != nil {
+		return m.ShardPeers
+	}
+	return nil
+}
+
+type RPCSyncCollationRequest struct {
+	PeerID               string   `protobuf:"bytes,1,opt,name=peerID,proto3" json:"peerID,omitempty"`
+	ShardID              int64    `protobuf:"varint,2,opt,name=shardID,proto3" json:"shardID,omitempty"`
+	Period               int64    `protobuf:"varint,3,opt,name=period,proto3" json:"period,omitempty"`
+	CollationHash        string   `protobuf:"bytes,4,opt,name=collationHash,proto3" json:"collationHash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RPCSyncCollationRequest) Reset()         { *m = RPCSyncCollationRequest{} }
+func (m *RPCSyncCollationRequest) String() string { return proto.CompactTextString(m) }
+func (*RPCSyncCollationRequest) ProtoMessage()    {}
+func (*RPCSyncCollationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{14}
+}
+func (m *RPCSyncCollationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCSyncCollationRequest.Unmarshal(m, b)
+}
+func (m *RPCSyncCollationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCSyncCollationRequest.Marshal(b, m, deterministic)
+}
+func (dst *RPCSyncCollationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCSyncCollationRequest.Merge(dst, src)
+}
+func (m *RPCSyncCollationRequest) XXX_Size() int {
+	return xxx_messageInfo_RPCSyncCollationRequest.Size(m)
+}
+func (m *RPCSyncCollationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCSyncCollationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCSyncCollationRequest proto.InternalMessageInfo
+
+func (m *RPCSyncCollationRequest) GetPeerID() string {
+	if m != nil {
+		return m.PeerID
+	}
+	return ""
+}
+
+func (m *RPCSyncCollationRequest) GetShardID() int64 {
+	if m != nil {
+		return m.ShardID
+	}
+	return 0
+}
+
+func (m *RPCSyncCollationRequest) GetPeriod() int64 {
+	if m != nil {
+		return m.Period
+	}
+	return 0
+}
+
+func (m *RPCSyncCollationRequest) GetCollationHash() string {
+	if m != nil {
+		return m.CollationHash
+	}
+	return ""
+}
+
+type RPCSyncCollationResponse struct {
+	Response             *Response          `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	Collation            *message.Collation `protobuf:"bytes,2,opt,name=collation,proto3" json:"collation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *RPCSyncCollationResponse) Reset()         { *m = RPCSyncCollationResponse{} }
+func (m *RPCSyncCollationResponse) String() string { return proto.CompactTextString(m) }
+func (*RPCSyncCollationResponse) ProtoMessage()    {}
+func (*RPCSyncCollationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{15}
+}
+func (m *RPCSyncCollationResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCSyncCollationResponse.Unmarshal(m, b)
+}
+func (m *RPCSyncCollationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCSyncCollationResponse.Marshal(b, m, deterministic)
+}
+func (dst *RPCSyncCollationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCSyncCollationResponse.Merge(dst, src)
+}
+func (m *RPCSyncCollationResponse) XXX_Size() int {
+	return xxx_messageInfo_RPCSyncCollationResponse.Size(m)
+}
+func (m *RPCSyncCollationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCSyncCollationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCSyncCollationResponse proto.InternalMessageInfo
+
+func (m *RPCSyncCollationResponse) GetResponse() *Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *RPCSyncCollationResponse) GetCollation() *message.Collation {
+	if m != nil {
+		return m.Collation
+	}
+	return nil
+}
+
 // Response
 type Response struct {
 	Status               Response_Status `protobuf:"varint,1,opt,name=status,proto3,enum=proto.rpc.Response_Status" json:"status,omitempty"`
@@ -351,7 +756,7 @@ func (m *Response) Reset()         { *m = Response{} }
 func (m *Response) String() string { return proto.CompactTextString(m) }
 func (*Response) ProtoMessage()    {}
 func (*Response) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{7}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{16}
 }
 func (m *Response) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Response.Unmarshal(m, b)
@@ -396,7 +801,7 @@ func (m *RPCPlainResponse) Reset()         { *m = RPCPlainResponse{} }
 func (m *RPCPlainResponse) String() string { return proto.CompactTextString(m) }
 func (*RPCPlainResponse) ProtoMessage()    {}
 func (*RPCPlainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{8}
+	return fileDescriptor_rpc_cc73613fdb50fe5f, []int{17}
 }
 func (m *RPCPlainResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCPlainResponse.Unmarshal(m, b)
@@ -423,63 +828,26 @@ func (m *RPCPlainResponse) GetResponse() *Response {
 	return nil
 }
 
-type RPCGetSubscribedShardResponse struct {
-	Response             *Response `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
-	ShardIDs             []int64   `protobuf:"varint,2,rep,packed,name=shardIDs,proto3" json:"shardIDs,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
-}
-
-func (m *RPCGetSubscribedShardResponse) Reset()         { *m = RPCGetSubscribedShardResponse{} }
-func (m *RPCGetSubscribedShardResponse) String() string { return proto.CompactTextString(m) }
-func (*RPCGetSubscribedShardResponse) ProtoMessage()    {}
-func (*RPCGetSubscribedShardResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_277a2f537a741991, []int{9}
-}
-func (m *RPCGetSubscribedShardResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_RPCGetSubscribedShardResponse.Unmarshal(m, b)
-}
-func (m *RPCGetSubscribedShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_RPCGetSubscribedShardResponse.Marshal(b, m, deterministic)
-}
-func (dst *RPCGetSubscribedShardResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RPCGetSubscribedShardResponse.Merge(dst, src)
-}
-func (m *RPCGetSubscribedShardResponse) XXX_Size() int {
-	return xxx_messageInfo_RPCGetSubscribedShardResponse.Size(m)
-}
-func (m *RPCGetSubscribedShardResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_RPCGetSubscribedShardResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RPCGetSubscribedShardResponse proto.InternalMessageInfo
-
-func (m *RPCGetSubscribedShardResponse) GetResponse() *Response {
-	if m != nil {
-		return m.Response
-	}
-	return nil
-}
-
-func (m *RPCGetSubscribedShardResponse) GetShardIDs() []int64 {
-	if m != nil {
-		return m.ShardIDs
-	}
-	return nil
-}
-
 func init() {
 	proto.RegisterType((*RPCAddPeerRequest)(nil), "proto.rpc.RPCAddPeerRequest")
 	proto.RegisterType((*RPCSubscribeShardRequest)(nil), "proto.rpc.RPCSubscribeShardRequest")
 	proto.RegisterType((*RPCUnsubscribeShardRequest)(nil), "proto.rpc.RPCUnsubscribeShardRequest")
 	proto.RegisterType((*RPCGetSubscribedShardRequest)(nil), "proto.rpc.RPCGetSubscribedShardRequest")
+	proto.RegisterType((*RPCGetSubscribedShardResponse)(nil), "proto.rpc.RPCGetSubscribedShardResponse")
 	proto.RegisterType((*RPCBroadcastCollationRequest)(nil), "proto.rpc.RPCBroadcastCollationRequest")
 	proto.RegisterType((*RPCSendCollationRequest)(nil), "proto.rpc.RPCSendCollationRequest")
 	proto.RegisterType((*RPCStopServerRequest)(nil), "proto.rpc.RPCStopServerRequest")
+	proto.RegisterType((*RPCGetConnectionRequest)(nil), "proto.rpc.RPCGetConnectionRequest")
+	proto.RegisterType((*RPCGetConnectionResponse)(nil), "proto.rpc.RPCGetConnectionResponse")
+	proto.RegisterType((*RPCGetPeerRequest)(nil), "proto.rpc.RPCGetPeerRequest")
+	proto.RegisterType((*RPCGetPeerResponse)(nil), "proto.rpc.RPCGetPeerResponse")
+	proto.RegisterType((*RPCSyncShardPeerRequest)(nil), "proto.rpc.RPCSyncShardPeerRequest")
+	proto.RegisterType((*RPCSyncShardPeerResponse)(nil), "proto.rpc.RPCSyncShardPeerResponse")
+	proto.RegisterMapType((map[int64]*message.Peers)(nil), "proto.rpc.RPCSyncShardPeerResponse.ShardPeersEntry")
+	proto.RegisterType((*RPCSyncCollationRequest)(nil), "proto.rpc.RPCSyncCollationRequest")
+	proto.RegisterType((*RPCSyncCollationResponse)(nil), "proto.rpc.RPCSyncCollationResponse")
 	proto.RegisterType((*Response)(nil), "proto.rpc.Response")
 	proto.RegisterType((*RPCPlainResponse)(nil), "proto.rpc.RPCPlainResponse")
-	proto.RegisterType((*RPCGetSubscribedShardResponse)(nil), "proto.rpc.RPCGetSubscribedShardResponse")
 	proto.RegisterEnum("proto.rpc.Response_Status", Response_Status_name, Response_Status_value)
 }
 
@@ -502,6 +870,10 @@ type PocClient interface {
 	BroadcastCollation(ctx context.Context, in *RPCBroadcastCollationRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
 	SendCollation(ctx context.Context, in *RPCSendCollationRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
 	StopServer(ctx context.Context, in *RPCStopServerRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
+	GetConnection(ctx context.Context, in *RPCGetConnectionRequest, opts ...grpc.CallOption) (*RPCGetConnectionResponse, error)
+	GetPeer(ctx context.Context, in *RPCGetPeerRequest, opts ...grpc.CallOption) (*RPCGetPeerResponse, error)
+	SyncShardPeer(ctx context.Context, in *RPCSyncShardPeerRequest, opts ...grpc.CallOption) (*RPCSyncShardPeerResponse, error)
+	SyncCollation(ctx context.Context, in *RPCSyncCollationRequest, opts ...grpc.CallOption) (*RPCSyncCollationResponse, error)
 }
 
 type pocClient struct {
@@ -575,6 +947,42 @@ func (c *pocClient) StopServer(ctx context.Context, in *RPCStopServerRequest, op
 	return out, nil
 }
 
+func (c *pocClient) GetConnection(ctx context.Context, in *RPCGetConnectionRequest, opts ...grpc.CallOption) (*RPCGetConnectionResponse, error) {
+	out := new(RPCGetConnectionResponse)
+	err := c.cc.Invoke(ctx, "/proto.rpc.Poc/GetConnection", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pocClient) GetPeer(ctx context.Context, in *RPCGetPeerRequest, opts ...grpc.CallOption) (*RPCGetPeerResponse, error) {
+	out := new(RPCGetPeerResponse)
+	err := c.cc.Invoke(ctx, "/proto.rpc.Poc/GetPeer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pocClient) SyncShardPeer(ctx context.Context, in *RPCSyncShardPeerRequest, opts ...grpc.CallOption) (*RPCSyncShardPeerResponse, error) {
+	out := new(RPCSyncShardPeerResponse)
+	err := c.cc.Invoke(ctx, "/proto.rpc.Poc/SyncShardPeer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pocClient) SyncCollation(ctx context.Context, in *RPCSyncCollationRequest, opts ...grpc.CallOption) (*RPCSyncCollationResponse, error) {
+	out := new(RPCSyncCollationResponse)
+	err := c.cc.Invoke(ctx, "/proto.rpc.Poc/SyncCollation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PocServer is the server API for Poc service.
 type PocServer interface {
 	AddPeer(context.Context, *RPCAddPeerRequest) (*RPCPlainResponse, error)
@@ -584,6 +992,10 @@ type PocServer interface {
 	BroadcastCollation(context.Context, *RPCBroadcastCollationRequest) (*RPCPlainResponse, error)
 	SendCollation(context.Context, *RPCSendCollationRequest) (*RPCPlainResponse, error)
 	StopServer(context.Context, *RPCStopServerRequest) (*RPCPlainResponse, error)
+	GetConnection(context.Context, *RPCGetConnectionRequest) (*RPCGetConnectionResponse, error)
+	GetPeer(context.Context, *RPCGetPeerRequest) (*RPCGetPeerResponse, error)
+	SyncShardPeer(context.Context, *RPCSyncShardPeerRequest) (*RPCSyncShardPeerResponse, error)
+	SyncCollation(context.Context, *RPCSyncCollationRequest) (*RPCSyncCollationResponse, error)
 }
 
 func RegisterPocServer(s *grpc.Server, srv PocServer) {
@@ -716,6 +1128,78 @@ func _Poc_StopServer_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Poc_GetConnection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RPCGetConnectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PocServer).GetConnection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.rpc.Poc/GetConnection",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PocServer).GetConnection(ctx, req.(*RPCGetConnectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Poc_GetPeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RPCGetPeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PocServer).GetPeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.rpc.Poc/GetPeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PocServer).GetPeer(ctx, req.(*RPCGetPeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Poc_SyncShardPeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RPCSyncShardPeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PocServer).SyncShardPeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.rpc.Poc/SyncShardPeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PocServer).SyncShardPeer(ctx, req.(*RPCSyncShardPeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Poc_SyncCollation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RPCSyncCollationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PocServer).SyncCollation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.rpc.Poc/SyncCollation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PocServer).SyncCollation(ctx, req.(*RPCSyncCollationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Poc_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.rpc.Poc",
 	HandlerType: (*PocServer)(nil),
@@ -748,48 +1232,81 @@ var _Poc_serviceDesc = grpc.ServiceDesc{
 			MethodName: "StopServer",
 			Handler:    _Poc_StopServer_Handler,
 		},
+		{
+			MethodName: "GetConnection",
+			Handler:    _Poc_GetConnection_Handler,
+		},
+		{
+			MethodName: "GetPeer",
+			Handler:    _Poc_GetPeer_Handler,
+		},
+		{
+			MethodName: "SyncShardPeer",
+			Handler:    _Poc_SyncShardPeer_Handler,
+		},
+		{
+			MethodName: "SyncCollation",
+			Handler:    _Poc_SyncCollation_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "rpc.proto",
 }
 
-func init() { proto.RegisterFile("rpc.proto", fileDescriptor_rpc_277a2f537a741991) }
+func init() { proto.RegisterFile("rpc.proto", fileDescriptor_rpc_cc73613fdb50fe5f) }
 
-var fileDescriptor_rpc_277a2f537a741991 = []byte{
-	// 553 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
-	0x14, 0x5d, 0x9b, 0xa9, 0x6b, 0xef, 0xf4, 0xab, 0xfa, 0x33, 0x68, 0x44, 0x61, 0x40, 0x65, 0x84,
-	0xe8, 0xcb, 0x52, 0xa9, 0x48, 0x13, 0x8f, 0x8c, 0xb0, 0xa1, 0x89, 0x3d, 0x04, 0x87, 0x4a, 0x3c,
-	0xf0, 0x92, 0x3f, 0x56, 0x6b, 0xa9, 0x8d, 0x8d, 0xed, 0xf2, 0x30, 0xed, 0x03, 0xf3, 0x31, 0x50,
-	0x9c, 0x3f, 0x5d, 0xd2, 0x56, 0x11, 0x3c, 0xd9, 0xd7, 0x3e, 0xf7, 0x5c, 0x1f, 0xdf, 0x7b, 0x60,
-	0x20, 0x45, 0xec, 0x0a, 0xc9, 0x35, 0x47, 0x03, 0xb3, 0xb8, 0x52, 0xc4, 0xce, 0x87, 0x05, 0xd3,
-	0xcb, 0x4d, 0xe4, 0xc6, 0x7c, 0x3d, 0xa5, 0x7a, 0x29, 0xa9, 0xa2, 0xa1, 0x8c, 0x97, 0x53, 0xb5,
-	0x0c, 0x65, 0xc2, 0xd2, 0xc5, 0x85, 0x98, 0x89, 0x0b, 0xc1, 0xe3, 0xa9, 0x88, 0xa6, 0x6b, 0xaa,
-	0x54, 0xb8, 0xa0, 0xe5, 0x9a, 0x93, 0xe1, 0x2f, 0xf0, 0x3f, 0xf1, 0xbd, 0xab, 0x24, 0xf1, 0x29,
-	0x95, 0x84, 0xfe, 0xdc, 0x50, 0xa5, 0xd1, 0x10, 0xba, 0x4c, 0xd8, 0x9d, 0x71, 0x67, 0x32, 0x20,
-	0x5d, 0x26, 0x10, 0x82, 0x63, 0xc1, 0xa5, 0xb6, 0xbb, 0xe3, 0xce, 0xc4, 0x22, 0x66, 0x9f, 0x9d,
-	0x29, 0x4a, 0x13, 0xdb, 0xca, 0xcf, 0xb2, 0x3d, 0xbe, 0x04, 0x9b, 0xf8, 0x5e, 0xb0, 0x89, 0x54,
-	0x2c, 0x59, 0x44, 0x83, 0xec, 0x15, 0x25, 0xa7, 0x03, 0x7d, 0xf3, 0xaa, 0xdb, 0x4f, 0xca, 0xee,
-	0x8c, 0xad, 0x89, 0x45, 0xaa, 0x18, 0xbf, 0x07, 0x87, 0xf8, 0xde, 0x3c, 0x55, 0x7f, 0x9d, 0xf9,
-	0x12, 0xce, 0x89, 0xef, 0x7d, 0xa6, 0xba, 0x2a, 0x9a, 0x3c, 0xce, 0xc5, 0x0f, 0xe6, 0xfe, 0xa3,
-	0xe4, 0x61, 0x12, 0x87, 0x4a, 0x7b, 0x7c, 0xb5, 0x0a, 0x35, 0xe3, 0x69, 0xc9, 0x6d, 0xc3, 0x49,
-	0xc1, 0x65, 0xe4, 0x5a, 0xa4, 0x0c, 0xd1, 0x19, 0xf4, 0xd2, 0xcd, 0x3a, 0xa2, 0xb2, 0x50, 0x5d,
-	0x44, 0x46, 0x37, 0xbb, 0xa7, 0x95, 0x6e, 0x76, 0x4f, 0x33, 0xac, 0xa0, 0x92, 0xf1, 0xc4, 0x3e,
-	0xce, 0xb1, 0x79, 0x84, 0xbf, 0xc2, 0xb3, 0xec, 0x3f, 0x68, 0x9a, 0xec, 0x14, 0xbe, 0x84, 0x41,
-	0x5c, 0x9e, 0x99, 0xd2, 0xa7, 0x33, 0x3b, 0x6f, 0x89, 0x5b, 0x36, 0x68, 0x9b, 0xb3, 0x85, 0xe2,
-	0x33, 0x78, 0x9a, 0x51, 0x6a, 0x2e, 0x02, 0x2a, 0x7f, 0x55, 0x2d, 0xc3, 0x0f, 0xd0, 0x27, 0x54,
-	0x09, 0x9e, 0x2a, 0x8a, 0x66, 0xd0, 0x53, 0x3a, 0xd4, 0x1b, 0x65, 0x88, 0x87, 0x33, 0xc7, 0xad,
-	0x26, 0xc6, 0x2d, 0x41, 0x6e, 0x60, 0x10, 0xa4, 0x40, 0x66, 0x1f, 0x51, 0xd4, 0x35, 0x7a, 0x07,
-	0xa4, 0x0c, 0x31, 0x86, 0x5e, 0x8e, 0x45, 0xa7, 0x70, 0x12, 0xcc, 0x3d, 0xef, 0x3a, 0x08, 0x46,
-	0x47, 0x59, 0x70, 0x73, 0x75, 0x7b, 0x37, 0x27, 0xd7, 0xa3, 0x0e, 0xf6, 0x60, 0x44, 0x7c, 0xcf,
-	0x5f, 0x85, 0x2c, 0xad, 0x5e, 0x31, 0x85, 0xbe, 0x2c, 0xf6, 0x85, 0xc0, 0x27, 0x7b, 0xde, 0x41,
-	0x2a, 0x10, 0x5e, 0xc1, 0x8b, 0x03, 0xbd, 0xfc, 0x47, 0xc6, 0xda, 0xe4, 0x74, 0xeb, 0x93, 0x33,
-	0xfb, 0x7d, 0x0c, 0x96, 0xcf, 0x63, 0x74, 0x03, 0x27, 0xc5, 0xf4, 0xa3, 0xf3, 0xc7, 0x6c, 0x4d,
-	0x53, 0x38, 0xcf, 0xeb, 0xb7, 0x35, 0xb1, 0xf8, 0x08, 0x7d, 0x83, 0x61, 0x7d, 0xf0, 0xd1, 0xeb,
-	0x7a, 0xc2, 0x5e, 0x5b, 0xb4, 0xb1, 0x7e, 0x87, 0x51, 0xd3, 0x16, 0xe8, 0x4d, 0x3d, 0xe5, 0x80,
-	0x6d, 0xda, 0x98, 0x19, 0xa0, 0xdd, 0xaf, 0x46, 0x6f, 0xeb, 0x49, 0x07, 0x8d, 0xe5, 0x4c, 0xda,
-	0x81, 0x55, 0xa9, 0x1f, 0x80, 0x76, 0x1d, 0xd8, 0x2c, 0x75, 0xd0, 0xa3, 0x6d, 0x42, 0x08, 0xfc,
-	0x57, 0x73, 0x18, 0xc2, 0x8d, 0x7f, 0xdf, 0x63, 0xbf, 0x36, 0xce, 0x3b, 0x80, 0xad, 0xc5, 0xd0,
-	0xab, 0x06, 0x61, 0xd3, 0x7c, 0x2d, 0x6c, 0x51, 0xcf, 0xdc, 0xbe, 0xfb, 0x13, 0x00, 0x00, 0xff,
-	0xff, 0xbc, 0x11, 0x7d, 0xc9, 0xc4, 0x05, 0x00, 0x00,
+var fileDescriptor_rpc_cc73613fdb50fe5f = []byte{
+	// 829 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0x5d, 0x6f, 0xdb, 0x36,
+	0x14, 0x8d, 0xac, 0xc4, 0x8e, 0xae, 0x91, 0xcc, 0xe3, 0x82, 0x4c, 0xd3, 0x92, 0xcd, 0x60, 0x36,
+	0xcc, 0x1b, 0x10, 0x1b, 0x70, 0x80, 0x20, 0xd8, 0xd3, 0x32, 0x35, 0x5f, 0x68, 0x0a, 0xa8, 0x54,
+	0x03, 0x14, 0x45, 0x81, 0x42, 0x96, 0x88, 0x58, 0xa8, 0x2d, 0xa9, 0xa4, 0x1c, 0x20, 0x41, 0xde,
+	0xfa, 0xd4, 0x3f, 0xd6, 0x7f, 0xd4, 0xf7, 0x42, 0xd4, 0x87, 0x25, 0x59, 0x8a, 0x5b, 0x3f, 0x49,
+	0x97, 0x3c, 0x3c, 0xf7, 0xf2, 0xf2, 0x90, 0x07, 0x14, 0x16, 0xd8, 0xfd, 0x80, 0xf9, 0xa1, 0x8f,
+	0x14, 0xf1, 0xe9, 0xb3, 0xc0, 0xd6, 0xfe, 0xbb, 0x75, 0xc3, 0xf1, 0x6c, 0xd4, 0xb7, 0xfd, 0xe9,
+	0x80, 0x86, 0x63, 0x46, 0x39, 0xb5, 0x98, 0x3d, 0x1e, 0xf0, 0xb1, 0xc5, 0x1c, 0xd7, 0xbb, 0x3d,
+	0x0c, 0x86, 0xc1, 0x61, 0xe0, 0xdb, 0x83, 0x60, 0x34, 0x98, 0x52, 0xce, 0xad, 0x5b, 0x9a, 0x7e,
+	0x63, 0x32, 0xfc, 0x1c, 0x7e, 0x24, 0x86, 0x7e, 0xea, 0x38, 0x06, 0xa5, 0x8c, 0xd0, 0x0f, 0x33,
+	0xca, 0x43, 0xb4, 0x0d, 0x0d, 0x37, 0x50, 0xa5, 0xae, 0xd4, 0x53, 0x48, 0xc3, 0x0d, 0x10, 0x82,
+	0xf5, 0xc0, 0x67, 0xa1, 0xda, 0xe8, 0x4a, 0x3d, 0x99, 0x88, 0xff, 0x68, 0x8c, 0x53, 0xea, 0xa8,
+	0x72, 0x3c, 0x16, 0xfd, 0xe3, 0x63, 0x50, 0x89, 0xa1, 0x9b, 0xb3, 0x11, 0xb7, 0x99, 0x3b, 0xa2,
+	0x66, 0x54, 0x45, 0xca, 0xa9, 0xc1, 0xa6, 0xa8, 0xea, 0xea, 0x19, 0x57, 0xa5, 0xae, 0xdc, 0x93,
+	0x49, 0x16, 0xe3, 0x13, 0xd0, 0x88, 0xa1, 0xdf, 0x78, 0xfc, 0xbb, 0x57, 0xfe, 0x06, 0x7b, 0xc4,
+	0xd0, 0x2f, 0x68, 0x98, 0x25, 0x75, 0xf2, 0x6b, 0xf1, 0x04, 0xf6, 0x6b, 0xe6, 0x79, 0xe0, 0x7b,
+	0x9c, 0xa2, 0x01, 0x6c, 0xb2, 0xe4, 0x5f, 0x6c, 0xb8, 0x3d, 0xfc, 0xa9, 0x9f, 0xf5, 0xb7, 0x9f,
+	0xc2, 0x48, 0x06, 0x2a, 0x54, 0xd3, 0x28, 0x55, 0xf3, 0x28, 0xaa, 0xf9, 0x9f, 0xf9, 0x96, 0x63,
+	0x5b, 0x3c, 0xd4, 0xfd, 0xc9, 0xc4, 0x0a, 0x5d, 0xdf, 0x4b, 0x77, 0xa2, 0x42, 0x2b, 0xc1, 0x8a,
+	0x5c, 0x32, 0x49, 0x43, 0xb4, 0x0b, 0x4d, 0x6f, 0x36, 0x1d, 0x51, 0x96, 0xf4, 0x38, 0x89, 0x44,
+	0x97, 0xdd, 0x07, 0x9a, 0x75, 0xd9, 0x7d, 0xa0, 0x11, 0x36, 0xa0, 0xcc, 0xf5, 0x1d, 0x75, 0x3d,
+	0xc6, 0xc6, 0x11, 0x7e, 0x09, 0x3f, 0x47, 0xdd, 0xa7, 0x9e, 0xb3, 0x90, 0xf8, 0x18, 0x14, 0x3b,
+	0x1d, 0x4b, 0xb6, 0xa9, 0x26, 0xdb, 0x4c, 0xe5, 0x30, 0x5f, 0x33, 0x87, 0xe2, 0x5d, 0xd8, 0x89,
+	0x28, 0x43, 0x3f, 0x30, 0x29, 0xbb, 0xcb, 0x04, 0x82, 0x7f, 0x11, 0xa9, 0x2e, 0x68, 0xa8, 0xfb,
+	0x9e, 0x47, 0xed, 0x5c, 0x2a, 0x3c, 0x15, 0x1a, 0x28, 0x4d, 0xad, 0xda, 0xec, 0x2e, 0xb4, 0xed,
+	0x8c, 0x26, 0xee, 0xb7, 0x42, 0xf2, 0x43, 0xf8, 0x6f, 0xa1, 0xdf, 0x0b, 0x1a, 0xe6, 0xf5, 0xbb,
+	0x03, 0x1b, 0xa1, 0x1f, 0xb8, 0x76, 0x22, 0xe1, 0x38, 0xc0, 0xef, 0x00, 0xe5, 0xa1, 0xab, 0xd6,
+	0xa4, 0x42, 0x2b, 0xa0, 0x94, 0xa5, 0xe7, 0xaf, 0x90, 0x34, 0xc4, 0x2f, 0xe2, 0x03, 0xb8, 0xf7,
+	0x6c, 0xa1, 0xb1, 0x7c, 0x45, 0xe2, 0xcc, 0x22, 0x54, 0x52, 0x52, 0x12, 0x3d, 0xa9, 0xa6, 0x2f,
+	0x52, 0x7c, 0x9d, 0x8a, 0x7c, 0xab, 0x96, 0x6d, 0x02, 0xf0, 0x94, 0x25, 0xce, 0xd5, 0x1e, 0x1e,
+	0xe5, 0x97, 0xd4, 0x64, 0xea, 0x67, 0x23, 0xfc, 0xcc, 0x0b, 0xd9, 0x3d, 0xc9, 0xd1, 0x68, 0x26,
+	0xfc, 0x50, 0x9a, 0x46, 0x1d, 0x90, 0xdf, 0xd3, 0xfb, 0x44, 0xdf, 0xd1, 0x2f, 0xfa, 0x07, 0x36,
+	0xee, 0xac, 0xc9, 0x8c, 0x0a, 0x69, 0xb7, 0x87, 0x3b, 0x25, 0xe1, 0x89, 0xb5, 0x24, 0x86, 0xfc,
+	0xdb, 0x38, 0x91, 0xf0, 0x27, 0x29, 0xeb, 0xe3, 0x82, 0x90, 0xeb, 0xfa, 0x98, 0xbb, 0x59, 0x8d,
+	0x85, 0x9b, 0x95, 0xdc, 0x16, 0x39, 0x7f, 0x5b, 0xd0, 0x1f, 0xb0, 0x95, 0xe9, 0xfc, 0xd2, 0xe2,
+	0x63, 0x71, 0x99, 0x14, 0x52, 0x1c, 0xc4, 0x1f, 0xe7, 0x67, 0x90, 0xab, 0x65, 0xd5, 0x33, 0x28,
+	0x5c, 0xc3, 0xc6, 0xb7, 0x5f, 0xc3, 0x47, 0xd8, 0xcc, 0x92, 0x0e, 0xa1, 0xc9, 0x43, 0x2b, 0x9c,
+	0x71, 0x91, 0x72, 0x7b, 0xa8, 0x55, 0xa4, 0xec, 0x9b, 0x02, 0x41, 0x12, 0x64, 0xd4, 0x9d, 0x84,
+	0x5f, 0x64, 0x55, 0x48, 0x1a, 0x62, 0x0c, 0xcd, 0x18, 0x8b, 0xda, 0xd0, 0x32, 0x6f, 0x74, 0xfd,
+	0xcc, 0x34, 0x3b, 0x6b, 0x51, 0x70, 0x7e, 0x7a, 0x75, 0x7d, 0x43, 0xce, 0x3a, 0x12, 0xd6, 0xa1,
+	0x43, 0x0c, 0xdd, 0x98, 0x58, 0xee, 0xea, 0x5b, 0x1f, 0x7e, 0x6e, 0x81, 0x6c, 0xf8, 0x36, 0x3a,
+	0x87, 0x56, 0x62, 0x36, 0x68, 0xaf, 0xa8, 0xbe, 0xa2, 0x07, 0x69, 0xbf, 0x16, 0x67, 0x0b, 0xe9,
+	0xf1, 0x1a, 0x7a, 0x05, 0xdb, 0x45, 0x9f, 0x41, 0x07, 0x25, 0x31, 0x57, 0x79, 0xc9, 0x32, 0xd6,
+	0xd7, 0xd0, 0x29, 0xbb, 0x10, 0xfa, 0xb3, 0xb8, 0xa4, 0xc6, 0xa5, 0x96, 0x31, 0xbb, 0x80, 0x16,
+	0x5d, 0x08, 0xfd, 0x55, 0x5c, 0x54, 0xeb, 0x63, 0x5a, 0x6f, 0x39, 0x30, 0x4b, 0xf5, 0x16, 0xd0,
+	0xa2, 0x05, 0x95, 0x53, 0xd5, 0x9a, 0xd4, 0xb2, 0x8d, 0x10, 0xd8, 0x2a, 0x58, 0x0c, 0xc2, 0xa5,
+	0xbe, 0x57, 0xf8, 0xcf, 0x32, 0xce, 0x6b, 0x80, 0xb9, 0xc7, 0xa0, 0xdf, 0x4b, 0x84, 0x65, 0xf7,
+	0x59, 0xc6, 0xf6, 0x06, 0xb6, 0x0a, 0xf6, 0x53, 0xae, 0xb0, 0xca, 0xb6, 0xb4, 0x83, 0x27, 0x31,
+	0x19, 0xf7, 0x25, 0xb4, 0x12, 0x03, 0x29, 0xcb, 0xb7, 0x68, 0x41, 0xda, 0x7e, 0xcd, 0x6c, 0xbe,
+	0xca, 0xc2, 0x7b, 0xbb, 0xd0, 0xc7, 0x0a, 0x1b, 0x29, 0x57, 0x59, 0xf9, 0x60, 0xcf, 0xb9, 0xeb,
+	0xcf, 0xa8, 0xe2, 0x69, 0xad, 0xe2, 0x5e, 0x78, 0xf2, 0xf0, 0xda, 0xa8, 0x29, 0x50, 0x47, 0x5f,
+	0x03, 0x00, 0x00, 0xff, 0xff, 0x27, 0x0c, 0xfe, 0xba, 0x91, 0x0a, 0x00, 0x00,
 }
