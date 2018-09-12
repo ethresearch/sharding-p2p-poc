@@ -8,12 +8,13 @@ import (
 	inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
+	protocol "github.com/libp2p/go-libp2p-protocol"
 	ma "github.com/multiformats/go-multiaddr"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 )
 
-const addPeerRequest = "/addPeer/request/0.0.1"
+const addPeerRequestProtocol = protocol.ID("/addPeer/request/0.0.1")
 
 type AddPeerProtocol struct {
 	node *Node // local host
@@ -50,12 +51,12 @@ func NewAddPeerProtocol(node *Node) *AddPeerProtocol {
 	p := &AddPeerProtocol{
 		node: node,
 	}
-	node.SetStreamHandler(addPeerRequest, p.onRequest)
+	node.SetStreamHandler(addPeerRequestProtocol, p.onAddPeerRequest)
 	return p
 }
 
 // remote peer requests handler
-func (p *AddPeerProtocol) onRequest(s inet.Stream) {
+func (p *AddPeerProtocol) onAddPeerRequest(s inet.Stream) {
 	defer inet.FullClose(s)
 	// get request data
 	data := &pbmsg.AddPeerRequest{}
@@ -96,17 +97,15 @@ func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
 		return err
 	}
 	p.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
-	// create message data
-	req := &pbmsg.AddPeerRequest{
-		Message: fmt.Sprintf("AddPeer from %s", p.node.ID()),
-	}
 
-	s, err := p.node.NewStream(ctx, peerid, addPeerRequest)
-	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to open a new stream with peer %v, err: %v", peerid, err))
+	if err := p.node.Connect(ctx, p.node.Peerstore().PeerInfo(peerid)); err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to connect to peer %v, err: %v", peerid, err))
 		log.Println(err)
 		return err
 	}
 
-	return sendProtoMessage(req, s)
+	// TODO: Execute protocol required when connection with new peer is built, e.g.
+	// s, err := p.node.NewStream(ctx, peerid, exchangeTopicsProtocol)
+
+	return nil
 }
