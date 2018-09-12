@@ -28,14 +28,14 @@ import (
 
 type (
 	ShardIDType = int64
-	PBInt = int64
+	PBInt       = int64
 )
 
 const (
-	numShards ShardIDType = 100
-	defaultListenPort = 10000
-	defaultRPCPort    = 13000
-	defaultIP         = "127.0.0.1"
+	numShards         ShardIDType = 100
+	defaultListenPort             = 10000
+	defaultRPCPort                = 13000
+	defaultIP                     = "127.0.0.1"
 )
 
 func main() {
@@ -78,7 +78,6 @@ func main() {
 	}
 }
 
-
 func runClient(rpcAddr string, cliArgs []string) {
 	if len(cliArgs) <= 0 {
 		log.Fatalf("Client: wrong args")
@@ -118,7 +117,7 @@ func runServer(
 		// TODO: don't use eventNotifier if it is not available
 		eventNotifier = nil
 	}
-	var bootnodes  = []pstore.PeerInfo{}
+	var bootnodes = []pstore.PeerInfo{}
 	if bootnodesStr != "" {
 		bootnodes = convertPeers(strings.Split(bootnodesStr, ","))
 	}
@@ -157,7 +156,6 @@ func runServer(
 
 	runRPCServer(node, rpcAddr)
 }
-
 
 func doAddPeer(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 3 {
@@ -233,7 +231,6 @@ func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
 	)
 }
 
-
 func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
 	// If the seed is zero, use real cryptographic randomness. Otherwise, use a
 	// deterministic randomness source to make generated keys stay the same
@@ -301,7 +298,7 @@ func makeNode(
 	}
 
 	// Make a host that listens on the given multiaddress
-	node := NewNode(ctx, routedHost, int(randseed), eventNotifier)
+	node := NewNode(ctx, routedHost, eventNotifier)
 
 	return node, nil
 }

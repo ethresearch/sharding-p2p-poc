@@ -9,7 +9,6 @@ import (
 	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	opentracing "github.com/opentracing/opentracing-go"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
@@ -70,8 +69,9 @@ func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifi
 
 func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDType) error {
 	// Add span for connectShardNodes of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.connectShardNodes")
-	defer span.Finish()
+	spanctx := logger.Start(ctx, "ShardManager.connectShardNodes")
+	defer logger.Finish(spanctx)
+	logger.SetTag(spanctx, "shard", shardID)
 
 	peerIDs := n.shardPrefTable.GetPeersInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
@@ -90,23 +90,27 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	}
 
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
-	errs := make(chan error, len(pinfos))
 	var wg sync.WaitGroup
 	for _, p := range pinfos {
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
+			// Add span for Connect of ShardManager.connectShardNodes
+			childSpanctx := logger.Start(spanctx, "ShardManager.connectShardNodes.Connect")
+			defer logger.Finish(childSpanctx)
+
 			defer wg.Done()
-			if err := n.host.Connect(ctx, p); err != nil {
+			if err := n.host.Connect(spanctx, p); err != nil {
+				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v, err: %v", p.ID, shardID, err))
 				log.Printf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,
 					shardID,
 					err,
 				)
-				errs <- err
 				return
 			}
 			log.Printf("Successfully connected peer %v in shard %v", p.ID, shardID)
+			logger.SetTag(childSpanctx, "peer", p.ID)
 		}(p)
 	}
 	wg.Wait()
@@ -114,35 +118,41 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	return nil
 }
 
-// TODO: return error if it fails
-func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) {
-	// Add span for AddPeer of ShardManager
-	span, newctx := opentracing.StartSpanFromContext(ctx, "ShardManager.ListenShard")
-	defer span.Finish()
-	// Set shardID info in Baggage
-	span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
+func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) error {
+	// Add span for ListenShard of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.ListenShard")
+	defer logger.Finish(spanctx)
 
 	if n.IsShardListened(shardID) {
-		return
+		return nil
 	}
 	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
-	n.connectShardNodes(newctx, shardID)
+	if err := n.connectShardNodes(spanctx, shardID); err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
+		log.Printf("Failed to connect to nodes in shard %v", shardID)
+	}
 
 	// shardCollations protocol
-	n.SubscribeCollation(newctx, shardID)
+	if err := n.SubscribeCollation(spanctx, shardID); err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to subscribe to collation in shard %v", shardID))
+		log.Printf("Failed to subscribe to collation in shard %v", shardID)
+		return err
+	}
+
+	// Tag shardID info if nothing goes wrong
+	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
+	return nil
 }
 
-func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) {
+func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) error {
 	// Add span for UnlistenShard of ShardManager
-	span, newctx := opentracing.StartSpanFromContext(ctx, "ShardManager.UnlistenShard")
-	defer span.Finish()
-	// Set shardID info in Baggage
-	span.SetBaggageItem("shardID", fmt.Sprintf("%v", shardID))
+	spanctx := logger.Start(ctx, "ShardManager.UnlistenShard")
+	defer logger.Finish(spanctx)
 
 	if !n.IsShardListened(shardID) {
-		return
+		return nil
 	}
 	n.shardPrefTable.RemovePeerListeningShard(n.host.ID(), shardID)
 
@@ -150,7 +160,11 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) {
 	// TODO: should we remove some peers in this shard?
 
 	// shardCollations protocol
-	n.UnsubscribeCollation(newctx, shardID)
+	n.UnsubscribeCollation(spanctx, shardID)
+
+	// Tag shardID info if nothing goes wrong
+	logger.SetTag(spanctx, "shardID", fmt.Sprintf("%v", shardID))
+	return nil
 }
 
 func (n *ShardManager) GetListeningShards() []ShardIDType {
@@ -177,11 +191,18 @@ func inShards(shardID ShardIDType, shards []ShardIDType) bool {
 // General
 
 func (n *ShardManager) SubscribeTopic(
+	ctx context.Context,
 	topic string,
 	handler TopicHandler,
 	validator TopicValidator) error {
+	// Add span for SubscribeTopic of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.SubscribeTopic")
+	defer logger.Finish(spanctx)
+
 	sub, err := n.pubsubService.Subscribe(topic)
 	if err != nil {
+		log.Printf("Failed to subscribe to topic: %s", topic)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to subscribe to topic: %s, err: %v", topic, err))
 		return err
 	}
 	n.subsLock.Lock()
@@ -202,21 +223,30 @@ func (n *ShardManager) SubscribeTopic(
 			handler(n.ctx, msg)
 		}
 	}()
+	// Tag topic to subscribe to if nothing goes wrong
+	logger.SetTag(spanctx, "Topic", topic)
 	return nil
 }
 
-func (n *ShardManager) UnsubscribeTopic(topic string) error {
+func (n *ShardManager) UnsubscribeTopic(ctx context.Context, topic string) {
+	// Add span for UnsubscribeTopic of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.UnsubscribeTopic")
+	defer logger.Finish(spanctx)
+
 	n.subsLock.RLock()
 	sub, prs := n.subs[topic]
 	n.subsLock.RUnlock()
 	if !prs {
-		return nil
+		return
 	}
+	// Tag topic to unsubscribe to
+	logger.SetTag(spanctx, "Topic", topic)
+
 	sub.Cancel()
 	n.subsLock.Lock()
 	delete(n.subs, topic)
 	n.subsLock.Unlock()
-	return nil
+	return
 }
 
 // listeningShards notification
@@ -238,24 +268,28 @@ func (n *ShardManager) makeShardPrefValidator() TopicValidator {
 
 func (n *ShardManager) SubscribeListeningShards() error {
 	return n.SubscribeTopic(
+		context.Background(),
 		listeningShardTopic,
 		n.makeShardPrefHandler(),
 		n.makeShardPrefValidator(),
 	)
 }
 
-func (n *ShardManager) UnsubscribeListeningShards() error {
-	return n.UnsubscribeTopic(listeningShardTopic)
+func (n *ShardManager) UnsubscribeListeningShards() {
+	n.UnsubscribeTopic(context.Background(), listeningShardTopic)
 }
 
 func (n *ShardManager) PublishListeningShards(ctx context.Context) {
-	// Add span for PublishListeningShards of AddPeerProtocol
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.PublishListeningShards")
-	defer span.Finish()
+	// Add span for PublishListeningShards of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.PublishListeningShards")
+	defer logger.Finish(spanctx)
 
 	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
 	bytes := selfListeningShards.toBytes()
-	n.pubsubService.Publish(listeningShardTopic, bytes)
+	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards, err: %v", err))
+		log.Println("Failed to publish listening shards")
+	}
 }
 
 // Collations
@@ -292,23 +326,23 @@ func (n *ShardManager) makeCollationHandler() TopicHandler {
 }
 
 func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDType) error {
-	// Add span for SubscribeShardCollations of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.SubscribeCollation")
-	defer span.Finish()
+	// Add span for SubscribeCollation of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.SubscribeCollation")
+	defer logger.Finish(spanctx)
 
 	topic := getCollationsTopic(shardID)
 	handler := n.makeCollationHandler()
 	validator := n.makeCollationValidator()
-	return n.SubscribeTopic(topic, handler, validator)
+	return n.SubscribeTopic(spanctx, topic, handler, validator)
 }
 
-func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) error {
-	// Add span for UnsubscribeShardCollations of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.UnsubscribeCollation")
-	defer span.Finish()
+func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) {
+	// Add span for UnsubscribeCollation of ShardManager
+	spanctx := logger.Start(ctx, "ShardManager.UnsubscribeCollation")
+	defer logger.Finish(spanctx)
 
 	topic := getCollationsTopic(shardID)
-	return n.UnsubscribeTopic(topic)
+	n.UnsubscribeTopic(spanctx, topic)
 }
 
 func (n *ShardManager) IsCollationSubscribed(shardID ShardIDType) bool {
@@ -325,10 +359,8 @@ func (n *ShardManager) broadcastCollation(
 	period int,
 	blobs []byte) error {
 	// Add span for broadcastCollation of ShardManager
-	span, _ := opentracing.StartSpanFromContext(ctx, "ShardManager.broadcastCollation")
-	defer span.Finish()
-	span.SetTag("Period", period)
-	span.SetTag("Blobs", blobs)
+	spanctx := logger.Start(ctx, "ShardManager.broadcastCollation")
+	defer logger.Finish(spanctx)
 
 	// create message data
 	data := &pbmsg.Collation{
@@ -336,7 +368,17 @@ func (n *ShardManager) broadcastCollation(
 		Period:  PBInt(period),
 		Blobs:   blobs,
 	}
-	return n.broadcastCollationMessage(data)
+	err := n.broadcastCollationMessage(data)
+	if err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
+		log.Println("Failed to broadcast collation message")
+		return err
+	}
+
+	// Tag collation period and blobs if nothing goes wrong
+	logger.SetTag(spanctx, "Period", period)
+	logger.SetTag(spanctx, "Blobs", blobs)
+	return nil
 }
 
 func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
@@ -346,12 +388,12 @@ func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) err
 	collationsTopic := getCollationsTopic(collation.ShardID)
 	bytes, err := proto.Marshal(collation)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 	err = n.pubsubService.Publish(collationsTopic, bytes)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 	return nil

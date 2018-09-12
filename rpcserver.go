@@ -14,14 +14,16 @@ import (
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	logging "github.com/ipfs/go-log"
 )
+
+var logger = logging.Logger("tracing")
 
 type server struct {
 	pbrpc.PocServer
-	node       *Node
-	parentSpan opentracing.Span
-	rpcServer  *grpc.Server
+	node              *Node
+	serializedSpanCtx []byte
+	rpcServer         *grpc.Server
 }
 
 func makeResponse(success bool, message string) *pbrpc.Response {
@@ -43,9 +45,12 @@ func makePlainResponse(success bool, message string) *pbrpc.RPCPlainResponse {
 func (s *server) AddPeer(
 	ctx context.Context,
 	req *pbrpc.RPCAddPeerRequest) (*pbrpc.RPCPlainResponse, error) {
-	// Add span for AddPeer
-	span := opentracing.StartSpan("RPCServer.AddPeer", opentracing.ChildOf(s.parentSpan.Context()))
-	defer span.Finish()
+	// Add span for AddPeer of RPC Server
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.AddPeer", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+	}
+	defer logger.Finish(spanctx)
 
 	log.Printf("rpcserver:AddPeer: receive=%v", req)
 	_, targetPID, err := makeKey(int(req.Seed))
@@ -56,13 +61,10 @@ func (s *server) AddPeer(
 		targetPID.Pretty(),
 	)
 	if err != nil {
-		log.Fatal(err)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err))
+		log.Printf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
+		return makePlainResponse(false, fmt.Sprintf("Failed to generate peer key/ID with seed: %v", req.Seed)), nil
 	}
-
-	// Set peer info in Baggage
-	span.SetBaggageItem("peerAddr", mAddr)
-	// Create span context
-	spanctx := opentracing.ContextWithSpan(ctx, span)
 
 	var replyMsg string
 	err = s.node.AddPeer(spanctx, mAddr)
@@ -70,11 +72,10 @@ func (s *server) AddPeer(
 	if success {
 		replyMsg = fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 		// Tag the span with peer info
-		span.SetTag("Peer info", fmt.Sprintf("%v:%v", req.Ip, req.Port))
+		logger.SetTag(spanctx, "Added peer", fmt.Sprintf("%v:%v", req.Ip, req.Port))
 	} else {
 		replyMsg = fmt.Sprintf("Failed to add Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)
 	}
-	span.SetTag("Status", success)
 	return makePlainResponse(success, replyMsg), nil
 }
 
@@ -82,16 +83,21 @@ func (s *server) SubscribeShard(
 	ctx context.Context,
 	req *pbrpc.RPCSubscribeShardRequest) (*pbrpc.RPCPlainResponse, error) {
 	// Add span for SubscribeShard
-	span := opentracing.StartSpan("RPCServer.SubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
-	defer span.Finish()
-	// Tag the span with shardIDs to be subscribed to
-	span.SetTag("req.ShardIDs", fmt.Sprintf("%v", req.ShardIDs))
-	// Create span context
-	spanctx := opentracing.ContextWithSpan(ctx, span)
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SubscribeShard", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+	}
+	defer logger.Finish(spanctx)
 
+	subscribedShardID := make([]int64, 0)
 	log.Printf("rpcserver:SubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.ListenShard(spanctx, shardID)
+		if err := s.node.ListenShard(spanctx, shardID); err != nil {
+			logger.SetErr(spanctx, fmt.Errorf("Failed to listen to shard %v", shardID))
+			log.Printf("Failed to listen to shard %v", shardID)
+		} else {
+			subscribedShardID = append(subscribedShardID, shardID)
+		}
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards(spanctx)
@@ -99,6 +105,9 @@ func (s *server) SubscribeShard(
 		"Subscribed shard %v",
 		req.ShardIDs,
 	)
+
+	// Tag the shardIDs which are successfully subscribed to
+	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("%v", subscribedShardID))
 	return makePlainResponse(true, replyMsg), nil
 }
 
@@ -106,14 +115,21 @@ func (s *server) UnsubscribeShard(
 	ctx context.Context,
 	req *pbrpc.RPCUnsubscribeShardRequest) (*pbrpc.RPCPlainResponse, error) {
 	// Add span for UnsubscribeShard
-	span := opentracing.StartSpan("RPCServer.UnsubscribeShard", opentracing.ChildOf(s.parentSpan.Context()))
-	defer span.Finish()
-	// Create span context
-	spanctx := opentracing.ContextWithSpan(ctx, span)
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.UnsubscribeShard", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+	}
+	defer logger.Finish(spanctx)
 
+	unsubscribedShardID := make([]int64, 0)
 	log.Printf("rpcserver:UnsubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
-		s.node.UnlistenShard(spanctx, shardID)
+		if err := s.node.UnlistenShard(spanctx, shardID); err != nil {
+			logger.SetErr(spanctx, fmt.Errorf("Failed to unlisten shard %v", shardID))
+			log.Printf("Failed to unlisten shard %v", shardID)
+		} else {
+			unsubscribedShardID = append(unsubscribedShardID, shardID)
+		}
 		time.Sleep(time.Millisecond * 30)
 	}
 	s.node.PublishListeningShards(spanctx)
@@ -122,7 +138,7 @@ func (s *server) UnsubscribeShard(
 		req.ShardIDs,
 	)
 	// Tag the span with shard info
-	span.SetTag("Shard info", fmt.Sprintf("shard %v", req.ShardIDs))
+	logger.SetTag(spanctx, "Shard info", fmt.Sprintf("shard %v", unsubscribedShardID))
 	return makePlainResponse(true, replyMsg), nil
 }
 
@@ -130,8 +146,11 @@ func (s *server) GetSubscribedShard(
 	ctx context.Context,
 	req *pbrpc.RPCGetSubscribedShardRequest) (*pbrpc.RPCGetSubscribedShardResponse, error) {
 	// Add span for GetSubscribedShard
-	span := opentracing.StartSpan("RPCServer.GetSubscribedShard", opentracing.ChildOf(s.parentSpan.Context()))
-	defer span.Finish()
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.GetSubscribedShard", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+	}
+	defer logger.Finish(spanctx)
 
 	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
@@ -140,7 +159,7 @@ func (s *server) GetSubscribedShard(
 		ShardIDs: shardIDs,
 	}
 	// Tag the span with shards info
-	span.SetTag("shardIDs", shardIDs)
+	logger.SetTag(spanctx, "shardIDs", shardIDs)
 	return res, nil
 }
 
@@ -148,12 +167,11 @@ func (s *server) BroadcastCollation(
 	ctx context.Context,
 	req *pbrpc.RPCBroadcastCollationRequest) (*pbrpc.RPCPlainResponse, error) {
 	// Add span for BroadcastCollation
-	span := opentracing.StartSpan("RPCServer.BroadcastCollation", opentracing.ChildOf(s.parentSpan.Context()))
-	defer span.Finish()
-	// Set shardID info in Baggage
-	span.SetBaggageItem("shardID", fmt.Sprintf("%v", req.ShardID))
-	// Create span context
-	spanctx := opentracing.ContextWithSpan(ctx, span)
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.BroadcastCollation", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+	}
+	defer logger.Finish(spanctx)
 
 	log.Printf("rpcserver:BroadcastCollationRequest: receive=%v", req)
 	shardID := req.ShardID
@@ -177,6 +195,7 @@ func (s *server) BroadcastCollation(
 		if err != nil {
 			failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
 			log.Println(failureMsg)
+			logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation"))
 			return makePlainResponse(false, failureMsg), err
 		}
 	}
@@ -186,9 +205,10 @@ func (s *server) BroadcastCollation(
 		sizeInBytes,
 		shardID,
 	)
-	// Tag the span with collations info
-	span.SetTag("numCollations", numCollations)
-	span.SetTag("sizeInBytes", sizeInBytes)
+	// Tag collations info if nothing goes wrong
+	logger.SetTag(spanctx, "shardID", req.ShardID)
+	logger.SetTag(spanctx, "numCollations", numCollations)
+	logger.SetTag(spanctx, "sizeInBytes", sizeInBytes)
 	return makePlainResponse(true, replyMsg), nil
 }
 
@@ -196,15 +216,19 @@ func (s *server) SendCollation(
 	ctx context.Context,
 	req *pbrpc.RPCSendCollationRequest) (*pbrpc.RPCPlainResponse, error) {
 	// Add span for SendCollation
-	span := opentracing.StartSpan("SendCollation", opentracing.ChildOf(s.parentSpan.Context()))
-	defer span.Finish()
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SendCollation", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+	}
+	defer logger.Finish(spanctx)
 
 	log.Printf("rpcserver:SendCollationRequest: receive=%v", req)
 	collation := req.Collation
-	err := s.node.broadcastCollationMessage(collation)
+	err = s.node.broadcastCollationMessage(collation)
 	if err != nil {
 		failureMsg := fmt.Sprintf("broadcastcollation failed: %v", err)
 		log.Println(failureMsg)
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
 		return makePlainResponse(false, failureMsg), err
 	}
 	replyMsg := fmt.Sprintf(
@@ -213,10 +237,10 @@ func (s *server) SendCollation(
 		collation.Period,
 		len(collation.Blobs),
 	)
-	// Tag the span with collations info
-	span.SetTag("Shard", collation.ShardID)
-	span.SetTag("Period of collation", collation.Period)
-	span.SetTag("Blobs of collation", collation.Blobs)
+	// Tag collation info if nothing goes wrong
+	logger.SetTag(spanctx, "Shard", collation.ShardID)
+	logger.SetTag(spanctx, "Period of collation", collation.Period)
+	logger.SetTag(spanctx, "Blobs of collation", collation.Blobs)
 	return makePlainResponse(true, replyMsg), nil
 }
 
@@ -224,13 +248,18 @@ func (s *server) StopServer(
 	ctx context.Context,
 	req *pbrpc.RPCStopServerRequest) (*pbrpc.RPCPlainResponse, error) {
 	// Add span for StopServer
-	span := opentracing.StartSpan("RPCServer.StopServer", opentracing.ChildOf(s.parentSpan.Context()))
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.StopServer", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+	}
+	defer logger.Finish(spanctx)
 
 	log.Printf("rpcserver:StopServer: receive=%v", req)
-	time.Sleep(time.Millisecond * 500)
-	span.Finish()
 	log.Printf("Closing RPC server by rpc call...")
-	s.rpcServer.Stop()
+	go func() {
+		time.Sleep(time.Second * 1)
+		s.rpcServer.Stop()
+	}()
 
 	replyMsg := fmt.Sprintf("Closed RPC server")
 	return makePlainResponse(true, replyMsg), nil
@@ -238,15 +267,22 @@ func (s *server) StopServer(
 
 func runRPCServer(n *Node, addr string) {
 	// Start a new trace
-	span := opentracing.StartSpan("RPCServer")
-	span.SetTag("Seed Number", n.number)
+	ctx := context.Background()
+	ctx = logger.Start(ctx, "RPCServer")
+	defer logger.Finish(ctx)
+	logger.SetTag(ctx, "Node ID %s", n.host.ID().Pretty())
+	serializedSpanCtx, err := logger.SerializeContext(ctx)
+	if err != nil {
+		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serialize span context, err: %v", err))
+	}
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatal(err)
+		logger.FinishWithErr(ctx, fmt.Errorf("Failed to set up a service listening on %s, err: %v", addr, err))
+		log.Fatalf("Failed to set up a service listening on %s, err: %v", addr, err)
 	}
 	s := grpc.NewServer()
-	pbrpc.RegisterPocServer(s, &server{node: n, parentSpan: span, rpcServer: s})
+	pbrpc.RegisterPocServer(s, &server{node: n, serializedSpanCtx: serializedSpanCtx, rpcServer: s})
 
 	// Catch interupt signal
 	c := make(chan os.Signal)
@@ -258,6 +294,8 @@ func runRPCServer(n *Node, addr string) {
 	}()
 
 	log.Printf("rpcserver: listening to %v", addr)
-	s.Serve(lis)
-	span.Finish()
+	if err := s.Serve(lis); err != nil {
+		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serve the RPC server, err: %v", err))
+		log.Fatalf("Failed to serve the RPC server, err: %v", err)
+	}
 }
