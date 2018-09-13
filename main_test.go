@@ -17,8 +17,13 @@ import (
 
 var nodeCount int
 
-func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
-	return makeTestingNode(t, ctx, number, false, nil)
+func makeNodes(t *testing.T, ctx context.Context, number int) []*Node {
+	nodes := []*Node{}
+	for i := 0; i < number; i++ {
+		nodes = append(nodes, makeUnbootstrappedNode(t, ctx, i))
+	}
+	time.Sleep(time.Millisecond * 100)
+	return nodes
 }
 
 func makeTestingNode(
@@ -37,6 +42,40 @@ func makeTestingNode(
 		t.Error("Failed to create node")
 	}
 	return node
+}
+
+func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
+	return makeTestingNode(t, ctx, number, false, nil)
+}
+
+func connect(t *testing.T, ctx context.Context, a, b *Node) {
+	err := a.AddPeer(ctx, b.GetFullAddr())
+	if err != nil {
+		t.Errorf("%v failed to `AddPeer` %v : %v", a.ID(), b.ID(), err)
+	}
+	if !a.IsPeer(b.ID()) || !b.IsPeer(a.ID()) {
+		t.Error("AddPeer failed")
+	}
+	if len(a.Network().ConnsToPeer(b.ID())) == 0 || len(b.Network().ConnsToPeer(a.ID())) == 0 {
+		t.Errorf("failed to connect %v with %v", a.ID(), b.ID())
+	}
+	time.Sleep(time.Millisecond * 100)
+}
+
+func connectBarbell(t *testing.T, ctx context.Context, nodes []*Node) {
+	for i := 0; i < len(nodes)-1; i++ {
+		connect(t, ctx, nodes[i], nodes[i+1])
+	}
+}
+
+func connectAll(t *testing.T, ctx context.Context, nodes []*Node) {
+	for i, nodei := range nodes {
+		for j, nodej := range nodes {
+			if i < j {
+				connect(t, ctx, nodei, nodej)
+			}
+		}
+	}
 }
 
 func waitForPubSubMeshBuilt() {
@@ -89,53 +128,6 @@ func TestNodeListeningShards(t *testing.T) {
 	}
 	node.UnlistenShard(ctx, testingShardID) // ensure no side effect
 	node.PublishListeningShards(ctx)
-}
-
-func connect(t *testing.T, ctx context.Context, a, b *Node) {
-	err := a.AddPeer(ctx, b.GetFullAddr())
-	if err != nil {
-		t.Errorf("%v failed to `AddPeer` %v : %v", a.ID(), b.ID(), err)
-	}
-	if !a.IsPeer(b.ID()) || !b.IsPeer(a.ID()) {
-		t.Error("AddPeer failed")
-	}
-	pinfo := pstore.PeerInfo{
-		ID:    a.ID(),
-		Addrs: a.Addrs(),
-	}
-	err = b.Connect(ctx, pinfo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(a.Network().ConnsToPeer(b.ID())) == 0 || len(b.Network().ConnsToPeer(a.ID())) == 0 {
-		t.Errorf("failed to connect %v with %v", a.ID(), b.ID())
-	}
-	time.Sleep(time.Millisecond * 100)
-}
-
-func makeNodes(t *testing.T, ctx context.Context, number int) []*Node {
-	nodes := []*Node{}
-	for i := 0; i < number; i++ {
-		nodes = append(nodes, makeUnbootstrappedNode(t, ctx, i))
-	}
-	time.Sleep(time.Millisecond * 100)
-	return nodes
-}
-
-func connectBarbell(t *testing.T, ctx context.Context, nodes []*Node) {
-	for i := 0; i < len(nodes)-1; i++ {
-		connect(t, ctx, nodes[i], nodes[i+1])
-	}
-}
-
-func connectAll(t *testing.T, ctx context.Context, nodes []*Node) {
-	for i, nodei := range nodes {
-		for j, nodej := range nodes {
-			if i < j {
-				connect(t, ctx, nodei, nodej)
-			}
-		}
-	}
 }
 
 func TestAddPeer(t *testing.T) {
