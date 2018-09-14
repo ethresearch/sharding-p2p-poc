@@ -82,79 +82,121 @@ func waitForPubSubMeshBuilt() {
 	time.Sleep(time.Second * 2)
 }
 
-func TestNodeListeningShards(t *testing.T) {
+func TestListenShardAndUnlistenShard(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	node := makeUnbootstrappedNode(t, ctx, 0)
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
+
 	var testingShardID ShardIDType = 42
 	// test `IsShardListened`
-	if node.IsShardListened(testingShardID) {
+	if nodes[0].IsShardListened(testingShardID) {
 		t.Errorf("Shard %v shoudn't have been listened", testingShardID)
 	}
 	// test `ListenShard`
-	if err := node.ListenShard(ctx, testingShardID); err != nil {
+	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
-	if !node.IsShardListened(testingShardID) {
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
+	if !nodes[0].IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been listened", testingShardID)
 	}
-	if !node.IsCollationSubscribed(testingShardID) {
+	if !nodes[0].IsCollationSubscribed(testingShardID) {
 		t.Errorf(
 			"shardCollations in shard [%v] should be subscribed",
 			testingShardID,
 		)
 	}
+	if len(nodes[1].pubsubService.ListPeers(fmt.Sprintf("shardCollations_%v", testingShardID))) != 1 {
+		t.Errorf("nodes[1] did not receive the subscription update")
+	}
+
 	// test `ListenShard` to same shard twice
-	if err := node.ListenShard(ctx, testingShardID); err != nil {
+	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
-	if !node.IsShardListened(testingShardID) {
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
+	if !nodes[0].IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been listened", testingShardID)
 	}
-	if !node.IsCollationSubscribed(testingShardID) {
+	if !nodes[0].IsCollationSubscribed(testingShardID) {
 		t.Errorf(
 			"shardCollations in shard [%v] should be subscribed",
 			testingShardID,
 		)
 	}
+
 	// test `ListenShard` to another shard
 	anotherShardID := testingShardID + 1
-	if err := node.ListenShard(ctx, anotherShardID); err != nil {
+	if err := nodes[0].ListenShard(ctx, anotherShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", anotherShardID)
 	}
-	if !node.IsShardListened(anotherShardID) {
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
+	if !nodes[0].IsShardListened(anotherShardID) {
 		t.Errorf("Shard %v should have been listened", anotherShardID)
 	}
-	shardIDs := node.GetListeningShards()
+	shardIDs := nodes[0].GetListeningShards()
 	if len(shardIDs) != 2 {
 		t.Errorf("We should have 2 shards being listened, instead of %v", len(shardIDs))
 	}
+	if len(nodes[1].pubsubService.ListPeers(fmt.Sprintf("shardCollations_%v", anotherShardID))) != 1 {
+		t.Errorf("nodes[1] did not receive the subscription update")
+	}
+
 	// test `UnlistenShard`
-	if err := node.UnlistenShard(ctx, testingShardID); err != nil {
+	if err := nodes[0].UnlistenShard(ctx, testingShardID); err != nil {
 		t.Errorf("Failed to unlisten to shard %v", testingShardID)
 	}
-	if node.IsShardListened(testingShardID) {
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
+	if nodes[0].IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been unlistened", testingShardID)
 	}
-	if node.IsCollationSubscribed(testingShardID) {
+	if nodes[0].IsCollationSubscribed(testingShardID) {
 		t.Errorf(
 			"shardCollations in shard [%v] should be already unsubscribed",
 			testingShardID,
 		)
 	}
+	if len(nodes[1].pubsubService.ListPeers(fmt.Sprintf("shardCollations_%v", testingShardID))) != 0 {
+		t.Errorf("nodes[1] did not receive the subscription update")
+	}
+
 	// test `UnlistenShard` same shard twice
-	if err := node.UnlistenShard(ctx, testingShardID); err != nil {
+	if err := nodes[0].UnlistenShard(ctx, testingShardID); err != nil {
 		t.Errorf("Failed to unlisten to shard %v", testingShardID)
 	}
-	if node.IsShardListened(testingShardID) {
+	if nodes[0].IsShardListened(testingShardID) {
 		t.Errorf("Shard %v should have been unlistened", testingShardID)
 	}
-	if node.IsCollationSubscribed(testingShardID) {
+	if nodes[0].IsCollationSubscribed(testingShardID) {
 		t.Errorf(
 			"shardCollations in shard [%v] should be already unsubscribed",
 			testingShardID,
 		)
+	}
+
+	// test `UnlistenShard` another shard
+	if err := nodes[0].UnlistenShard(ctx, anotherShardID); err != nil {
+		t.Errorf("Failed to unlisten to shard %v", anotherShardID)
+	}
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
+	if nodes[0].IsShardListened(anotherShardID) {
+		t.Errorf("Shard %v should have been unlistened", anotherShardID)
+	}
+	if nodes[0].IsCollationSubscribed(anotherShardID) {
+		t.Errorf(
+			"shardCollations in shard [%v] should be already unsubscribed",
+			anotherShardID,
+		)
+	}
+	if len(nodes[1].pubsubService.ListPeers(fmt.Sprintf("shardCollations_%v", anotherShardID))) != 0 {
+		t.Errorf("nodes[1] did not receive the subscription update")
 	}
 }
 
@@ -178,12 +220,16 @@ func TestBroadcastCollation(t *testing.T) {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
 	nodes[0].PublishListeningShards(ctx)
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
 	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
 
 	if err := nodes[1].ListenShard(ctx, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
 	nodes[1].PublishListeningShards(ctx)
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
 	// TODO: fail: if the collation's shardID does not correspond to the protocol's shardID,
 	//		 receiver should reject it
 
@@ -244,6 +290,8 @@ func TestRequestShardPeer(t *testing.T) {
 	if err := nodes[1].ListenShard(ctx, 2); err != nil {
 		t.Errorf("Failed to listen to shard 2")
 	}
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
 	// node1 listens to [1, 2], but we only request shard [1]
 	shardPeers, err = nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1})
 	if err != nil {
@@ -353,7 +401,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 		t.Errorf("Failed to listen to shard 42")
 	}
 	nodes[0].PublishListeningShards(ctx)
-
+	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
@@ -367,7 +415,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 		t.Errorf("Failed to listen to shard 42")
 	}
 	nodes[1].PublishListeningShards(ctx)
-
+	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
 	shardPeers42 := nodes[2].shardPrefTable.GetPeersInShard(42)
@@ -385,7 +433,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 		t.Errorf("Failed to listen to shard 42")
 	}
 	nodes[0].PublishListeningShards(ctx)
-
+	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
@@ -460,12 +508,12 @@ func TestListenShardConnectingPeers(t *testing.T) {
 		t.Errorf("Failed to listen to shard 0")
 	}
 	nodes[0].PublishListeningShards(ctx)
-	time.Sleep(time.Millisecond * 100)
 
 	if err := nodes[2].ListenShard(ctx, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
 	nodes[2].PublishListeningShards(ctx)
+	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
 	connWithNode2 := nodes[0].Network().ConnsToPeer(nodes[2].ID())
@@ -477,7 +525,8 @@ func TestListenShardConnectingPeers(t *testing.T) {
 		t.Errorf("Failed to listen to shard 42")
 	}
 	nodes[0].PublishListeningShards(ctx)
-	time.Sleep(time.Second * 1)
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
 
 	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
 	if len(connWithNode2) == 0 {
