@@ -82,6 +82,227 @@ func waitForPubSubMeshBuilt() {
 	time.Sleep(time.Second * 2)
 }
 
+func TestAddPeer(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	nodes := makeNodes(t, ctx, 2)
+	connect(t, ctx, nodes[0], nodes[1])
+}
+
+func TestRouting(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	nodes := makeNodes(t, ctx, 3)
+	connectBarbell(t, ctx, nodes)
+
+	// set the logger to DEBUG, to see the process of dht.FindPeer
+	// we should be able to see something like
+	// "dht: FindPeer <peer.ID d3wzD2> true routed.go:76", if successfully found the desire peer
+	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
+	if nodes[0].IsPeer(nodes[2].ID()) {
+		t.Error("node0 should not be able to reach node2 before routing")
+	}
+	nodes[0].Connect(
+		ctx,
+		pstore.PeerInfo{
+			ID: nodes[2].ID(),
+		},
+	)
+
+	time.Sleep(time.Millisecond * 100)
+
+	if !nodes[2].IsPeer(nodes[0].ID()) {
+		t.Error("node0 should be a peer of node2 now")
+	}
+}
+
+// test if nodes can find each other with ipfs nodes
+func TestWithIPFSNodesRouting(t *testing.T) {
+	// FIXME: skipped by default, since currently our boostrapping nodes are local ipfs nodes
+	t.Skip()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
+	ipfsPeers := convertPeers([]string{
+		"/ip4/127.0.0.1/tcp/4001/ipfs/QmXa1ncfGc9RQotUAyN3Gb4ar7WXZ4DEb2wPZsSybkK1sf",
+		"/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+		"/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
+		"/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
+		"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
+	})
+	ipfsPeer0 := ipfsPeers[0]
+	ipfsPeer1 := ipfsPeers[1]
+
+	nodes := makeNodes(t, ctx, 2)
+
+	nodes[0].Peerstore().AddAddrs(ipfsPeer0.ID, ipfsPeer0.Addrs, pstore.PermanentAddrTTL)
+	nodes[0].Connect(context.Background(), ipfsPeer0)
+	if len(nodes[0].Network().ConnsToPeer(ipfsPeer0.ID)) == 0 {
+		t.Error()
+	}
+
+	nodes[1].Peerstore().AddAddrs(ipfsPeer1.ID, ipfsPeer1.Addrs, pstore.PermanentAddrTTL)
+	nodes[1].Connect(context.Background(), ipfsPeer1)
+	if len(nodes[1].Network().ConnsToPeer(ipfsPeer1.ID)) == 0 {
+		t.Error()
+	}
+	// ensure connection: node0 <-> ipfsPeer0 <-> ipfsPeer1 <-> node1
+	if len(nodes[0].Network().ConnsToPeer(ipfsPeer1.ID)) != 0 {
+		t.Error()
+	}
+	if len(nodes[1].Network().ConnsToPeer(ipfsPeer0.ID)) != 0 {
+		t.Error()
+	}
+	if len(nodes[1].Network().ConnsToPeer(nodes[0].ID())) != 0 {
+		t.Error()
+	}
+
+	node0PeerInfo := pstore.PeerInfo{
+		ID:    nodes[0].ID(),
+		Addrs: []ma.Multiaddr{},
+	}
+	nodes[1].Connect(context.Background(), node0PeerInfo)
+
+	if len(nodes[1].Network().ConnsToPeer(nodes[0].ID())) == 0 {
+		t.Error()
+	}
+}
+
+func TestDHTBootstrapping(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	bootnode := makeUnbootstrappedNode(t, ctx, 0)
+	piBootnode := pstore.PeerInfo{
+		ID:    bootnode.ID(),
+		Addrs: bootnode.Addrs(),
+	}
+	node1 := makeUnbootstrappedNode(t, ctx, 1)
+	connect(t, ctx, bootnode, node1)
+
+	node2 := makeTestingNode(t, ctx, 2, true, []pstore.PeerInfo{piBootnode})
+	time.Sleep(time.Millisecond * 100)
+
+	if len(node2.Peerstore().PeerInfo(node1.ID()).Addrs) == 0 {
+		t.Error("node2 should have known node1 through the bootnode")
+	}
+}
+
+func TestRequestCollation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
+
+	shardID := ShardIDType(1)
+	period := 42
+	collation, err := nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
+	if err != nil {
+		t.Errorf("request collation failed: %v", err)
+	}
+	if collation != nil {
+		t.Errorf(
+			"collation should not be returned since we didn't set an eventNotifier in nodes[1]",
+		)
+	}
+}
+
+func TestRequestShardPeer(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
+
+	shardPeers, err := nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1})
+	if err != nil {
+		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs, prs := shardPeers[1]
+	if !prs {
+		t.Errorf("node1 should still return a empty peer list of the shard %v", 1)
+	}
+	if len(peerIDs) != 0 {
+		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs)
+	}
+
+	if err := nodes[1].ListenShard(ctx, 1); err != nil {
+		t.Errorf("Failed to listen to shard 1")
+	}
+	if err := nodes[1].ListenShard(ctx, 2); err != nil {
+		t.Errorf("Failed to listen to shard 2")
+	}
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
+	// node1 listens to [1, 2], but we only request shard [1]
+	shardPeers, err = nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1})
+	if err != nil {
+		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs1, prs := shardPeers[1]
+	if len(peerIDs1) != 1 || peerIDs1[0] != nodes[1].ID() {
+		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs1)
+	}
+
+	// node1 only listens to [1, 2], but we request shard [1, 2, 3]
+	shardPeers, err = nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1, 2, 3})
+	if err != nil {
+		t.Errorf("Error occurred when requesting shard peer: %v", err)
+	}
+	peerIDs1, prs = shardPeers[1]
+	if len(peerIDs1) != 1 || peerIDs1[0] != nodes[1].ID() {
+		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs1)
+	}
+	peerIDs2, prs := shardPeers[2]
+	if len(peerIDs2) != 1 || peerIDs2[0] != nodes[1].ID() {
+		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs2)
+	}
+	peerIDs3, prs := shardPeers[3]
+	if !prs {
+		t.Errorf("node1 should still return a empty peer list of the shard %v", 3)
+	}
+	if len(peerIDs3) != 0 {
+		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs3)
+	}
+}
+
+func TestPubSub(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	nodes := makeNodes(t, ctx, 3)
+	connectBarbell(t, ctx, nodes)
+
+	topic := "iamtopic"
+
+	subch0, err := nodes[0].pubsubService.Subscribe(topic)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// TODO: This sleep is necessary!!! Find out why
+	time.Sleep(time.Millisecond * 100)
+
+	publishMsg := "789"
+	err = nodes[1].pubsubService.Publish(topic, []byte(publishMsg))
+	if err != nil {
+		t.Error(err)
+	}
+
+	msg0, err := subch0.Next(ctx)
+	if string(msg0.Data) != publishMsg {
+		t.Error(err)
+	}
+	if msg0.GetFrom() != nodes[1].ID() {
+		t.Error("Wrong ID")
+	}
+}
+
 func TestListenShardAndUnlistenShard(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -200,187 +421,42 @@ func TestListenShardAndUnlistenShard(t *testing.T) {
 	}
 }
 
-func TestAddPeer(t *testing.T) {
+func TestListenShardConnectingPeers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	nodes := makeNodes(t, ctx, 2)
-	connect(t, ctx, nodes[0], nodes[1])
-}
-
-func TestBroadcastCollation(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	nodes := makeNodes(t, ctx, 2)
+	nodes := makeNodes(t, ctx, 3)
 	connectBarbell(t, ctx, nodes)
+	waitForPubSubMeshBuilt()
 
-	var testingShardID ShardIDType = 42
-	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
-		t.Errorf("Failed to listen to shard %v", testingShardID)
+	// 0 <-> 1 <-> 2
+	if err := nodes[0].ListenShard(ctx, 0); err != nil {
+		t.Errorf("Failed to listen to shard 0")
+	}
+	nodes[0].PublishListeningShards(ctx)
+
+	if err := nodes[2].ListenShard(ctx, 42); err != nil {
+		t.Errorf("Failed to listen to shard 42")
+	}
+	nodes[2].PublishListeningShards(ctx)
+	// wait for peer to receive shard subscription update
+	time.Sleep(time.Millisecond * 100)
+
+	connWithNode2 := nodes[0].Network().ConnsToPeer(nodes[2].ID())
+	if len(connWithNode2) != 0 {
+		t.Error("Node 0 shouldn't have connection with node 2")
+	}
+
+	if err := nodes[0].ListenShard(ctx, 42); err != nil {
+		t.Errorf("Failed to listen to shard 42")
 	}
 	nodes[0].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
-	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
 
-	if err := nodes[1].ListenShard(ctx, testingShardID); err != nil {
-		t.Errorf("Failed to listen to shard %v", testingShardID)
-	}
-	nodes[1].PublishListeningShards(ctx)
-	// wait for peer to receive shard subscription update
-	time.Sleep(time.Millisecond * 100)
-	// TODO: fail: if the collation's shardID does not correspond to the protocol's shardID,
-	//		 receiver should reject it
-
-	// success
-	err := nodes[0].broadcastCollation(
-		ctx,
-		testingShardID,
-		1,
-		[]byte("123"),
-	)
-	if err != nil {
-		t.Errorf("failed to send collation %v, %v, %v. reason=%v", testingShardID, 1, 123, err)
-	}
-}
-
-func TestRequestCollation(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	nodes := makeNodes(t, ctx, 2)
-	connectBarbell(t, ctx, nodes)
-
-	shardID := ShardIDType(1)
-	period := 42
-	collation, err := nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
-	if err != nil {
-		t.Errorf("request collation failed: %v", err)
-	}
-	if collation != nil {
-		t.Errorf(
-			"collation should not be returned since we didn't set an eventNotifier in nodes[1]",
-		)
-	}
-}
-
-func TestRequestShardPeer(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	nodes := makeNodes(t, ctx, 2)
-	connectBarbell(t, ctx, nodes)
-
-	shardPeers, err := nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1})
-	if err != nil {
-		t.Errorf("Error occurred when requesting shard peer: %v", err)
-	}
-	peerIDs, prs := shardPeers[1]
-	if !prs {
-		t.Errorf("node1 should still return a empty peer list of the shard %v", 1)
-	}
-	if len(peerIDs) != 0 {
-		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs)
-	}
-
-	if err := nodes[1].ListenShard(ctx, 1); err != nil {
-		t.Errorf("Failed to listen to shard 1")
-	}
-	if err := nodes[1].ListenShard(ctx, 2); err != nil {
-		t.Errorf("Failed to listen to shard 2")
-	}
-	// wait for peer to receive shard subscription update
-	time.Sleep(time.Millisecond * 100)
-	// node1 listens to [1, 2], but we only request shard [1]
-	shardPeers, err = nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1})
-	if err != nil {
-		t.Errorf("Error occurred when requesting shard peer: %v", err)
-	}
-	peerIDs1, prs := shardPeers[1]
-	if len(peerIDs1) != 1 || peerIDs1[0] != nodes[1].ID() {
-		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs1)
-	}
-
-	// node1 only listens to [1, 2], but we request shard [1, 2, 3]
-	shardPeers, err = nodes[0].requestShardPeer(ctx, nodes[1].ID(), []ShardIDType{1, 2, 3})
-	if err != nil {
-		t.Errorf("Error occurred when requesting shard peer: %v", err)
-	}
-	peerIDs1, prs = shardPeers[1]
-	if len(peerIDs1) != 1 || peerIDs1[0] != nodes[1].ID() {
-		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs1)
-	}
-	peerIDs2, prs := shardPeers[2]
-	if len(peerIDs2) != 1 || peerIDs2[0] != nodes[1].ID() {
-		t.Errorf("Wrong shard peer response %v, should be nodes[1].ID() only", peerIDs2)
-	}
-	peerIDs3, prs := shardPeers[3]
-	if !prs {
-		t.Errorf("node1 should still return a empty peer list of the shard %v", 3)
-	}
-	if len(peerIDs3) != 0 {
-		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs3)
-	}
-}
-
-func TestRouting(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	nodes := makeNodes(t, ctx, 3)
-	connectBarbell(t, ctx, nodes)
-
-	// set the logger to DEBUG, to see the process of dht.FindPeer
-	// we should be able to see something like
-	// "dht: FindPeer <peer.ID d3wzD2> true routed.go:76", if successfully found the desire peer
-	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
-	if nodes[0].IsPeer(nodes[2].ID()) {
-		t.Error("node0 should not be able to reach node2 before routing")
-	}
-	nodes[0].Connect(
-		ctx,
-		pstore.PeerInfo{
-			ID: nodes[2].ID(),
-		},
-	)
-
-	time.Sleep(time.Millisecond * 100)
-
-	if !nodes[2].IsPeer(nodes[0].ID()) {
-		t.Error("node0 should be a peer of node2 now")
-	}
-}
-
-func TestPubSub(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	nodes := makeNodes(t, ctx, 3)
-	connectBarbell(t, ctx, nodes)
-
-	topic := "iamtopic"
-
-	subch0, err := nodes[0].pubsubService.Subscribe(topic)
-	if err != nil {
-		t.Error(err)
-	}
-
-	// TODO: This sleep is necessary!!! Find out why
-	time.Sleep(time.Millisecond * 100)
-
-	publishMsg := "789"
-	err = nodes[1].pubsubService.Publish(topic, []byte(publishMsg))
-	if err != nil {
-		t.Error(err)
-	}
-
-	msg0, err := subch0.Next(ctx)
-	if string(msg0.Data) != publishMsg {
-		t.Error(err)
-	}
-	if msg0.GetFrom() != nodes[1].ID() {
-		t.Error("Wrong ID")
+	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
+	if len(connWithNode2) == 0 {
+		t.Error("Node 0 should have connected to node 2 after listening to shard 42")
 	}
 }
 
@@ -441,116 +517,40 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	}
 }
 
-// test if nodes can find each other with ipfs nodes
-func TestWithIPFSNodesRouting(t *testing.T) {
-	// FIXME: skipped by default, since currently our boostrapping nodes are local ipfs nodes
-	t.Skip()
-
+func TestBroadcastCollation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
-	ipfsPeers := convertPeers([]string{
-		"/ip4/127.0.0.1/tcp/4001/ipfs/QmXa1ncfGc9RQotUAyN3Gb4ar7WXZ4DEb2wPZsSybkK1sf",
-		"/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
-		"/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
-		"/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
-		"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
-	})
-	ipfsPeer0 := ipfsPeers[0]
-	ipfsPeer1 := ipfsPeers[1]
 
 	nodes := makeNodes(t, ctx, 2)
-
-	nodes[0].Peerstore().AddAddrs(ipfsPeer0.ID, ipfsPeer0.Addrs, pstore.PermanentAddrTTL)
-	nodes[0].Connect(context.Background(), ipfsPeer0)
-	if len(nodes[0].Network().ConnsToPeer(ipfsPeer0.ID)) == 0 {
-		t.Error()
-	}
-
-	nodes[1].Peerstore().AddAddrs(ipfsPeer1.ID, ipfsPeer1.Addrs, pstore.PermanentAddrTTL)
-	nodes[1].Connect(context.Background(), ipfsPeer1)
-	if len(nodes[1].Network().ConnsToPeer(ipfsPeer1.ID)) == 0 {
-		t.Error()
-	}
-	// ensure connection: node0 <-> ipfsPeer0 <-> ipfsPeer1 <-> node1
-	if len(nodes[0].Network().ConnsToPeer(ipfsPeer1.ID)) != 0 {
-		t.Error()
-	}
-	if len(nodes[1].Network().ConnsToPeer(ipfsPeer0.ID)) != 0 {
-		t.Error()
-	}
-	if len(nodes[1].Network().ConnsToPeer(nodes[0].ID())) != 0 {
-		t.Error()
-	}
-
-	node0PeerInfo := pstore.PeerInfo{
-		ID:    nodes[0].ID(),
-		Addrs: []ma.Multiaddr{},
-	}
-	nodes[1].Connect(context.Background(), node0PeerInfo)
-
-	if len(nodes[1].Network().ConnsToPeer(nodes[0].ID())) == 0 {
-		t.Error()
-	}
-}
-
-func TestListenShardConnectingPeers(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	nodes := makeNodes(t, ctx, 3)
 	connectBarbell(t, ctx, nodes)
-	waitForPubSubMeshBuilt()
 
-	// 0 <-> 1 <-> 2
-	if err := nodes[0].ListenShard(ctx, 0); err != nil {
-		t.Errorf("Failed to listen to shard 0")
-	}
-	nodes[0].PublishListeningShards(ctx)
-
-	if err := nodes[2].ListenShard(ctx, 42); err != nil {
-		t.Errorf("Failed to listen to shard 42")
-	}
-	nodes[2].PublishListeningShards(ctx)
-	// wait for peer to receive shard subscription update
-	time.Sleep(time.Millisecond * 100)
-
-	connWithNode2 := nodes[0].Network().ConnsToPeer(nodes[2].ID())
-	if len(connWithNode2) != 0 {
-		t.Error("Node 0 shouldn't have connection with node 2")
-	}
-
-	if err := nodes[0].ListenShard(ctx, 42); err != nil {
-		t.Errorf("Failed to listen to shard 42")
+	var testingShardID ShardIDType = 42
+	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
+		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
 	nodes[0].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
+	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
 
-	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
-	if len(connWithNode2) == 0 {
-		t.Error("Node 0 should have connected to node 2 after listening to shard 42")
+	if err := nodes[1].ListenShard(ctx, testingShardID); err != nil {
+		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
-}
-
-func TestDHTBootstrapping(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	bootnode := makeUnbootstrappedNode(t, ctx, 0)
-	piBootnode := pstore.PeerInfo{
-		ID:    bootnode.ID(),
-		Addrs: bootnode.Addrs(),
-	}
-	node1 := makeUnbootstrappedNode(t, ctx, 1)
-	connect(t, ctx, bootnode, node1)
-
-	node2 := makeTestingNode(t, ctx, 2, true, []pstore.PeerInfo{piBootnode})
+	nodes[1].PublishListeningShards(ctx)
+	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
+	// TODO: fail: if the collation's shardID does not correspond to the protocol's shardID,
+	//		 receiver should reject it
 
-	if len(node2.Peerstore().PeerInfo(node1.ID()).Addrs) == 0 {
-		t.Error("node2 should have known node1 through the bootnode")
+	// success
+	err := nodes[0].broadcastCollation(
+		ctx,
+		testingShardID,
+		1,
+		[]byte("123"),
+	)
+	if err != nil {
+		t.Errorf("failed to send collation %v, %v, %v. reason=%v", testingShardID, 1, 123, err)
 	}
 }
 
