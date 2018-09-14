@@ -93,27 +93,30 @@ func (p *RequestProtocol) requestShardPeer(
 		peerID,
 		shardPeerRequestProtocol,
 	)
-	defer s.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open new stream")
 	}
+	defer s.Close()
+
 	req := &pbmsg.ShardPeerRequest{
 		ShardIDs: shardIDs,
 	}
 	if err := sendProtoMessage(req, s); err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
 	}
+
 	res := &pbmsg.ShardPeerResponse{}
 	if err := readProtoMessage(res, s); err != nil {
 		return nil, fmt.Errorf("failed to read response proto")
 	}
+
 	shardPeers := make(map[ShardIDType][]peer.ID)
 	for shardID, peers := range res.ShardPeers {
 		peerIDs := []peer.ID{}
 		for _, peerString := range peers.Peers {
 			peerID, err := peer.IDB58Decode(peerString)
 			if err != nil {
-				return nil, fmt.Errorf("error occurred when parsing peerIDs")
+				return nil, fmt.Errorf("error occurred when parsing peerID: %s", peerString)
 			}
 			peerIDs = append(peerIDs, peerID)
 		}
