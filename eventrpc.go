@@ -16,6 +16,7 @@ var (
 
 type EventNotifier interface {
 	NotifyCollation(collation *pbmsg.Collation) (bool, error)
+	NotifyPubSub(string, []byte) (bool, error)
 	GetCollation(shardID ShardIDType, period int, hash string) (*pbmsg.Collation, error)
 }
 
@@ -44,6 +45,18 @@ func (notifier *rpcEventNotifier) NotifyCollation(collation *pbmsg.Collation) (b
 		Collation: collation,
 	}
 	res, err := notifier.client.NotifyCollation(notifier.ctx, notifyCollationReq)
+	if err != nil {
+		return false, err
+	}
+	return res.IsValid, nil
+}
+
+func (notifier *rpcEventNotifier) NotifyPubSub(topic string, data []byte) (bool, error) {
+	notifyPubSubReq := &pbevent.NotifyPubSubRequest{
+		Topic: topic,
+		Data: data,
+	}
+	res, err := notifier.client.NotifyPubSub(notifier.ctx, notifyPubSubReq)
 	if err != nil {
 		return false, err
 	}

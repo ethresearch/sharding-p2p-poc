@@ -443,6 +443,7 @@ func TestDHTBootstrapping(t *testing.T) {
 type eventTestServer struct {
 	pbevent.EventServer
 	collations chan *pbmsg.Collation
+	pubsubs chan []byte
 }
 
 func makeEventResponse(success bool) *pbevent.Response {
@@ -470,6 +471,20 @@ func (s *eventTestServer) NotifyCollation(
 	}
 	return res, nil
 }
+
+func (s *eventTestServer) NotifyPubSub(
+	ctx context.Context,
+	req *pbevent.NotifyPubSubRequest) (*pbevent.NotifyPubSubResponse, error) {
+	go func() {
+		s.pubsubs <- req.Data
+	}()
+	res := &pbevent.NotifyPubSubResponse{
+		Response: makeEventResponse(true),
+		IsValid:  true,
+	}
+	return res, nil
+}
+
 func (s *eventTestServer) GetCollation(
 	ctx context.Context,
 	req *pbevent.GetCollationRequest) (*pbevent.GetCollationResponse, error) {
@@ -510,6 +525,24 @@ func runEventServer(ctx context.Context, eventRPCAddr string) (*eventTestServer,
 		}
 	}()
 	return ets, nil
+}
+
+func TestEventRPCPubSub(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	nodes := makeNodes(t, ctx, 2)
+	connectBarbell(t, ctx, nodes)
+	waitForPubSubMeshBuilt()
+	eventRPCPort := 35566
+	notifierAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
+	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	if err != nil {
+		t.Error("failed to create event notifier")
+	}
+	// explicitly set the eventNotifier
+	nodes[1].eventNotifier = eventNotifier
+	nodes[0].broadcastCollation(ctx, 1, 1, []byte{})
+	time.Sleep(time.Second*1)
 }
 
 func TestEventRPCNotifier(t *testing.T) {

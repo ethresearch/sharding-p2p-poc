@@ -6,6 +6,7 @@ import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 
 service Event {
     rpc NotifyCollation (NotifyCollationRequest) returns (NotifyCollationResponse) {}
+    rpc NotifyPubSub (NotifyPubSubRequest) returns (NotifyPubSubResponse) {}
     rpc GetCollation (GetCollationRequest) returns (GetCollationResponse) {}
   }
 
@@ -34,6 +35,15 @@ message GetCollationResponse {
     proto.message.Collation collation = 3;
 }
 
+message NotifyPubSubRequest {
+    string topic = 1;
+    bytes data = 2;
+}
+
+message NotifyPubSubResponse {
+    Response response = 1;
+    bool isValid = 2;
+}
 
 message Response {
     Status status = 1;

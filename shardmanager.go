@@ -336,6 +336,29 @@ func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDTy
 	return n.SubscribeTopic(spanctx, topic, handler, validator)
 }
 
+func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
+	return func(ctx context.Context, msg *pubsub.Message) bool {
+		// FIXME: if no eventNotifier, just skip the verification
+		if n.eventNotifier != nil {
+			validity, _ := n.eventNotifier.NotifyPubSub(topic, msg.GetData())
+			return validity
+		}
+		return true
+	}
+}
+
+func (n *ShardManager) makeGeneralHandler() TopicHandler {
+	return func(ctx context.Context, msg *pubsub.Message) {
+		// do nothing now
+	}
+}
+
+func (n *ShardManager) SubscribeGeneral(ctx context.Context, topic string) error {
+	handler := n.makeGeneralHandler()
+	validator := n.makeGeneralValidator(topic)
+	return n.SubscribeTopic(ctx, topic, handler, validator)
+}
+
 func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) {
 	// Add span for UnsubscribeCollation of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.UnsubscribeCollation")
