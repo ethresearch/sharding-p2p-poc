@@ -443,7 +443,7 @@ func TestDHTBootstrapping(t *testing.T) {
 type eventTestServer struct {
 	pbevent.EventServer
 	collations chan *pbmsg.Collation
-	pubsubs chan []byte
+	pubsubs    chan []byte
 }
 
 func makeEventResponse(success bool) *pbevent.Response {
@@ -532,6 +532,9 @@ func TestEventRPCPubSub(t *testing.T) {
 	defer cancel()
 	nodes := makeNodes(t, ctx, 2)
 	connectBarbell(t, ctx, nodes)
+	shardID := ShardIDType(1)
+	nodes[0].ListenShard(ctx, shardID)
+	nodes[1].ListenShard(ctx, shardID)
 	waitForPubSubMeshBuilt()
 	eventRPCPort := 35566
 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
@@ -541,8 +544,8 @@ func TestEventRPCPubSub(t *testing.T) {
 	}
 	// explicitly set the eventNotifier
 	nodes[1].eventNotifier = eventNotifier
-	nodes[0].broadcastCollation(ctx, 1, 1, []byte{})
-	time.Sleep(time.Second*1)
+	nodes[0].broadcastCollation(ctx, shardID, 1, []byte{})
+	time.Sleep(time.Second * 1)
 }
 
 func TestEventRPCNotifier(t *testing.T) {
