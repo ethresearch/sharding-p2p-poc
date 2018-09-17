@@ -20,7 +20,7 @@ import (
 	logging "github.com/ipfs/go-log"
 )
 
-var logger = logging.Logger("tracing")
+var logger = logging.Logger("sharding-p2p")
 
 type server struct {
 	pbrpc.PocServer
