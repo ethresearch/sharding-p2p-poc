@@ -128,7 +128,9 @@ func (p *RequestProtocol) requestShardPeer(
 // collation request
 func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 	defer inet.FullClose(s)
-	// reject if the sender is not a peer
+
+	// TODO: reject if the sender is not a peer
+
 	data := &pbmsg.CollationRequest{}
 	if err := readProtoMessage(data, s); err != nil {
 		return
@@ -140,6 +142,7 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 		int(data.GetPeriod()),
 		data.GetHash(),
 	)
+
 	var collationResp *pbmsg.CollationResponse
 	if err != nil {
 		collationResp = &pbmsg.CollationResponse{
