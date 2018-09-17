@@ -8,7 +8,6 @@ import re
 
 unwrite_pkgs = (
     "github.com/opentracing/opentracing-go",
-    "github.com/gogo/protobuf/proto",
 )
 
 URL_DELIMETER = '/'
