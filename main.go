@@ -151,7 +151,7 @@ func runServer(
 	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
 	defer closer.Close()
 	if err != nil {
-		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
+		logger.Debugf("Failed to create tracer, err: %v", err)
 	}
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
@@ -165,9 +165,12 @@ func doAddPeer(rpcArgs []string, rpcAddr string) {
 	}
 	targetIP := rpcArgs[0]
 	targetPort, err := strconv.Atoi(rpcArgs[1])
+	if err != nil {
+		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[1])
+	}
 	targetSeed, err := strconv.Atoi(rpcArgs[2])
 	if err != nil {
-		panic(err)
+		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[2])
 	}
 	callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
 }
@@ -180,7 +183,7 @@ func doSubShard(rpcArgs []string, rpcAddr string) {
 	for _, shardIDString := range rpcArgs {
 		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
 		if err != nil {
-			panic(err)
+			logger.Fatalf("Failed to convert string '%v' to integer, err: %v", shardIDString, err)
 		}
 		shardIDs = append(shardIDs, shardID)
 	}
@@ -195,7 +198,7 @@ func doUnsubShard(rpcArgs []string, rpcAddr string) {
 	for _, shardIDString := range rpcArgs {
 		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
 		if err != nil {
-			panic(err)
+			logger.Fatalf("Failed to convert string '%v' to integer, err: %v", shardIDString, err)
 		}
 		shardIDs = append(shardIDs, shardID)
 	}
@@ -277,7 +280,7 @@ func makeNode(
 		libp2p.ListenAddrStrings(listenAddrString),
 	)
 	if err != nil {
-		panic(err)
+		logger.Panicf("Failed to create new libp2p host, err: %v", err)
 	}
 
 	// Construct a datastore (needed by the DHT). This is just a simple, in-memory thread-safe datastore.
