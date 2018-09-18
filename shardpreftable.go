@@ -40,7 +40,6 @@ func (ls *ListeningShards) unsetShard(shardID ShardIDType) error {
 			len(ls.shardBits),
 		)
 	}
-	// log.Printf("shardID=%v, byteIndex=%v, bitIndex=%v", shardID, byteIndex, bitIndex)
 	ls.shardBits[byteIndex] &= (^(1 << bitIndex))
 	return nil
 }
@@ -57,7 +56,6 @@ func (ls *ListeningShards) setShard(shardID ShardIDType) error {
 			len(ls.shardBits),
 		)
 	}
-	// log.Printf("shardID=%v, byteIndex=%v, bitIndex=%v", shardID, byteIndex, bitIndex)
 	ls.shardBits[byteIndex] |= (1 << bitIndex)
 	return nil
 }

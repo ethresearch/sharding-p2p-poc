@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	mrand "math/rand"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	// gologging "gx/ipfs/QmQvJiADDe7JR4m968MwXobTCCzUqQkP87aRHe29MEBGHV/go-logging"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
+	logging "github.com/ipfs/go-log"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	ic "github.com/libp2p/go-libp2p-crypto"
@@ -25,6 +25,8 @@ import (
 
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
+
+var logger = logging.Logger("sharding-p2p")
 
 type (
 	ShardIDType = int64
@@ -80,7 +82,7 @@ func main() {
 
 func runClient(rpcAddr string, cliArgs []string) {
 	if len(cliArgs) <= 0 {
-		log.Fatalf("Client: wrong args")
+		logger.Fatal("Client: Invalid args")
 		return
 	}
 	rpcCmd := cliArgs[0]
@@ -99,7 +101,7 @@ func runClient(rpcAddr string, cliArgs []string) {
 	case "stop":
 		callRPCStopServer(rpcAddr)
 	default:
-		log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
+		logger.Fatalf("Client: Invalid cmd '%v'", rpcCmd)
 	}
 }
 
@@ -132,7 +134,7 @@ func runServer(
 		bootnodes,
 	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Panicf("Failed to make node, err: %v", err)
 	}
 
 	// Set up Opentracing and Jaeger tracer
@@ -159,7 +161,7 @@ func runServer(
 
 func doAddPeer(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 3 {
-		log.Fatalf("Client: usage: addpeer ip port seed")
+		logger.Fatal("Client: usage: addpeer ip port seed")
 	}
 	targetIP := rpcArgs[0]
 	targetPort, err := strconv.Atoi(rpcArgs[1])
@@ -172,7 +174,7 @@ func doAddPeer(rpcArgs []string, rpcAddr string) {
 
 func doSubShard(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) == 0 {
-		log.Fatalf("Client: usage: subshard shard0 shard1 ...")
+		logger.Fatal("Client: usage: subshard shard0 shard1 ...")
 	}
 	shardIDs := []ShardIDType{}
 	for _, shardIDString := range rpcArgs {
@@ -187,7 +189,7 @@ func doSubShard(rpcArgs []string, rpcAddr string) {
 
 func doUnsubShard(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) == 0 {
-		log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
+		logger.Fatal("Client: usage: unsubshard shard0 shard1 ...")
 	}
 	shardIDs := []ShardIDType{}
 	for _, shardIDString := range rpcArgs {
@@ -202,25 +204,25 @@ func doUnsubShard(rpcArgs []string, rpcAddr string) {
 
 func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 4 {
-		log.Fatalf(
+		logger.Fatal(
 			"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
 		)
 	}
 	shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
 	if err != nil {
-		log.Fatalf("wrong shard: %v", rpcArgs)
+		logger.Fatalf("Invalid shard: %v", rpcArgs[0])
 	}
 	numCollations, err := strconv.Atoi(rpcArgs[1])
 	if err != nil {
-		log.Fatalf("wrong numCollations: %v", rpcArgs)
+		logger.Fatalf("Invalid numCollations: %v", rpcArgs[1])
 	}
 	collationSize, err := strconv.Atoi(rpcArgs[2])
 	if err != nil {
-		log.Fatalf("wrong collationSize: %v", rpcArgs)
+		logger.Fatalf("Invalid collationSize: %v", rpcArgs[2])
 	}
 	timeInMs, err := strconv.Atoi(rpcArgs[3])
 	if err != nil {
-		log.Fatalf("wrong timeInMs: %v", rpcArgs)
+		logger.Fatalf("Invalid timeInMs: %v", rpcArgs[3])
 	}
 	callRPCBroadcastCollation(
 		rpcAddr,

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
@@ -79,7 +78,7 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 		ShardPeers: shardPeers,
 	}
 	if err := sendProtoMessage(res, s); err != nil {
-		log.Printf("onShardPeerRequest: failed to send proto message %v, reason=%v", res, err)
+		logger.Errorf("onShardPeerRequest: failed to send proto message '%v', err: %v", res, err)
 		return
 	}
 }
@@ -156,8 +155,8 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 		}
 	}
 	if err := sendProtoMessage(collationResp, s); err != nil {
-		log.Printf(
-			"onCollationRequest: failed to send proto message %v, reason=%v",
+		logger.Errorf(
+			"onCollationRequest: failed to send proto message '%v', err: %v",
 			collationResp,
 			err,
 		)
