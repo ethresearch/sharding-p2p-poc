@@ -12,6 +12,7 @@ import (
 	"time"
 
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"google.golang.org/grpc"
 
 	logging "github.com/ipfs/go-log"
@@ -263,6 +264,57 @@ func (s *server) StopServer(
 
 	replyMsg := fmt.Sprintf("Closed RPC server")
 	return makePlainResponse(true, replyMsg), nil
+}
+
+func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendResponse, error) {
+	// Add span for Send
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.Send", s.serializedSpanCtx)
+	if err != nil {
+		logger.FinishWithErr(
+			spanctx,
+			fmt.Errorf("Failed to deserialize parent span context, err: %v", err),
+		)
+	}
+	defer logger.Finish(spanctx)
+
+	if req.PeerID == "" {
+		// TODO: broadcast
+		err = s.node.pubsubService.Publish(req.Topic, req.Data)
+		if err != nil {
+			response := makeResponse(
+				false,
+				fmt.Sprintf(
+					"failed to publish %v bytes in topic %v. reason: %v",
+					len(req.Data),
+					req.Topic,
+					err,
+				),
+			)
+			// TODO: try return error as non-nil
+			return &pbrpc.SendResponse{Response: response}, nil
+		}
+		return &pbrpc.SendResponse{Response: makeResponse(true, "")}, nil
+	}
+	// direct request
+	peerID, err := peer.IDB58Decode(req.PeerID)
+	if err != nil {
+		return &pbrpc.SendResponse{
+			Response: makeResponse(false, fmt.Sprintf("invalid peerID %v", peerID)),
+		}, nil
+	}
+	dataBytes, err := s.node.generalRequest(ctx, peerID, int(req.MsgType), req.Data)
+	if err != nil {
+		return &pbrpc.SendResponse{
+			Response: makeResponse(
+				false,
+				fmt.Sprintf("failed to make request to peer %v", peerID),
+			),
+		}, nil
+	}
+	return &pbrpc.SendResponse{
+		Response: makeResponse(true, ""),
+		Data:     dataBytes,
+	}, nil
 }
 
 func runRPCServer(n *Node, addr string) {

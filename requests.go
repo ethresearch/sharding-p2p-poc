@@ -23,6 +23,7 @@ type RequestProtocol struct {
 
 const collationRequestProtocol = protocol.ID("/collationRequest/1.0.0")
 const shardPeerRequestProtocol = protocol.ID("/shardPeerRequest/1.0.0")
+const generalRequestProtocol = protocol.ID("/generalRequest/1.0.0")
 
 // NewRequestProtocol defines the request protocol, which allows others to query data
 func NewRequestProtocol(node *Node) *RequestProtocol {
@@ -31,6 +32,7 @@ func NewRequestProtocol(node *Node) *RequestProtocol {
 	}
 	node.SetStreamHandler(collationRequestProtocol, p.onCollationRequest)
 	node.SetStreamHandler(shardPeerRequestProtocol, p.onShardPeerRequest)
+	node.SetStreamHandler(generalRequestProtocol, p.onGeneralRequest)
 	return p
 }
 
@@ -155,7 +157,6 @@ func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
 			collationResp,
 			err,
 		)
-		return
 	}
 }
 
@@ -185,4 +186,58 @@ func (p *RequestProtocol) requestCollation(
 		return nil, fmt.Errorf("failed to read response proto")
 	}
 	return data.Collation, nil
+}
+
+func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
+	defer inet.FullClose(s)
+	// reject if the sender is not a peer
+	req := &pbmsg.GeneralRequest{}
+	if err := readProtoMessage(req, s); err != nil {
+		return
+	}
+	if p.node.eventNotifier != nil {
+		peerID := s.Conn().RemotePeer()
+		dataBytes, err := p.node.eventNotifier.Receive(peerID, "", int(req.MsgType), req.Data)
+		if err != nil {
+			return
+		}
+		resp := &pbmsg.GeneralResponse{
+			Data: dataBytes,
+		}
+		if err := sendProtoMessage(resp, s); err != nil {
+			log.Printf(
+				"onGeneralRequest: failed to send proto message %v, reason=%v",
+				resp,
+				err,
+			)
+		}
+	}
+}
+
+func (p *RequestProtocol) generalRequest(
+	ctx context.Context,
+	peerID peer.ID,
+	msgType int,
+	data []byte) ([]byte, error) {
+	s, err := p.node.NewStream(
+		ctx,
+		peerID,
+		generalRequestProtocol,
+	)
+	defer s.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open new stream %v", err)
+	}
+	req := &pbmsg.GeneralRequest{
+		MsgType: PBInt(msgType),
+		Data:    data,
+	}
+	if err := sendProtoMessage(req, s); err != nil {
+		return nil, fmt.Errorf("failed to send request: %v", err)
+	}
+	resp := &pbmsg.GeneralResponse{}
+	if err := readProtoMessage(resp, s); err != nil {
+		return nil, fmt.Errorf("failed to read response proto")
+	}
+	return resp.Data, nil
 }

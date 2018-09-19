@@ -7,6 +7,7 @@ import (
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"google.golang.org/grpc"
 )
 
@@ -16,7 +17,7 @@ var (
 
 type EventNotifier interface {
 	NotifyCollation(collation *pbmsg.Collation) (bool, error)
-	NotifyPubSub(string, []byte) (bool, error)
+	Receive(peerID peer.ID, topic string, msgType int, data []byte) ([]byte, error)
 	GetCollation(shardID ShardIDType, period int, hash string) (*pbmsg.Collation, error)
 }
 
@@ -51,16 +52,22 @@ func (notifier *rpcEventNotifier) NotifyCollation(collation *pbmsg.Collation) (b
 	return res.IsValid, nil
 }
 
-func (notifier *rpcEventNotifier) NotifyPubSub(topic string, data []byte) (bool, error) {
-	notifyPubSubReq := &pbevent.NotifyPubSubRequest{
-		Topic: topic,
-		Data: data,
+func (notifier *rpcEventNotifier) Receive(
+	peerID peer.ID,
+	topic string,
+	msgType int,
+	data []byte) ([]byte, error) {
+	req := &pbevent.ReceiveRequest{
+		PeerID:  peerID.Pretty(),
+		Topic:   topic,
+		MsgType: PBInt(msgType),
+		Data:    data,
 	}
-	res, err := notifier.client.NotifyPubSub(notifier.ctx, notifyPubSubReq)
+	res, err := notifier.client.Receive(notifier.ctx, req)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	return res.IsValid, nil
+	return res.Data, nil
 }
 
 func (notifier *rpcEventNotifier) GetCollation(

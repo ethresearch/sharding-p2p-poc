@@ -12,6 +12,7 @@ service Poc {
   rpc BroadcastCollation(RPCBroadcastCollationRequest) returns (RPCPlainResponse) {}
   rpc SendCollation(RPCSendCollationRequest) returns (RPCPlainResponse) {}
   rpc StopServer(RPCStopServerRequest) returns (RPCPlainResponse) {}
+  rpc Send (SendRequest) returns (SendResponse) {}
 }
 
 // Request
@@ -56,4 +57,16 @@ message RPCPlainResponse {
 message RPCGetSubscribedShardResponse {
   Response response = 1;
   repeated int64 shardIDs = 2;
+}
+
+message SendRequest {
+  string peerID = 1;  // empty string indicates it is a broadcast
+  string topic = 2;  // topic for broadcast usage
+  int64 msgType = 3;  // message type of the data
+  bytes data = 4;
+}
+
+message SendResponse {
+  Response response = 1;
+  bytes data = 2;
 }

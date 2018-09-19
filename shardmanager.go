@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 
 	pubsub "github.com/libp2p/go-floodsub"
@@ -340,7 +341,22 @@ func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
 	return func(ctx context.Context, msg *pubsub.Message) bool {
 		// FIXME: if no eventNotifier, just skip the verification
 		if n.eventNotifier != nil {
-			validity, _ := n.eventNotifier.NotifyPubSub(topic, msg.GetData())
+			// FIXME: currently use -1 indicating "we don't know the type".
+			//		  However, it should be able to be inferred from the topic on Python side.
+			validityBytes, err := n.eventNotifier.Receive(
+				msg.GetFrom(),
+				topic,
+				-1,
+				msg.GetData(),
+			)
+			if err != nil {
+				return false
+			}
+			// FIXME: does it make sense that we know the type without `msgType` here?
+			validity, err := strconv.ParseBool(string(validityBytes))
+			if err != nil {
+				return false
+			}
 			return validity
 		}
 		return true

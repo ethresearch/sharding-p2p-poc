@@ -52,3 +52,12 @@ message ShardPeerResponse {
 message NotifyShardsRequest {
     repeated int64 shardIDs = 1;
 }
+
+message GeneralRequest {
+    int64 msgType = 1;
+    bytes data = 2;
+}
+
+message GeneralResponse {
+    bytes data = 2;
+}
