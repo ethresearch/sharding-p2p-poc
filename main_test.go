@@ -682,7 +682,6 @@ func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
 
 	nodes := makeNodes(t, ctx, 3)
 	connectBarbell(t, ctx, nodes)
-	waitForPubSubMeshBuilt()
 
 	shardID := ShardIDType(1)
 	if err := nodes[0].ListenShard(ctx, shardID); err != nil {
@@ -694,8 +693,7 @@ func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
 	if err := nodes[2].ListenShard(ctx, shardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", shardID)
 	}
-	// wait for peer to receive shard subscription update
-	time.Sleep(time.Millisecond * 100)
+	waitForPubSubMeshBuilt()
 
 	// setup 2 event server and notifier(stub), for node1 and node2 respectively
 	// event server and notifier for node1
@@ -726,7 +724,9 @@ func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
 	nodes[2].eventNotifier = eventNotifier
 
 	// TODO: should be sure when is the validator executed, and how it will affect relaying
-	nodes[0].broadcastCollation(ctx, shardID, 1, []byte{})
+	if err := nodes[0].broadcastCollation(ctx, shardID, 1, []byte{}); err != nil {
+		t.Error("Failed to broadcast collation")
+	}
 
 	select {
 	case collation := <-s1.collations:
