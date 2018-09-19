@@ -332,13 +332,16 @@ func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDTy
 	defer logger.Finish(spanctx)
 
 	topic := getCollationsTopic(shardID)
-	handler := n.makeCollationHandler()
-	validator := n.makeCollationValidator()
-	return n.SubscribeTopic(spanctx, topic, handler, validator)
+	return n.SubscribeGeneral(spanctx, topic)
 }
 
 func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
 	return func(ctx context.Context, msg *pubsub.Message) bool {
+		typedMessage := &pbmsg.MessageWithType{}
+		err := extractProtoMsg(msg, typedMessage)
+		if err != nil {
+			return false
+		}
 		// FIXME: if no eventNotifier, just skip the verification
 		if n.eventNotifier != nil {
 			// FIXME: currently use -1 indicating "we don't know the type".
@@ -346,8 +349,8 @@ func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
 			validityBytes, err := n.eventNotifier.Receive(
 				msg.GetFrom(),
 				topic,
-				-1,
-				msg.GetData(),
+				int(typedMessage.MsgType),
+				typedMessage.Data,
 			)
 			if err != nil {
 				return false

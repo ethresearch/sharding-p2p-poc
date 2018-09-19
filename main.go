@@ -154,6 +154,7 @@ func runServer(
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
 
+	log.Printf("listening: seed=%v, peerID=%v", seed, node.ID().Pretty())
 	runRPCServer(node, rpcAddr)
 }
 

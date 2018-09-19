@@ -170,7 +170,6 @@ func (p *RequestProtocol) requestCollation(
 		peerID,
 		collationRequestProtocol,
 	)
-	defer s.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open new stream %v", err)
 	}
@@ -193,24 +192,34 @@ func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
 	// reject if the sender is not a peer
 	req := &pbmsg.GeneralRequest{}
 	if err := readProtoMessage(req, s); err != nil {
+		log.Printf(
+			"onGeneralRequest: failed to read proto message, reason=%v",
+			err,
+		)
 		return
 	}
-	if p.node.eventNotifier != nil {
-		peerID := s.Conn().RemotePeer()
-		dataBytes, err := p.node.eventNotifier.Receive(peerID, "", int(req.MsgType), req.Data)
-		if err != nil {
-			return
-		}
-		resp := &pbmsg.GeneralResponse{
-			Data: dataBytes,
-		}
-		if err := sendProtoMessage(resp, s); err != nil {
-			log.Printf(
-				"onGeneralRequest: failed to send proto message %v, reason=%v",
-				resp,
-				err,
-			)
-		}
+	if p.node.eventNotifier == nil {
+		log.Print("onGeneralRequest: no eventNodifier set")
+		return
+	}
+	peerID := s.Conn().RemotePeer()
+	dataBytes, err := p.node.eventNotifier.Receive(peerID, "", int(req.MsgType), req.Data)
+	if err != nil {
+		log.Printf(
+			"onGeneralRequest: failed to read proto message, reason=%v",
+			err,
+		)
+		return
+	}
+	resp := &pbmsg.GeneralResponse{
+		Data: dataBytes,
+	}
+	if err := sendProtoMessage(resp, s); err != nil {
+		log.Printf(
+			"onGeneralRequest: failed to send proto message %v, reason=%v",
+			resp,
+			err,
+		)
 	}
 }
 
@@ -224,7 +233,6 @@ func (p *RequestProtocol) generalRequest(
 		peerID,
 		generalRequestProtocol,
 	)
-	defer s.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open new stream %v", err)
 	}

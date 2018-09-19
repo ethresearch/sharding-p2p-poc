@@ -61,3 +61,8 @@ message GeneralRequest {
 message GeneralResponse {
     bytes data = 2;
 }
+
+message MessageWithType {
+    int64 msgType = 1;
+    bytes data = 2;
+}

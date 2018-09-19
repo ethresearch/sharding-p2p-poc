@@ -11,7 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
+	"github.com/golang/protobuf/proto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	"google.golang.org/grpc"
 
@@ -277,9 +279,26 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 	}
 	defer logger.Finish(spanctx)
 
+	log.Printf("rpcserver:Send: receive=%v", req)
 	if req.PeerID == "" {
-		// TODO: broadcast
-		err = s.node.pubsubService.Publish(req.Topic, req.Data)
+		typedMessage := &pbmsg.MessageWithType{
+			MsgType: req.MsgType,
+			Data:    req.Data,
+		}
+		msgBytes, err := proto.Marshal(typedMessage)
+		if err != nil {
+			response := makeResponse(
+				false,
+				fmt.Sprintf(
+					"failed to marshall typedMessage %v. reason: %v",
+					typedMessage,
+					err,
+				),
+			)
+			// TODO: try return error as non-nil
+			return &pbrpc.SendResponse{Response: response}, nil
+		}
+		err = s.node.pubsubService.Publish(req.Topic, msgBytes)
 		if err != nil {
 			response := makeResponse(
 				false,
