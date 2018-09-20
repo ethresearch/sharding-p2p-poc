@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	ma "github.com/multiformats/go-multiaddr"
-
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 )
 
 const addPeerRequestProtocol = protocol.ID("/addPeer/request/0.0.1")
@@ -51,38 +48,7 @@ func NewAddPeerProtocol(node *Node) *AddPeerProtocol {
 	p := &AddPeerProtocol{
 		node: node,
 	}
-	node.SetStreamHandler(addPeerRequestProtocol, p.onAddPeerRequest)
 	return p
-}
-
-// remote peer requests handler
-func (p *AddPeerProtocol) onAddPeerRequest(s inet.Stream) {
-	defer inet.FullClose(s)
-	// get request data
-	data := &pbmsg.AddPeerRequest{}
-	if err := readProtoMessage(data, s); err != nil {
-		return
-	}
-
-	log.Printf(
-		"%s: Received addPeer request from %s. Message: %s",
-		p.node.ID(),
-		s.Conn().RemotePeer(),
-		data.Message,
-	)
-
-	// TODO: add logics for handshake and initialization, e.g. asking for shard peers
-	//		 if nothing is wrong, accept this peer.
-	resp := &pbmsg.AddPeerResponse{
-		Response: &pbmsg.Response{Status: pbmsg.Response_SUCCESS},
-	}
-
-	p.node.Peerstore().AddAddr(
-		s.Conn().RemotePeer(),
-		s.Conn().RemoteMultiaddr(),
-		pstore.PermanentAddrTTL,
-	)
-	sendProtoMessage(resp, s)
 }
 
 func (p *AddPeerProtocol) AddPeer(ctx context.Context, peerAddr string) error {
