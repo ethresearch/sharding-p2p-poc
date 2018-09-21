@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"sync"
 
 	pubsub "github.com/libp2p/go-floodsub"
@@ -31,6 +30,12 @@ type ShardManager struct {
 
 const listeningShardTopic = "listeningShard"
 const collationTopicFmt = "shardCollations_%d"
+
+const (
+	typeUnknown int = iota
+	typeCollation
+	typeCollationRequest
+)
 
 type TopicValidator = pubsub.Validator
 type TopicHandler = func(ctx context.Context, msg *pubsub.Message)
@@ -304,28 +309,6 @@ func extractProtoMsg(pubsubMsg *pubsub.Message, msg proto.Message) error {
 	return nil
 }
 
-func (n *ShardManager) makeCollationValidator() TopicValidator {
-	return func(ctx context.Context, msg *pubsub.Message) bool {
-		collation := &pbmsg.Collation{}
-		err := extractProtoMsg(msg, collation)
-		if err != nil {
-			return false
-		}
-		// FIXME: if no eventNotifier, just skip the verification
-		if n.eventNotifier != nil {
-			validity, _ := n.eventNotifier.NotifyCollation(collation)
-			return validity
-		}
-		return true
-	}
-}
-
-func (n *ShardManager) makeCollationHandler() TopicHandler {
-	return func(ctx context.Context, msg *pubsub.Message) {
-		// do nothing now
-	}
-}
-
 func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDType) error {
 	// Add span for SubscribeCollation of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.SubscribeCollation")
@@ -344,23 +327,19 @@ func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
 		}
 		// FIXME: if no eventNotifier, just skip the verification
 		if n.eventNotifier != nil {
-			// FIXME: currently use -1 indicating "we don't know the type".
-			//		  However, it should be able to be inferred from the topic on Python side.
 			validityBytes, err := n.eventNotifier.Receive(
 				msg.GetFrom(),
-				topic,
 				int(typedMessage.MsgType),
 				typedMessage.Data,
 			)
 			if err != nil {
 				return false
 			}
-			// FIXME: does it make sense that we know the type without `msgType` here?
-			validity, err := strconv.ParseBool(string(validityBytes))
-			if err != nil {
+			// TODO: `retVal` from `n.eventNotifier.Receive` should be a bool.
+			//		 validityByte == b"\x00" means false, otherwise true.
+			if len(validityBytes) != 1 || validityBytes[0] == 0 {
 				return false
 			}
-			return validity
 		}
 		return true
 	}
@@ -423,17 +402,27 @@ func (n *ShardManager) broadcastCollation(
 	return nil
 }
 
+// FIXME: in this go layer, we shouldn't have knowledge that what we are broadcasting
+//		  This should be handled in the upper side, e.g. the Python host.
+// 		  However, this code makes us easier to test without spinning up the "remote host"
+//		  We should remove these "collation" specific messages when the host side is ready.
 func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
 	if !n.IsCollationSubscribed(collation.GetShardID()) {
 		return fmt.Errorf("broadcasting to a not subscribed shard")
 	}
 	collationsTopic := getCollationsTopic(collation.ShardID)
-	bytes, err := proto.Marshal(collation)
+	dataBytes, err := proto.Marshal(collation)
+	// FIXME: we shouldn't know MsgType in Go code.
+	typedMessage := &pbmsg.MessageWithType{
+		MsgType: PBInt(typeCollation),
+		Data:    dataBytes,
+	}
+	msgBytes, err := proto.Marshal(typedMessage)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-	err = n.pubsubService.Publish(collationsTopic, bytes)
+	err = n.pubsubService.Publish(collationsTopic, msgBytes)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -442,20 +431,3 @@ func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) err
 }
 
 // TODO: beacon chain
-
-// notifier related
-
-func (n *ShardManager) getCollation(
-	shardID ShardIDType,
-	period int,
-	collationHash string) (*pbmsg.Collation, error) {
-	// get collations from remote clients only when `n.eventNotifier` is set
-	if n.eventNotifier != nil {
-		collation, err := n.eventNotifier.GetCollation(shardID, period, collationHash)
-		if err != nil {
-			return nil, err
-		}
-		return collation, nil
-	}
-	return nil, nil
-}

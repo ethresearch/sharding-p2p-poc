@@ -21,7 +21,6 @@ type RequestProtocol struct {
 	node *Node
 }
 
-const collationRequestProtocol = protocol.ID("/collationRequest/1.0.0")
 const shardPeerRequestProtocol = protocol.ID("/shardPeerRequest/1.0.0")
 const generalRequestProtocol = protocol.ID("/generalRequest/1.0.0")
 
@@ -30,7 +29,6 @@ func NewRequestProtocol(node *Node) *RequestProtocol {
 	p := &RequestProtocol{
 		node: node,
 	}
-	node.SetStreamHandler(collationRequestProtocol, p.onCollationRequest)
 	node.SetStreamHandler(shardPeerRequestProtocol, p.onShardPeerRequest)
 	node.SetStreamHandler(generalRequestProtocol, p.onGeneralRequest)
 	return p
@@ -124,72 +122,8 @@ func (p *RequestProtocol) requestShardPeer(
 	return shardPeers, nil
 }
 
-// collation request
-func (p *RequestProtocol) onCollationRequest(s inet.Stream) {
-	defer inet.FullClose(s)
-	// reject if the sender is not a peer
-	data := &pbmsg.CollationRequest{}
-	if err := readProtoMessage(data, s); err != nil {
-		return
-	}
-	// FIXME: add checks
-	var collation *pbmsg.Collation
-	collation, err := p.node.getCollation(
-		ShardIDType(data.GetShardID()),
-		int(data.GetPeriod()),
-		data.GetHash(),
-	)
-	var collationResp *pbmsg.CollationResponse
-	if err != nil {
-		collationResp = &pbmsg.CollationResponse{
-			Response:  &pbmsg.Response{Status: pbmsg.Response_FAILURE},
-			Collation: nil,
-		}
-	} else {
-		collationResp = &pbmsg.CollationResponse{
-			Response:  &pbmsg.Response{Status: pbmsg.Response_SUCCESS},
-			Collation: collation,
-		}
-	}
-	if err := sendProtoMessage(collationResp, s); err != nil {
-		log.Printf(
-			"onCollationRequest: failed to send proto message %v, reason=%v",
-			collationResp,
-			err,
-		)
-	}
-}
-
-func (p *RequestProtocol) requestCollation(
-	ctx context.Context,
-	peerID peer.ID,
-	shardID ShardIDType,
-	period int) (*pbmsg.Collation, error) {
-	s, err := p.node.NewStream(
-		ctx,
-		peerID,
-		collationRequestProtocol,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open new stream %v", err)
-	}
-	req := &pbmsg.CollationRequest{
-		ShardID: PBInt(shardID),
-		Period:  PBInt(period),
-	}
-	if err := sendProtoMessage(req, s); err != nil {
-		return nil, fmt.Errorf("failed to send request: %v", err)
-	}
-	data := &pbmsg.CollationResponse{}
-	if err := readProtoMessage(data, s); err != nil {
-		return nil, fmt.Errorf("failed to read response proto")
-	}
-	return data.Collation, nil
-}
-
 func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
 	defer inet.FullClose(s)
-	// reject if the sender is not a peer
 	req := &pbmsg.GeneralRequest{}
 	if err := readProtoMessage(req, s); err != nil {
 		log.Printf(
@@ -199,11 +133,11 @@ func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
 		return
 	}
 	if p.node.eventNotifier == nil {
-		log.Print("onGeneralRequest: no eventNodifier set")
+		log.Print("onGeneralRequest: no eventNotifier set")
 		return
 	}
 	peerID := s.Conn().RemotePeer()
-	dataBytes, err := p.node.eventNotifier.Receive(peerID, "", int(req.MsgType), req.Data)
+	dataBytes, err := p.node.eventNotifier.Receive(peerID, int(req.MsgType), req.Data)
 	if err != nil {
 		log.Printf(
 			"onGeneralRequest: failed to read proto message, reason=%v",

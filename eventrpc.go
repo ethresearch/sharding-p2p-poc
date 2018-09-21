@@ -6,7 +6,6 @@ import (
 	"log"
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	peer "github.com/libp2p/go-libp2p-peer"
 	"google.golang.org/grpc"
 )
@@ -16,9 +15,7 @@ var (
 )
 
 type EventNotifier interface {
-	NotifyCollation(collation *pbmsg.Collation) (bool, error)
-	Receive(peerID peer.ID, topic string, msgType int, data []byte) ([]byte, error)
-	GetCollation(shardID ShardIDType, period int, hash string) (*pbmsg.Collation, error)
+	Receive(peerID peer.ID, msgType int, data []byte) ([]byte, error)
 }
 
 type rpcEventNotifier struct {
@@ -40,26 +37,12 @@ func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier
 	return n, nil
 }
 
-func (notifier *rpcEventNotifier) NotifyCollation(collation *pbmsg.Collation) (bool, error) {
-	notifyCollationReq := &pbevent.NotifyCollationRequest{
-		MetaMsg:   &pbevent.MetaMsg{},
-		Collation: collation,
-	}
-	res, err := notifier.client.NotifyCollation(notifier.ctx, notifyCollationReq)
-	if err != nil {
-		return false, err
-	}
-	return res.IsValid, nil
-}
-
 func (notifier *rpcEventNotifier) Receive(
 	peerID peer.ID,
-	topic string,
 	msgType int,
 	data []byte) ([]byte, error) {
 	req := &pbevent.ReceiveRequest{
 		PeerID:  peerID.Pretty(),
-		Topic:   topic,
 		MsgType: PBInt(msgType),
 		Data:    data,
 	}
@@ -67,25 +50,8 @@ func (notifier *rpcEventNotifier) Receive(
 	if err != nil {
 		return nil, err
 	}
-	return res.Data, nil
-}
-
-func (notifier *rpcEventNotifier) GetCollation(
-	shardID ShardIDType,
-	period int,
-	hash string) (*pbmsg.Collation, error) {
-	getCollationReq := &pbevent.GetCollationRequest{
-		MetaMsg: &pbevent.MetaMsg{},
-		ShardID: PBInt(shardID),
-		Period:  PBInt(period),
-		Hash:    hash,
-	}
-	res, err := notifier.client.GetCollation(notifier.ctx, getCollationReq)
-	if err != nil {
-		return nil, err
-	}
 	if res.Response.Status != pbevent.Response_SUCCESS {
-		return nil, fmt.Errorf("request failed: %v", res.Response.Message)
+		return nil, fmt.Errorf("failure response")
 	}
-	return res.Collation, nil
+	return res.Data, nil
 }
