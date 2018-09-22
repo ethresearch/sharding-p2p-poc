@@ -67,11 +67,13 @@ func main() {
 	)
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
 	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
+	logLevel := flag.String("loglevel", "INFO", "setting log level, e.g., DEBUG, WARNING, INFO, ERROR, CRITICAL")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
 	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
 	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
+	logging.SetLogLevel("sharding-p2p", *logLevel)
 
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
