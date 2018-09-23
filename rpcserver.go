@@ -73,7 +73,6 @@ func (s *server) AddPeer(
 	// Add span for AddPeer of RPC Server
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.AddPeer", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
@@ -124,7 +123,6 @@ func (s *server) SubscribeShard(
 	// Add span for SubscribeShard
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SubscribeShard", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
@@ -157,7 +155,6 @@ func (s *server) UnsubscribeShard(
 	// Add span for UnsubscribeShard
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.UnsubscribeShard", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
@@ -189,7 +186,6 @@ func (s *server) GetSubscribedShard(
 	// Add span for GetSubscribedShard
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.GetSubscribedShard", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
@@ -211,7 +207,6 @@ func (s *server) BroadcastCollation(
 	// Add span for BroadcastCollation
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.BroadcastCollation", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
@@ -261,7 +256,6 @@ func (s *server) SendCollation(
 	// Add span for SendCollation
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SendCollation", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
@@ -294,7 +288,6 @@ func (s *server) StopServer(
 	// Add span for StopServer
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.StopServer", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
