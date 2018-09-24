@@ -82,6 +82,7 @@ func (s *server) AddPeer(
 	}
 	defer logger.Finish(spanctx)
 
+	failureMsg := fmt.Sprintf("Failed to add Peer %v:%v", req.Ip, req.Port)
 	log.Printf("rpcserver:AddPeer: receive=%v", req)
 	_, targetPID, err := makeKey(int(req.Seed))
 	mAddr := fmt.Sprintf(
@@ -93,27 +94,32 @@ func (s *server) AddPeer(
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err))
 		log.Printf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
-		return makePlainResponse(false, fmt.Sprintf("Failed to generate peer key/ID with seed: %v", req.Seed)), nil
+		return makePlainResponse(false, failureMsg), nil
 	}
 
 	peerid, targetAddr, err := parseAddr(mAddr)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to parse peer address: %s, err: %v", mAddr, err))
 		log.Printf("Failed to parse peer address: %s, err: %v", mAddr, err)
-		return makePlainResponse(false, fmt.Sprintf("Failed to parse peer address: %s, err: %v", mAddr, err)), nil
+		return makePlainResponse(false, failureMsg), nil
 	}
 	s.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 
 	if err := s.node.Connect(ctx, s.node.Peerstore().PeerInfo(peerid)); err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to connect to peer %v, err: %v", peerid, err))
 		log.Printf("Failed to connect to peer %v, err: %v", peerid, err)
-		return makePlainResponse(false, fmt.Sprintf("Failed to connect to peer %v, err: %v", peerid, err)), nil
+		return makePlainResponse(false, failureMsg), nil
 	}
+	replyMsg := fmt.Sprintf(
+		"Added Peer %v:%v, pid=%v!",
+		req.Ip,
+		req.Port,
+		targetPID,
+	)
 
 	// Tag the span with peer info
 	logger.SetTag(spanctx, "Added peer", fmt.Sprintf("%v:%v", req.Ip, req.Port))
-
-	return makePlainResponse(true, fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)), nil
+	return makePlainResponse(true, replyMsg), nil
 }
 
 func (s *server) SubscribeShard(
