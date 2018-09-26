@@ -33,10 +33,14 @@ const collationTopicFmt = "shardCollations_%d"
 type TopicValidator = pubsub.Validator
 type TopicHandler = func(ctx context.Context, msg *pubsub.Message)
 
-func getCollationHash(msg *pbmsg.Collation) string {
-	hashBytes := keccak(msg)
+func getCollationHash(msg *pbmsg.Collation) (string, error) {
+	hashBytes, err := keccak(msg)
+	if err != nil {
+		logger.Errorf("Failed to hash the given message: %v, err: %v", msg, err)
+		return "", err
+	}
 	// FIXME: for convenience
-	return b58.Encode(hashBytes)
+	return b58.Encode(hashBytes), nil
 }
 
 func getCollationsTopic(shardID ShardIDType) string {

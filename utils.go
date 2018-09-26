@@ -6,12 +6,15 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func keccak(msg proto.Message) []byte {
+func keccak(msg proto.Message) ([]byte, error) {
 	dataInBytes, err := proto.Marshal(msg)
 	if err != nil {
-		logger.Panicf("Failed to encode protobuf message: %v, err: %v", msg, err)
+		logger.Errorf("Failed to encode protobuf message: %v, err: %v", msg, err)
+		return nil, err
 	}
 	h := sha3.NewLegacyKeccak256()
-	h.Write(dataInBytes)
-	return h.Sum(nil)
+	if _, err := h.Write(dataInBytes); err != nil {
+		return nil, err
+	}
+	return h.Sum(nil), nil
 }
