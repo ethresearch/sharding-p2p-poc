@@ -11,18 +11,17 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-func convertPeers(peers []string) []pstore.PeerInfo {
+func convertPeers(peers []string) ([]pstore.PeerInfo, error) {
 	pinfos := make([]pstore.PeerInfo, len(peers))
 	for i, peer := range peers {
 		maddr := ma.StringCast(peer)
 		p, err := pstore.InfoFromP2pAddr(maddr)
 		if err != nil {
-			// TODO: should just skip?
-			logger.Fatalf("Failed to convert address %v to peer info, err: %v", maddr, err)
+			return nil, err
 		}
 		pinfos[i] = *p
 	}
-	return pinfos
+	return pinfos, nil
 }
 
 // This code is borrowed from the go-ipfs bootstrap process

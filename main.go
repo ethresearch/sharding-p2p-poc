@@ -123,7 +123,10 @@ func runServer(
 	}
 	var bootnodes = []pstore.PeerInfo{}
 	if bootnodesStr != "" {
-		bootnodes = convertPeers(strings.Split(bootnodesStr, ","))
+		bootnodes, err = convertPeers(strings.Split(bootnodesStr, ","))
+		if err != nil {
+			logger.Errorf("Failed to convert bootnode address: %v, to peer info format, err: %v", bootnodesStr, err)
+		}
 	}
 
 	node, err := makeNode(
