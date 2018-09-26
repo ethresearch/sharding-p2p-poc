@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 
 	host "github.com/libp2p/go-libp2p-host"
@@ -12,18 +11,17 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-func convertPeers(peers []string) []pstore.PeerInfo {
+func convertPeers(peers []string) ([]pstore.PeerInfo, error) {
 	pinfos := make([]pstore.PeerInfo, len(peers))
 	for i, peer := range peers {
 		maddr := ma.StringCast(peer)
 		p, err := pstore.InfoFromP2pAddr(maddr)
 		if err != nil {
-			// TODO: should just skip?
-			log.Fatalln(err)
+			return nil, err
 		}
 		pinfos[i] = *p
 	}
-	return pinfos
+	return pinfos, nil
 }
 
 // This code is borrowed from the go-ipfs bootstrap process
@@ -44,18 +42,17 @@ func bootstrapConnect(ctx context.Context, ph host.Host, peers []pstore.PeerInfo
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
 			defer wg.Done()
-			defer log.Println(ctx, "bootstrapDial", ph.ID(), p.ID)
-			log.Printf("%s bootstrapping to %s", ph.ID(), p.ID)
+			defer logger.Debug(ctx, "bootstrapDial", ph.ID(), p.ID)
+			logger.Debugf("%s bootstrapping to %s", ph.ID(), p.ID)
 
 			ph.Peerstore().AddAddrs(p.ID, p.Addrs, pstore.PermanentAddrTTL)
 			if err := ph.Connect(ctx, p); err != nil {
-				log.Println(ctx, "bootstrapDialFailed", p.ID)
-				log.Printf("failed to bootstrap with %v: %s", p.ID, err)
+				logger.Errorf("Failed to bootstrap with %v: %s", p.ID, err)
 				errs <- err
 				return
 			}
-			log.Println(ctx, "bootstrapDialSuccess", p.ID)
-			log.Printf("bootstrapped with %v", p.ID)
+			logger.Debug(ctx, "bootstrapDialSuccess", p.ID)
+			logger.Debugf("Bootstrapped with %v", p.ID)
 		}(p)
 	}
 	wg.Wait()
@@ -71,7 +68,7 @@ func bootstrapConnect(ctx context.Context, ph host.Host, peers []pstore.PeerInfo
 		}
 	}
 	if count == len(peers) {
-		return fmt.Errorf("failed to bootstrap. %s", err)
+		return fmt.Errorf("Failed to bootstrap. %s", err)
 	}
 	return nil
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -16,11 +15,7 @@ import (
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	"google.golang.org/grpc"
-
-	logging "github.com/ipfs/go-log"
 )
-
-var logger = logging.Logger("tracing")
 
 type server struct {
 	pbrpc.PocServer
@@ -79,11 +74,12 @@ func (s *server) AddPeer(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.AddPeer", s.serializedSpanCtx)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
 
 	failureMsg := fmt.Sprintf("Failed to add Peer %v:%v", req.Ip, req.Port)
-	log.Printf("rpcserver:AddPeer: receive=%v", req)
+	logger.Debugf("rpcserver:AddPeer: receive=%v", req)
 	_, targetPID, err := makeKey(int(req.Seed))
 	mAddr := fmt.Sprintf(
 		"/ip4/%s/tcp/%d/ipfs/%s",
@@ -93,21 +89,21 @@ func (s *server) AddPeer(
 	)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err))
-		log.Printf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
+		logger.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
 		return makePlainResponse(false, failureMsg), nil
 	}
 
 	peerid, targetAddr, err := parseAddr(mAddr)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to parse peer address: %s, err: %v", mAddr, err))
-		log.Printf("Failed to parse peer address: %s, err: %v", mAddr, err)
+		logger.Errorf("Failed to parse peer address: %s, err: %v", mAddr, err)
 		return makePlainResponse(false, failureMsg), nil
 	}
 	s.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 
 	if err := s.node.Connect(ctx, s.node.Peerstore().PeerInfo(peerid)); err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to connect to peer %v, err: %v", peerid, err))
-		log.Printf("Failed to connect to peer %v, err: %v", peerid, err)
+		logger.Errorf("Failed to connect to peer %v, err: %v", peerid, err)
 		return makePlainResponse(false, failureMsg), nil
 	}
 	replyMsg := fmt.Sprintf(
@@ -129,15 +125,16 @@ func (s *server) SubscribeShard(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SubscribeShard", s.serializedSpanCtx)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
 
 	subscribedShardID := make([]int64, 0)
-	log.Printf("rpcserver:SubscribeShardRequest: receive=%v", req)
+	logger.Debugf("rpcserver:SubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
 		if err := s.node.ListenShard(spanctx, shardID); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to listen to shard %v", shardID))
-			log.Printf("Failed to listen to shard %v", shardID)
+			logger.Errorf("Failed to listen to shard %v", shardID)
 		} else {
 			subscribedShardID = append(subscribedShardID, shardID)
 		}
@@ -161,15 +158,16 @@ func (s *server) UnsubscribeShard(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.UnsubscribeShard", s.serializedSpanCtx)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
 
 	unsubscribedShardID := make([]int64, 0)
-	log.Printf("rpcserver:UnsubscribeShardRequest: receive=%v", req)
+	logger.Debugf("rpcserver:UnsubscribeShardRequest: receive=%v", req)
 	for _, shardID := range req.ShardIDs {
 		if err := s.node.UnlistenShard(spanctx, shardID); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to unlisten shard %v", shardID))
-			log.Printf("Failed to unlisten shard %v", shardID)
+			logger.Errorf("Failed to unlisten shard %v", shardID)
 		} else {
 			unsubscribedShardID = append(unsubscribedShardID, shardID)
 		}
@@ -192,10 +190,11 @@ func (s *server) GetSubscribedShard(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.GetSubscribedShard", s.serializedSpanCtx)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
 
-	log.Printf("rpcserver:GetSubscribedShard: receive=%v", req)
+	logger.Debugf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
 	res := &pbrpc.RPCGetSubscribedShardResponse{
 		Response: makeResponse(true, ""),
@@ -213,10 +212,11 @@ func (s *server) BroadcastCollation(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.BroadcastCollation", s.serializedSpanCtx)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
 
-	log.Printf("rpcserver:BroadcastCollationRequest: receive=%v", req)
+	logger.Debugf("rpcserver:BroadcastCollationRequest: receive=%v", req)
 	shardID := req.ShardID
 	numCollations := int(req.Number)
 	timeInMs := req.Period
@@ -237,7 +237,7 @@ func (s *server) BroadcastCollation(
 		)
 		if err != nil {
 			failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
-			log.Println(failureMsg)
+			logger.Error(failureMsg)
 			logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation"))
 			return makePlainResponse(false, failureMsg), err
 		}
@@ -262,15 +262,16 @@ func (s *server) SendCollation(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SendCollation", s.serializedSpanCtx)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
 
-	log.Printf("rpcserver:SendCollationRequest: receive=%v", req)
+	logger.Debugf("rpcserver:SendCollationRequest: receive=%v", req)
 	collation := req.Collation
 	err = s.node.broadcastCollationMessage(collation)
 	if err != nil {
 		failureMsg := fmt.Sprintf("broadcastcollation failed: %v", err)
-		log.Println(failureMsg)
+		logger.Error(failureMsg)
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
 		return makePlainResponse(false, failureMsg), err
 	}
@@ -294,13 +295,14 @@ func (s *server) StopServer(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.StopServer", s.serializedSpanCtx)
 	if err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
 	}
 	defer logger.Finish(spanctx)
 
-	log.Printf("rpcserver:StopServer: receive=%v", req)
-	log.Printf("Closing RPC server by rpc call...")
+	logger.Debugf("rpcserver:StopServer: receive=%v", req)
 	go func() {
 		time.Sleep(time.Second * 1)
+		logger.Info("Closing RPC server by rpc call...")
 		s.rpcServer.Stop()
 	}()
 
@@ -309,6 +311,7 @@ func (s *server) StopServer(
 }
 
 func runRPCServer(n *Node, addr string) {
+	// logging.SetLogLevel("sharding-p2p", "DEBUG")
 	// Start a new trace
 	ctx := context.Background()
 	ctx = logger.Start(ctx, "RPCServer")
@@ -317,12 +320,13 @@ func runRPCServer(n *Node, addr string) {
 	serializedSpanCtx, err := logger.SerializeContext(ctx)
 	if err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serialize span context, err: %v", err))
+		logger.Debugf("Failed to serialze the trace context. Tracer won't be able to put rpc call traces together, err: %v", err)
 	}
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to set up a service listening on %s, err: %v", addr, err))
-		log.Fatalf("Failed to set up a service listening on %s, err: %v", addr, err)
+		logger.Fatalf("Failed to set up a service listening on %s, err: %v", addr, err)
 	}
 	s := grpc.NewServer()
 	pbrpc.RegisterPocServer(s, &server{node: n, serializedSpanCtx: serializedSpanCtx, rpcServer: s})
@@ -332,13 +336,13 @@ func runRPCServer(n *Node, addr string) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		log.Printf("Closing RPC server by Interrupt signal...")
+		logger.Info("Closing RPC server by Interrupt signal...")
 		s.Stop()
 	}()
 
-	log.Printf("rpcserver: listening to %v", addr)
+	logger.Info("RPC server listening to address: %v", addr)
 	if err := s.Serve(lis); err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serve the RPC server, err: %v", err))
-		log.Fatalf("Failed to serve the RPC server, err: %v", err)
+		logger.Fatalf("Failed to serve the RPC server, err: %v", err)
 	}
 }

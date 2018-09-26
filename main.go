@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	mrand "math/rand"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	// gologging "gx/ipfs/QmQvJiADDe7JR4m968MwXobTCCzUqQkP87aRHe29MEBGHV/go-logging"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
+	logging "github.com/ipfs/go-log"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	ic "github.com/libp2p/go-libp2p-crypto"
@@ -25,6 +25,8 @@ import (
 
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
+
+var logger = logging.Logger("sharding-p2p")
 
 type (
 	ShardIDType = int64
@@ -65,11 +67,13 @@ func main() {
 	)
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
 	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
+	logLevel := flag.String("loglevel", "INFO", "setting log level, e.g., DEBUG, WARNING, INFO, ERROR, CRITICAL")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
 	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
 	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
+	logging.SetLogLevel("sharding-p2p", *logLevel)
 
 	if *isClient {
 		runClient(rpcAddr, flag.Args())
@@ -80,7 +84,7 @@ func main() {
 
 func runClient(rpcAddr string, cliArgs []string) {
 	if len(cliArgs) <= 0 {
-		log.Fatalf("Client: wrong args")
+		logger.Fatal("Client: Invalid args")
 		return
 	}
 	rpcCmd := cliArgs[0]
@@ -99,7 +103,7 @@ func runClient(rpcAddr string, cliArgs []string) {
 	case "stop":
 		callRPCStopServer(rpcAddr)
 	default:
-		log.Fatalf("Client: wrong cmd '%v'", rpcCmd)
+		logger.Fatalf("Client: Invalid cmd '%v'", rpcCmd)
 	}
 }
 
@@ -119,7 +123,10 @@ func runServer(
 	}
 	var bootnodes = []pstore.PeerInfo{}
 	if bootnodesStr != "" {
-		bootnodes = convertPeers(strings.Split(bootnodesStr, ","))
+		bootnodes, err = convertPeers(strings.Split(bootnodesStr, ","))
+		if err != nil {
+			logger.Errorf("Failed to convert bootnode address: %v, to peer info format, err: %v", bootnodesStr, err)
+		}
 	}
 
 	node, err := makeNode(
@@ -132,7 +139,7 @@ func runServer(
 		bootnodes,
 	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("Failed to make node, err: %v", err)
 	}
 
 	// Set up Opentracing and Jaeger tracer
@@ -149,7 +156,7 @@ func runServer(
 	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
 	defer closer.Close()
 	if err != nil {
-		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
+		logger.Debugf("Failed to create tracer, err: %v", err)
 	}
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
@@ -159,26 +166,29 @@ func runServer(
 
 func doAddPeer(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 3 {
-		log.Fatalf("Client: usage: addpeer ip port seed")
+		logger.Fatal("Client: usage: addpeer ip port seed")
 	}
 	targetIP := rpcArgs[0]
 	targetPort, err := strconv.Atoi(rpcArgs[1])
+	if err != nil {
+		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[1])
+	}
 	targetSeed, err := strconv.Atoi(rpcArgs[2])
 	if err != nil {
-		panic(err)
+		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[2])
 	}
 	callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
 }
 
 func doSubShard(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) == 0 {
-		log.Fatalf("Client: usage: subshard shard0 shard1 ...")
+		logger.Fatal("Client: usage: subshard shard0 shard1 ...")
 	}
 	shardIDs := []ShardIDType{}
 	for _, shardIDString := range rpcArgs {
 		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
 		if err != nil {
-			panic(err)
+			logger.Fatalf("Failed to convert string '%v' to integer, err: %v", shardIDString, err)
 		}
 		shardIDs = append(shardIDs, shardID)
 	}
@@ -187,13 +197,13 @@ func doSubShard(rpcArgs []string, rpcAddr string) {
 
 func doUnsubShard(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) == 0 {
-		log.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
+		logger.Fatal("Client: usage: unsubshard shard0 shard1 ...")
 	}
 	shardIDs := []ShardIDType{}
 	for _, shardIDString := range rpcArgs {
 		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
 		if err != nil {
-			panic(err)
+			logger.Fatalf("Failed to convert string '%v' to integer, err: %v", shardIDString, err)
 		}
 		shardIDs = append(shardIDs, shardID)
 	}
@@ -202,25 +212,25 @@ func doUnsubShard(rpcArgs []string, rpcAddr string) {
 
 func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 4 {
-		log.Fatalf(
+		logger.Fatal(
 			"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
 		)
 	}
 	shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
 	if err != nil {
-		log.Fatalf("wrong shard: %v", rpcArgs)
+		logger.Fatalf("Invalid shard: %v", rpcArgs[0])
 	}
 	numCollations, err := strconv.Atoi(rpcArgs[1])
 	if err != nil {
-		log.Fatalf("wrong numCollations: %v", rpcArgs)
+		logger.Fatalf("Invalid numCollations: %v", rpcArgs[1])
 	}
 	collationSize, err := strconv.Atoi(rpcArgs[2])
 	if err != nil {
-		log.Fatalf("wrong collationSize: %v", rpcArgs)
+		logger.Fatalf("Invalid collationSize: %v", rpcArgs[2])
 	}
 	timeInMs, err := strconv.Atoi(rpcArgs[3])
 	if err != nil {
-		log.Fatalf("wrong timeInMs: %v", rpcArgs)
+		logger.Fatalf("Invalid timeInMs: %v", rpcArgs[3])
 	}
 	callRPCBroadcastCollation(
 		rpcAddr,
@@ -275,7 +285,7 @@ func makeNode(
 		libp2p.ListenAddrStrings(listenAddrString),
 	)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Construct a datastore (needed by the DHT). This is just a simple, in-memory thread-safe datastore.

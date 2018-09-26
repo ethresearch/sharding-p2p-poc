@@ -134,13 +134,16 @@ func TestWithIPFSNodesRouting(t *testing.T) {
 	defer cancel()
 
 	// golog.SetAllLoggers(gologging.DEBUG) // Change to DEBUG for extra info
-	ipfsPeers := convertPeers([]string{
+	ipfsPeers, err := convertPeers([]string{
 		"/ip4/127.0.0.1/tcp/4001/ipfs/QmXa1ncfGc9RQotUAyN3Gb4ar7WXZ4DEb2wPZsSybkK1sf",
 		"/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
 		"/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
 		"/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
 		"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
 	})
+	if err != nil {
+		t.Error("Failed to convert ipfs peers info")
+	}
 	ipfsPeer0 := ipfsPeers[0]
 	ipfsPeer1 := ipfsPeers[1]
 

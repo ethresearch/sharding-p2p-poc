@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
 	pubsub "github.com/libp2p/go-floodsub"
@@ -34,10 +33,14 @@ const collationTopicFmt = "shardCollations_%d"
 type TopicValidator = pubsub.Validator
 type TopicHandler = func(ctx context.Context, msg *pubsub.Message)
 
-func getCollationHash(msg *pbmsg.Collation) string {
-	hashBytes := keccak(msg)
+func getCollationHash(msg *pbmsg.Collation) (string, error) {
+	hashBytes, err := keccak(msg)
+	if err != nil {
+		logger.Errorf("Failed to hash the given message: %v, err: %v", msg, err)
+		return "", err
+	}
 	// FIXME: for convenience
-	return b58.Encode(hashBytes)
+	return b58.Encode(hashBytes), nil
 }
 
 func getCollationsTopic(shardID ShardIDType) string {
@@ -47,7 +50,7 @@ func getCollationsTopic(shardID ShardIDType) string {
 func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifier) *ShardManager {
 	service, err := pubsub.NewGossipSub(ctx, h)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalf("Failed to create new pubsub service, err: %v", err)
 	}
 	p := &ShardManager{
 		ctx:            ctx,
@@ -60,7 +63,7 @@ func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifi
 	}
 	err = p.SubscribeListeningShards()
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalf("Failed to subscribe to global topic 'listeningShard', err: %v", err)
 	}
 	return p
 }
@@ -101,7 +104,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 			defer wg.Done()
 			if err := n.host.Connect(spanctx, p); err != nil {
 				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v, err: %v", p.ID, shardID, err))
-				log.Printf(
+				logger.Errorf(
 					"Failed to connect peer %v in shard %v: %s",
 					p.ID,
 					shardID,
@@ -109,7 +112,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 				)
 				return
 			}
-			log.Printf("Successfully connected peer %v in shard %v", p.ID, shardID)
+			logger.Debugf("Successfully connected peer %v in shard %v", p.ID, shardID)
 			logger.SetTag(childSpanctx, "peer", p.ID)
 		}(p)
 	}
@@ -130,14 +133,14 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) err
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	if err := n.connectShardNodes(spanctx, shardID); err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
-		log.Printf("Failed to connect to nodes in shard %v", shardID)
+		logger.SetErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
+		logger.Errorf("Failed to connect to nodes in shard %v", shardID)
 	}
 
 	// shardCollations protocol
 	if err := n.SubscribeCollation(spanctx, shardID); err != nil {
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to subscribe to collation in shard %v", shardID))
-		log.Printf("Failed to subscribe to collation in shard %v", shardID)
+		logger.Errorf("Failed to subscribe to collation in shard %v", shardID)
 		return err
 	}
 
@@ -201,7 +204,7 @@ func (n *ShardManager) SubscribeTopic(
 
 	sub, err := n.pubsubService.Subscribe(topic)
 	if err != nil {
-		log.Printf("Failed to subscribe to topic: %s", topic)
+		logger.Errorf("Failed to subscribe to topic: %s", topic)
 		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to subscribe to topic: %s, err: %v", topic, err))
 		return err
 	}
@@ -288,7 +291,7 @@ func (n *ShardManager) PublishListeningShards(ctx context.Context) {
 	bytes := selfListeningShards.toBytes()
 	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards, err: %v", err))
-		log.Println("Failed to publish listening shards")
+		logger.Errorf("Failed to publish data '%v' to topic '%v', err: %v", bytes, listeningShardTopic, err)
 	}
 }
 
@@ -371,7 +374,7 @@ func (n *ShardManager) broadcastCollation(
 	err := n.broadcastCollationMessage(data)
 	if err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
-		log.Println("Failed to broadcast collation message")
+		logger.Errorf("Failed to broadcast collation message")
 		return err
 	}
 
@@ -388,12 +391,12 @@ func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) err
 	collationsTopic := getCollationsTopic(collation.ShardID)
 	bytes, err := proto.Marshal(collation)
 	if err != nil {
-		log.Println(err)
+		logger.Errorf("Failed to encode protobuf message: %v, err: %v", collation, err)
 		return err
 	}
 	err = n.pubsubService.Publish(collationsTopic, bytes)
 	if err != nil {
-		log.Println(err)
+		logger.Errorf("Failed to publish data '%v' to topic '%v', err: %v", bytes, collationsTopic, err)
 		return err
 	}
 	return nil
