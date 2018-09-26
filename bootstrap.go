@@ -47,7 +47,6 @@ func bootstrapConnect(ctx context.Context, ph host.Host, peers []pstore.PeerInfo
 
 			ph.Peerstore().AddAddrs(p.ID, p.Addrs, pstore.PermanentAddrTTL)
 			if err := ph.Connect(ctx, p); err != nil {
-				logger.Error(ctx, "bootstrapDialFailed", p.ID)
 				logger.Errorf("Failed to bootstrap with %v: %s", p.ID, err)
 				errs <- err
 				return
