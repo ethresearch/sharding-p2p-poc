@@ -50,7 +50,7 @@ func getCollationsTopic(shardID ShardIDType) string {
 func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifier) *ShardManager {
 	service, err := pubsub.NewGossipSub(ctx, h)
 	if err != nil {
-		logger.Panicf("Failed to create new pubsub service, err: %v", err)
+		logger.Fatalf("Failed to create new pubsub service, err: %v", err)
 	}
 	p := &ShardManager{
 		ctx:            ctx,
@@ -63,7 +63,7 @@ func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifi
 	}
 	err = p.SubscribeListeningShards()
 	if err != nil {
-		logger.Panicf("Failed to subscribe to global topic 'listeningShard', err: %v", err)
+		logger.Fatalf("Failed to subscribe to global topic 'listeningShard', err: %v", err)
 	}
 	return p
 }

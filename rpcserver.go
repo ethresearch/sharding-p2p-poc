@@ -326,7 +326,7 @@ func runRPCServer(n *Node, addr string) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to set up a service listening on %s, err: %v", addr, err))
-		logger.Panicf("Failed to set up a service listening on %s, err: %v", addr, err)
+		logger.Fatalf("Failed to set up a service listening on %s, err: %v", addr, err)
 	}
 	s := grpc.NewServer()
 	pbrpc.RegisterPocServer(s, &server{node: n, serializedSpanCtx: serializedSpanCtx, rpcServer: s})
@@ -343,6 +343,6 @@ func runRPCServer(n *Node, addr string) {
 	logger.Info("RPC server listening to address: %v", addr)
 	if err := s.Serve(lis); err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serve the RPC server, err: %v", err))
-		logger.Panicf("Failed to serve the RPC server, err: %v", err)
+		logger.Fatalf("Failed to serve the RPC server, err: %v", err)
 	}
 }

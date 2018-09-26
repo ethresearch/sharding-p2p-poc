@@ -136,7 +136,7 @@ func runServer(
 		bootnodes,
 	)
 	if err != nil {
-		logger.Panicf("Failed to make node, err: %v", err)
+		logger.Fatalf("Failed to make node, err: %v", err)
 	}
 
 	// Set up Opentracing and Jaeger tracer
@@ -282,7 +282,7 @@ func makeNode(
 		libp2p.ListenAddrStrings(listenAddrString),
 	)
 	if err != nil {
-		logger.Panicf("Failed to create new libp2p host, err: %v", err)
+		return nil, err
 	}
 
 	// Construct a datastore (needed by the DHT). This is just a simple, in-memory thread-safe datastore.

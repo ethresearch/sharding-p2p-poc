@@ -18,7 +18,7 @@ func convertPeers(peers []string) []pstore.PeerInfo {
 		p, err := pstore.InfoFromP2pAddr(maddr)
 		if err != nil {
 			// TODO: should just skip?
-			logger.Panicf("Failed to convert address %v to peer info, err: %v", maddr, err)
+			logger.Fatalf("Failed to convert address %v to peer info, err: %v", maddr, err)
 		}
 		pinfos[i] = *p
 	}
