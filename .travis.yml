@@ -23,4 +23,5 @@ before_install:
 
 script:
   - go test -v ./...
+  - ./cli-example/iterate_all_rpc_call.sh
   - docker ps | grep -q p2p
