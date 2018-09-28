@@ -95,6 +95,11 @@ broadcast_collation 0 2 2 100 0
 
 # peer 1 broadcast collations
 broadcast_collation 1 1 1 100 0
+# exit code should be 1
+if [ "$?" != "1" ]
+then
+    exit 1
+fi
 
 # peer 0 unsubscribe shard
 unsubscribe_shard 0 2 4

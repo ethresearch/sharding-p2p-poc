@@ -336,7 +336,7 @@ func runRPCServer(n *Node, addr string) {
 		s.Stop()
 	}()
 
-	logger.Info("RPC server listening to address: %v", addr)
+	logger.Infof("RPC server listening to address: %v", addr)
 	if err := s.Serve(lis); err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serve the RPC server, err: %v", err))
 		logger.Fatalf("Failed to serve the RPC server, err: %v", err)
