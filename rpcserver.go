@@ -126,7 +126,7 @@ func (s *server) SubscribeShard(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SubscribeShard", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
-		spanctx = logger.Start(ctx, "RPCServer.AddPeer")
+		spanctx = logger.Start(ctx, "RPCServer.SubscribeShard")
 	}
 	defer logger.Finish(spanctx)
 
@@ -159,7 +159,7 @@ func (s *server) UnsubscribeShard(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.UnsubscribeShard", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
-		spanctx = logger.Start(ctx, "RPCServer.AddPeer")
+		spanctx = logger.Start(ctx, "RPCServer.UnsubscribeShard")
 	}
 	defer logger.Finish(spanctx)
 
@@ -191,7 +191,7 @@ func (s *server) GetSubscribedShard(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.GetSubscribedShard", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
-		spanctx = logger.Start(ctx, "RPCServer.AddPeer")
+		spanctx = logger.Start(ctx, "RPCServer.GetSubscribedShard")
 	}
 	defer logger.Finish(spanctx)
 
@@ -213,7 +213,7 @@ func (s *server) BroadcastCollation(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.BroadcastCollation", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
-		spanctx = logger.Start(ctx, "RPCServer.AddPeer")
+		spanctx = logger.Start(ctx, "RPCServer.BroadcastCollation")
 	}
 	defer logger.Finish(spanctx)
 
@@ -263,7 +263,7 @@ func (s *server) SendCollation(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SendCollation", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
-		spanctx = logger.Start(ctx, "RPCServer.AddPeer")
+		spanctx = logger.Start(ctx, "RPCServer.SendCollation")
 	}
 	defer logger.Finish(spanctx)
 
@@ -296,7 +296,7 @@ func (s *server) StopServer(
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.StopServer", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
-		spanctx = logger.Start(ctx, "RPCServer.AddPeer")
+		spanctx = logger.Start(ctx, "RPCServer.StopServer")
 	}
 	defer logger.Finish(spanctx)
 
