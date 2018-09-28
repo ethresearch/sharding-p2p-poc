@@ -5,6 +5,7 @@ EXE_NAME="./sharding-p2p-poc"
 IP=127.0.0.1
 PORT=10000
 RPCPORT=13000
+LOGLEVEL="DEBUG"
 
 # spinup_node {seed} {other_params}
 spinup_node() {
@@ -12,7 +13,7 @@ spinup_node() {
     rpcport=$((RPCPORT+$1))
     p=$@
     params=${@:2}
-    $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport $params &
+    $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport -loglevel=$LOGLEVEL $params &
 }
 
 cli_prompt() {
@@ -104,5 +105,7 @@ for i in `seq 0 1`;
 do
     stop_server $i
 done
+
+sleep 1
 
 make gx-uw
