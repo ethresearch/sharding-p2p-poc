@@ -73,12 +73,11 @@ func (s *server) AddPeer(
 	// Add span for AddPeer of RPC Server
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.AddPeer", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.AddPeer")
 	}
 	defer logger.Finish(spanctx)
 
-	failureMsg := fmt.Sprintf("Failed to add Peer %v:%v", req.Ip, req.Port)
 	logger.Debugf("rpcserver:AddPeer: receive=%v", req)
 	_, targetPID, err := makeKey(int(req.Seed))
 	mAddr := fmt.Sprintf(
@@ -88,34 +87,31 @@ func (s *server) AddPeer(
 		targetPID.Pretty(),
 	)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err))
-		logger.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
-		return makePlainResponse(false, failureMsg), nil
+		errMsg := fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg.Error())
+		return nil, errMsg
 	}
 
 	peerid, targetAddr, err := parseAddr(mAddr)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to parse peer address: %s, err: %v", mAddr, err))
-		logger.Errorf("Failed to parse peer address: %s, err: %v", mAddr, err)
-		return makePlainResponse(false, failureMsg), nil
+		errMsg := fmt.Errorf("Failed to parse peer address: %s, err: %v", mAddr, err)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg.Error())
+		return nil, errMsg
 	}
 	s.node.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 
 	if err := s.node.Connect(ctx, s.node.Peerstore().PeerInfo(peerid)); err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to connect to peer %v, err: %v", peerid, err))
-		logger.Errorf("Failed to connect to peer %v, err: %v", peerid, err)
-		return makePlainResponse(false, failureMsg), nil
+		errMsg := fmt.Errorf("Failed to connect to peer %v, err: %v", peerid, err)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg)
+		return nil, errMsg
 	}
-	replyMsg := fmt.Sprintf(
-		"Added Peer %v:%v, pid=%v!",
-		req.Ip,
-		req.Port,
-		targetPID,
-	)
 
 	// Tag the span with peer info
 	logger.SetTag(spanctx, "Added peer", fmt.Sprintf("%v:%v", req.Ip, req.Port))
-	return makePlainResponse(true, replyMsg), nil
+	return makePlainResponse(true, fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)), nil
 }
 
 func (s *server) SubscribeShard(
@@ -124,8 +120,8 @@ func (s *server) SubscribeShard(
 	// Add span for SubscribeShard
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SubscribeShard", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.SubscribeShard")
 	}
 	defer logger.Finish(spanctx)
 
@@ -157,8 +153,8 @@ func (s *server) UnsubscribeShard(
 	// Add span for UnsubscribeShard
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.UnsubscribeShard", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.UnsubscribeShard")
 	}
 	defer logger.Finish(spanctx)
 
@@ -189,8 +185,8 @@ func (s *server) GetSubscribedShard(
 	// Add span for GetSubscribedShard
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.GetSubscribedShard", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.GetSubscribedShard")
 	}
 	defer logger.Finish(spanctx)
 
@@ -211,8 +207,8 @@ func (s *server) BroadcastCollation(
 	// Add span for BroadcastCollation
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.BroadcastCollation", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.BroadcastCollation")
 	}
 	defer logger.Finish(spanctx)
 
@@ -236,10 +232,10 @@ func (s *server) BroadcastCollation(
 			randBytes,
 		)
 		if err != nil {
-			failureMsg := fmt.Sprintf("broadcastcollation fails: %v", err)
-			logger.Error(failureMsg)
-			logger.SetErr(spanctx, fmt.Errorf("Failed to broadcast collation"))
-			return makePlainResponse(false, failureMsg), err
+			errMsg := fmt.Errorf("Failed to broadcast collation, err: %v", err)
+			logger.SetErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
 		}
 	}
 	replyMsg := fmt.Sprintf(
@@ -261,8 +257,8 @@ func (s *server) SendCollation(
 	// Add span for SendCollation
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.SendCollation", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.SendCollation")
 	}
 	defer logger.Finish(spanctx)
 
@@ -270,10 +266,10 @@ func (s *server) SendCollation(
 	collation := req.Collation
 	err = s.node.broadcastCollationMessage(collation)
 	if err != nil {
-		failureMsg := fmt.Sprintf("broadcastcollation failed: %v", err)
-		logger.Error(failureMsg)
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to broadcast collation message, err: %v", err))
-		return makePlainResponse(false, failureMsg), err
+		errMsg := fmt.Errorf("Failed to broadcast collation message, err: %v", err)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg.Error())
+		return nil, errMsg
 	}
 	replyMsg := fmt.Sprintf(
 		"Finished sending collation shardID=%v, period=%v, len(blobs)=%v",
@@ -294,8 +290,8 @@ func (s *server) StopServer(
 	// Add span for StopServer
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.StopServer", s.serializedSpanCtx)
 	if err != nil {
-		logger.FinishWithErr(spanctx, fmt.Errorf("Failed to deserialize parent span context, err: %v", err))
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.StopServer")
 	}
 	defer logger.Finish(spanctx)
 
@@ -340,7 +336,7 @@ func runRPCServer(n *Node, addr string) {
 		s.Stop()
 	}()
 
-	logger.Info("RPC server listening to address: %v", addr)
+	logger.Infof("RPC server listening to address: %v", addr)
 	if err := s.Serve(lis); err != nil {
 		logger.FinishWithErr(ctx, fmt.Errorf("Failed to serve the RPC server, err: %v", err))
 		logger.Fatalf("Failed to serve the RPC server, err: %v", err)

@@ -13,14 +13,14 @@ spinup_node() {
     rpcport=$((RPCPORT+$1))
     eventrpcport=$((EVENTRPCPORT+$1))
     p=$@
-    params=${p[@]:1}
+    params=${@:2}
     $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport -notifierport=$eventrpcport $params &
 }
 
 cli_prompt() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     echo "$EXE_NAME -rpcport=$((RPCPORT+seed)) -client $params"
 }
 

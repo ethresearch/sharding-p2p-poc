@@ -20,11 +20,11 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 		Seed: PBInt(seed),
 	}
 	logger.Debugf("rpcclient:AddPeer: sending=%v", addPeerReq)
-	res, err := client.AddPeer(context.Background(), addPeerReq)
-	if err != nil {
+	if res, err := client.AddPeer(context.Background(), addPeerReq); err != nil {
 		logger.Fatalf("Failed to add peer at %v:%v, err: %v", ipAddr, port, err)
+	} else {
+		logger.Debugf("rpcclient:AddPeer: result=%v", res)
 	}
-	logger.Debugf("rpcclient:AddPeer: result=%v", res)
 }
 
 func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
@@ -38,11 +38,11 @@ func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		ShardIDs: shardIDs,
 	}
 	logger.Debugf("rpcclient:ShardReq: sending=%v", subscribeShardReq)
-	res, err := client.SubscribeShard(context.Background(), subscribeShardReq)
-	if err != nil {
+	if res, err := client.SubscribeShard(context.Background(), subscribeShardReq); err != nil {
 		logger.Fatalf("Failed to subscribe to shards %v, err: %v", shardIDs, err)
+	} else {
+		logger.Debugf("rpcclient:ShardReq: result=%v", res)
 	}
-	logger.Debugf("rpcclient:ShardReq: result=%v", res)
 }
 
 func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
@@ -56,11 +56,11 @@ func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		ShardIDs: shardIDs,
 	}
 	logger.Debugf("rpcclient:UnsubscribeShardReq: sending=%v", unsubscribeShardReq)
-	res, err := client.UnsubscribeShard(context.Background(), unsubscribeShardReq)
-	if err != nil {
+	if res, err := client.UnsubscribeShard(context.Background(), unsubscribeShardReq); err != nil {
 		logger.Fatalf("Failed to unsubscribe shards %v, err: %v", shardIDs, err)
+	} else {
+		logger.Debugf("rpcclient:UnsubscribeShardReq: result=%v", res)
 	}
-	logger.Debugf("rpcclient:UnsubscribeShardReq: result=%v", res)
 }
 
 func callRPCGetSubscribedShard(rpcAddr string) {
@@ -72,11 +72,11 @@ func callRPCGetSubscribedShard(rpcAddr string) {
 	client := pbrpc.NewPocClient(conn)
 	getSubscribedShardReq := &pbrpc.RPCGetSubscribedShardRequest{}
 	logger.Debugf("rpcclient:GetSubscribedShard: sending=%v", getSubscribedShardReq)
-	res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq)
-	if err != nil {
+	if res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq); err != nil {
 		logger.Fatalf("Failed to get subscribed shards, err: %v", err)
+	} else {
+		logger.Debugf("rpcclient:GetSubscribedShard: result=%v", res.ShardIDs)
 	}
-	logger.Debugf("rpcclient:GetSubscribedShard: result=%v", res.ShardIDs)
 }
 
 func callRPCBroadcastCollation(
@@ -98,11 +98,11 @@ func callRPCBroadcastCollation(
 		Period:  PBInt(period),
 	}
 	logger.Debugf("rpcclient:BroadcastCollation: sending=%v", broadcastCollationReq)
-	res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq)
-	if err != nil {
+	if res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq); err != nil {
 		logger.Fatalf("Failed to broadcast %v collations of size %v in period %v in shard %v, err: %v", numCollations, collationSize, period, shardID, err)
+	} else {
+		logger.Debugf("rpcclient:BroadcastCollation: result=%v", res)
 	}
-	logger.Debugf("rpcclient:BroadcastCollation: result=%v", res)
 }
 
 func callRPCStopServer(rpcAddr string) {
@@ -114,9 +114,9 @@ func callRPCStopServer(rpcAddr string) {
 	client := pbrpc.NewPocClient(conn)
 	stopServerReq := &pbrpc.RPCStopServerRequest{}
 	logger.Debugf("rpcclient:StopServerReq: sending=%v", stopServerReq)
-	res, err := client.StopServer(context.Background(), stopServerReq)
-	if err != nil {
+	if res, err := client.StopServer(context.Background(), stopServerReq); err != nil {
 		logger.Fatalf("Failed to stop RPC server at %v, err: %v", rpcAddr, err)
+	} else {
+		logger.Debugf("rpcclient:StopServer: result=%v", res)
 	}
-	logger.Debugf("rpcclient:StopServer: result=%v", res)
 }

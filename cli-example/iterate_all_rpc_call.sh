@@ -5,20 +5,21 @@ EXE_NAME="./sharding-p2p-poc"
 IP=127.0.0.1
 PORT=10000
 RPCPORT=13000
+LOGLEVEL="DEBUG"
 
 # spinup_node {seed} {other_params}
 spinup_node() {
     port=$((PORT+$1))
     rpcport=$((RPCPORT+$1))
     p=$@
-    params=${p[@]:1}
-    $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport $params &
+    params=${@:2}
+    $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport -loglevel=$LOGLEVEL $params &
 }
 
 cli_prompt() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     echo "$EXE_NAME -rpcport=$((RPCPORT+seed)) -client $params"
 }
 
@@ -33,7 +34,7 @@ add_peer() {
 subscribe_shard() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     `cli_prompt $seed` subshard $params
 }
 
@@ -41,7 +42,7 @@ subscribe_shard() {
 unsubscribe_shard() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     `cli_prompt $seed` unsubshard $params
 }
 
@@ -56,7 +57,7 @@ get_subscribe_shard() {
 broadcast_collation() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     `cli_prompt $seed` broadcastcollation $params
 }
 
@@ -94,6 +95,11 @@ broadcast_collation 0 2 2 100 0
 
 # peer 1 broadcast collations
 broadcast_collation 1 1 1 100 0
+# exit code should be 1
+if [ "$?" != "1" ]
+then
+    exit 1
+fi
 
 # peer 0 unsubscribe shard
 unsubscribe_shard 0 2 4
@@ -104,5 +110,7 @@ for i in `seq 0 1`;
 do
     stop_server $i
 done
+
+sleep 1
 
 make gx-uw

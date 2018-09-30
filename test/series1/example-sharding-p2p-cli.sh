@@ -11,14 +11,14 @@ spinup_node() {
     port=$((PORT+$1))
     rpcport=$((RPCPORT+$1))
     p=$@
-    params=${p[@]:1}
+    params=${@:2}
     $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport $params &
 }
 
 cli_prompt() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     echo "$EXE_NAME -rpcport=$((RPCPORT+seed)) -client $params"
 }
 
@@ -33,7 +33,7 @@ add_peer() {
 subscribe_shard() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     `cli_prompt $seed` subshard $params
 }
 
@@ -41,7 +41,7 @@ subscribe_shard() {
 unsubscribe_shard() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     # subshard {shard_id0} {shard_id1} ...
     `cli_prompt $seed` unsubshard $params
 }
@@ -57,7 +57,7 @@ get_subscribed_shard() {
 broadcast_collation() {
     p=$@
     seed=$1
-    params=${p[@]:1}
+    params=${@:2}
     `cli_prompt $seed` broadcastcollation $params
 }
 
