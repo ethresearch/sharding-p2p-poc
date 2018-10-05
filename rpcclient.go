@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
@@ -12,7 +10,7 @@ import (
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
@@ -21,64 +19,64 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 		Port: PBInt(port),
 		Seed: PBInt(seed),
 	}
-	log.Printf("rpcclient:AddPeer: sending=%v", addPeerReq)
-	res, err := client.AddPeer(context.Background(), addPeerReq)
-	if err != nil {
-		log.Fatal(err)
+	logger.Debugf("rpcclient:AddPeer: sending=%v", addPeerReq)
+	if res, err := client.AddPeer(context.Background(), addPeerReq); err != nil {
+		logger.Fatalf("Failed to add peer at %v:%v, err: %v", ipAddr, port, err)
+	} else {
+		logger.Debugf("rpcclient:AddPeer: result=%v", res)
 	}
-	log.Printf("rpcclient:AddPeer: result=%v", res)
 }
 
 func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
 	subscribeShardReq := &pbrpc.RPCSubscribeShardRequest{
 		ShardIDs: shardIDs,
 	}
-	log.Printf("rpcclient:ShardReq: sending=%v", subscribeShardReq)
-	res, err := client.SubscribeShard(context.Background(), subscribeShardReq)
-	if err != nil {
-		log.Fatal(err)
+	logger.Debugf("rpcclient:ShardReq: sending=%v", subscribeShardReq)
+	if res, err := client.SubscribeShard(context.Background(), subscribeShardReq); err != nil {
+		logger.Fatalf("Failed to subscribe to shards %v, err: %v", shardIDs, err)
+	} else {
+		logger.Debugf("rpcclient:ShardReq: result=%v", res)
 	}
-	log.Printf("rpcclient:ShardReq: result=%v", res)
 }
 
 func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
 	unsubscribeShardReq := &pbrpc.RPCUnsubscribeShardRequest{
 		ShardIDs: shardIDs,
 	}
-	log.Printf("rpcclient:UnsubscribeShardReq: sending=%v", unsubscribeShardReq)
-	res, err := client.UnsubscribeShard(context.Background(), unsubscribeShardReq)
-	if err != nil {
-		log.Fatal(err)
+	logger.Debugf("rpcclient:UnsubscribeShardReq: sending=%v", unsubscribeShardReq)
+	if res, err := client.UnsubscribeShard(context.Background(), unsubscribeShardReq); err != nil {
+		logger.Fatalf("Failed to unsubscribe shards %v, err: %v", shardIDs, err)
+	} else {
+		logger.Debugf("rpcclient:UnsubscribeShardReq: result=%v", res)
 	}
-	log.Printf("rpcclient:UnsubscribeShardReq: result=%v", res)
 }
 
 func callRPCGetSubscribedShard(rpcAddr string) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
 	getSubscribedShardReq := &pbrpc.RPCGetSubscribedShardRequest{}
-	log.Printf("rpcclient:GetSubscribedShard: sending=%v", getSubscribedShardReq)
-	res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq)
-	if err != nil {
-		log.Fatal(err)
+	logger.Debugf("rpcclient:GetSubscribedShard: sending=%v", getSubscribedShardReq)
+	if res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq); err != nil {
+		logger.Fatalf("Failed to get subscribed shards, err: %v", err)
+	} else {
+		logger.Debugf("rpcclient:GetSubscribedShard: result=%v", res.ShardIDs)
 	}
-	log.Printf("rpcclient:GetSubscribedShard: result=%v", res.ShardIDs)
 }
 
 func callRPCBroadcastCollation(
@@ -89,7 +87,7 @@ func callRPCBroadcastCollation(
 	period int) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
@@ -99,26 +97,26 @@ func callRPCBroadcastCollation(
 		Size:    PBInt(collationSize),
 		Period:  PBInt(period),
 	}
-	log.Printf("rpcclient:BroadcastCollation: sending=%v", broadcastCollationReq)
-	res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq)
-	if err != nil {
-		log.Fatal(err)
+	logger.Debugf("rpcclient:BroadcastCollation: sending=%v", broadcastCollationReq)
+	if res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq); err != nil {
+		logger.Fatalf("Failed to broadcast %v collations of size %v in period %v in shard %v, err: %v", numCollations, collationSize, period, shardID, err)
+	} else {
+		logger.Debugf("rpcclient:BroadcastCollation: result=%v", res)
 	}
-	log.Printf("rpcclient:BroadcastCollation: result=%v", res)
 }
 
 func callRPCStopServer(rpcAddr string) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
 	stopServerReq := &pbrpc.RPCStopServerRequest{}
-	log.Printf("rpcclient:StopServerReq: sending=%v", stopServerReq)
-	res, err := client.StopServer(context.Background(), stopServerReq)
-	if err != nil {
-		log.Fatal(err)
+	logger.Debugf("rpcclient:StopServerReq: sending=%v", stopServerReq)
+	if res, err := client.StopServer(context.Background(), stopServerReq); err != nil {
+		logger.Fatalf("Failed to stop RPC server at %v, err: %v", rpcAddr, err)
+	} else {
+		logger.Debugf("rpcclient:StopServer: result=%v", res)
 	}
-	fmt.Print(res)
 }

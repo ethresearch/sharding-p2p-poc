@@ -11,7 +11,6 @@ import (
 
 type Node struct {
 	host.Host        // lib-p2p host
-	*AddPeerProtocol // addpeer protocol impl
 	*RequestProtocol // for peers to request data
 	*ShardManager
 
@@ -24,7 +23,6 @@ func NewNode(ctx context.Context, h host.Host, eventNotifier EventNotifier) *Nod
 		Host: h,
 		ctx:  ctx,
 	}
-	node.AddPeerProtocol = NewAddPeerProtocol(node)
 	node.RequestProtocol = NewRequestProtocol(node)
 	node.ShardManager = NewShardManager(ctx, node, eventNotifier)
 
