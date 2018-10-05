@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -320,7 +319,7 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 	}
 	defer logger.Finish(spanctx)
 
-	log.Printf("rpcserver:Send: receive=%v", req)
+	logger.Debugf("rpcserver:Send: receive=%v", req)
 	if req.PeerID == "" {
 		typedMessage := &pbmsg.MessageWithType{
 			MsgType: req.MsgType,

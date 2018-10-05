@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log"
 
 	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
@@ -129,20 +128,20 @@ func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
 	defer inet.FullClose(s)
 	req := &pbmsg.GeneralRequest{}
 	if err := readProtoMessage(req, s); err != nil {
-		log.Printf(
+		logger.Errorf(
 			"onGeneralRequest: failed to read proto message, reason=%v",
 			err,
 		)
 		return
 	}
 	if p.node.eventNotifier == nil {
-		log.Print("onGeneralRequest: no eventNotifier set")
+		logger.Error("onGeneralRequest: no eventNotifier set")
 		return
 	}
 	peerID := s.Conn().RemotePeer()
 	dataBytes, err := p.node.eventNotifier.Receive(peerID, int(req.MsgType), req.Data)
 	if err != nil {
-		log.Printf(
+		logger.Errorf(
 			"onGeneralRequest: failed to read proto message, reason=%v",
 			err,
 		)
@@ -152,7 +151,7 @@ func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
 		Data: dataBytes,
 	}
 	if err := sendProtoMessage(resp, s); err != nil {
-		log.Printf(
+		logger.Errorf(
 			"onGeneralRequest: failed to send proto message %v, reason=%v",
 			resp,
 			err,
