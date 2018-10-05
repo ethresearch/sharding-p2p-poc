@@ -30,6 +30,8 @@ type ShardManager struct {
 const listeningShardTopic = "listeningShard"
 const collationTopicFmt = "shardCollations_%d"
 
+// FIXME: this should only be temporary, since this layer should not know the type of the data
+//		  Currently use it to support the legacy function `broadcastCollationMessage`
 const (
 	typeUnknown int = iota
 	typeCollation
