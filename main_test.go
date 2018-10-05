@@ -9,10 +9,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+
+	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"google.golang.org/grpc"
 	// gologging "github.com/whyrusleeping/go-logging"
 )
@@ -579,22 +580,24 @@ func (s *eventTestServer) Receive(
 	go func() {
 		s.receivedData <- req.Data
 	}()
-	var resBytes []byte
-	success := true
+	resBytes := make([]byte, 0)
+	success := false
 	switch int(req.MsgType) {
 	case typeCollation:
 		msg := &pbmsg.Collation{}
 		err := proto.Unmarshal(req.Data, msg)
 		if err != nil {
-			success = false
+			break
 		}
+		success = true
 		resBytes = []byte{1} // true
 	case typeCollationRequest:
 		msg := &pbmsg.CollationRequest{}
 		err := proto.Unmarshal(req.Data, msg)
 		if err != nil {
-			success = false
+			break
 		}
+		// We assume collations in shard 42 are always not found for easier testing
 		if msg.ShardID != 42 {
 			collation := &pbmsg.Collation{
 				ShardID: msg.ShardID,
@@ -603,11 +606,9 @@ func (s *eventTestServer) Receive(
 			}
 			resBytes, err = proto.Marshal(collation)
 			if err != nil {
-				success = false
+				break
 			}
-		} else {
-			success = false
-			// resBytes = []byte{} // return empty bytes to indicate that we don't have the collation
+			success = true
 		}
 	default:
 		success = false
@@ -672,8 +673,8 @@ func TestEventRPCNotifier(t *testing.T) {
 	if err != nil {
 		t.Errorf("something wrong when calling `eventNotifier.Receive`: %v", err)
 	}
-	if len(isValidBytes) != 1 && isValidBytes[0] != 0 {
-		t.Errorf("wrong reponse from `eventNotifier`")
+	if len(isValidBytes) != 1 || isValidBytes[0] == 0 {
+		t.Errorf("wrong reponse from `eventNotifier`, isValidBytes=%v", isValidBytes)
 	}
 
 	// request collation
