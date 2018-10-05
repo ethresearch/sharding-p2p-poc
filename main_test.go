@@ -689,27 +689,6 @@ func runEventServer(ctx context.Context, eventRPCAddr string) (*eventTestServer,
 	return ets, nil
 }
 
-func TestEventRPCPubSub(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	nodes := makeNodes(t, ctx, 2)
-	connectBarbell(t, ctx, nodes)
-	shardID := ShardIDType(1)
-	nodes[0].ListenShard(ctx, shardID)
-	nodes[1].ListenShard(ctx, shardID)
-	waitForPubSubMeshBuilt()
-	eventRPCPort := 35566
-	notifierAddr := fmt.Sprintf("127.0.0.1:%v", eventRPCPort)
-	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
-	if err != nil {
-		t.Error("failed to create event notifier")
-	}
-	// explicitly set the eventNotifier
-	nodes[1].eventNotifier = eventNotifier
-	nodes[0].broadcastCollation(ctx, shardID, 1, []byte{})
-	time.Sleep(time.Second * 1)
-}
-
 func TestEventRPCNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -745,7 +724,7 @@ func TestEventRPCNotifier(t *testing.T) {
 		t.Errorf("wrong reponse from `eventNotifier`")
 	}
 
-	// GetCollation
+	// request collation
 	req := &pbmsg.CollationRequest{
 		ShardID: shardID,
 		Period:  PBInt(period),
@@ -763,11 +742,11 @@ func TestEventRPCNotifier(t *testing.T) {
 	}
 	if ShardIDType(collationReceived.ShardID) != shardID &&
 		int(collationReceived.Period) != period {
-		t.Errorf("wrong response from `eventNotifier.GetCollation`")
+		t.Errorf("wrong response from `eventNotifier.Receive`")
 	}
 }
 
-func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
+func TestBroadcastCollationWithRPCEventNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
