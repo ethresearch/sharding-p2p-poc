@@ -7,10 +7,13 @@ import (
 	"testing"
 	"time"
 
-	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
+	"github.com/golang/protobuf/proto"
+
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+
+	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"google.golang.org/grpc"
 	// gologging "github.com/whyrusleeping/go-logging"
 )
@@ -42,6 +45,14 @@ func makeTestingNode(
 		t.Error("Failed to create node")
 	}
 	return node
+}
+
+func protoToBytes(t *testing.T, data proto.Message) []byte {
+	bytes, err := proto.Marshal(data)
+	if err != nil {
+		t.Errorf("error occurred when marshaling proto: %v", err)
+	}
+	return bytes
 }
 
 func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
@@ -199,26 +210,6 @@ func TestDHTBootstrapping(t *testing.T) {
 
 	if len(node2.Peerstore().PeerInfo(node1.ID()).Addrs) == 0 {
 		t.Error("node2 should have known node1 through the bootnode")
-	}
-}
-
-func TestRequestCollation(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	nodes := makeNodes(t, ctx, 2)
-	connectBarbell(t, ctx, nodes)
-
-	shardID := ShardIDType(1)
-	period := 42
-	collation, err := nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
-	if err != nil {
-		t.Errorf("request collation failed: %v", err)
-	}
-	if collation != nil {
-		t.Errorf(
-			"collation should not be returned since we didn't set an eventNotifier in nodes[1]",
-		)
 	}
 }
 
@@ -567,7 +558,7 @@ func TestBroadcastCollation(t *testing.T) {
 
 type eventTestServer struct {
 	pbevent.EventServer
-	collations chan *pbmsg.Collation
+	receivedData chan []byte
 }
 
 func makeEventResponse(success bool) *pbevent.Response {
@@ -583,37 +574,49 @@ func makeEventResponse(success bool) *pbevent.Response {
 	return &pbevent.Response{Status: status, Message: msg}
 }
 
-func (s *eventTestServer) NotifyCollation(
+func (s *eventTestServer) Receive(
 	ctx context.Context,
-	req *pbevent.NotifyCollationRequest) (*pbevent.NotifyCollationResponse, error) {
+	req *pbevent.ReceiveRequest) (*pbevent.ReceiveResponse, error) {
 	go func() {
-		s.collations <- req.Collation
+		s.receivedData <- req.Data
 	}()
-	res := &pbevent.NotifyCollationResponse{
-		Response: makeEventResponse(true),
-		IsValid:  true,
-	}
-	return res, nil
-}
-func (s *eventTestServer) GetCollation(
-	ctx context.Context,
-	req *pbevent.GetCollationRequest) (*pbevent.GetCollationResponse, error) {
-	var collation *pbmsg.Collation
-	// simulate the case when collation is not found
-	if int(req.ShardID) == 1 && int(req.Period) == 42 {
-		collation = nil
-	} else {
-		collation = &pbmsg.Collation{
-			ShardID: req.ShardID,
-			Period:  req.Period,
-			Blobs:   []byte(fmt.Sprintf("shardID=%v, period=%v", req.ShardID, req.Period)),
+	resBytes := make([]byte, 0)
+	success := false
+	switch int(req.MsgType) {
+	case typeCollation:
+		msg := &pbmsg.Collation{}
+		err := proto.Unmarshal(req.Data, msg)
+		if err != nil {
+			break
 		}
+		success = true
+		resBytes = []byte{1} // true
+	case typeCollationRequest:
+		msg := &pbmsg.CollationRequest{}
+		err := proto.Unmarshal(req.Data, msg)
+		if err != nil {
+			break
+		}
+		// We assume collations in shard 42 are always not found for easier testing
+		if msg.ShardID != 42 {
+			collation := &pbmsg.Collation{
+				ShardID: msg.ShardID,
+				Period:  msg.Period,
+				Blobs:   []byte(fmt.Sprintf("%v:%v:blobssss", msg.ShardID, msg.Period)),
+			}
+			resBytes, err = proto.Marshal(collation)
+			if err != nil {
+				break
+			}
+			success = true
+		}
+	default:
+		success = false
 	}
-	res := &pbevent.GetCollationResponse{
-		Response:  makeEventResponse(true),
-		Collation: collation,
-	}
-	return res, nil
+	return &pbevent.ReceiveResponse{
+		Response: makeEventResponse(success),
+		Data:     resBytes,
+	}, nil
 }
 
 func runEventServer(ctx context.Context, eventRPCAddr string) (*eventTestServer, error) {
@@ -623,7 +626,7 @@ func runEventServer(ctx context.Context, eventRPCAddr string) (*eventTestServer,
 	}
 
 	s := grpc.NewServer()
-	ets := &eventTestServer{collations: make(chan *pbmsg.Collation)}
+	ets := &eventTestServer{receivedData: make(chan []byte)}
 	pbevent.RegisterEventServer(
 		s,
 		ets,
@@ -659,33 +662,44 @@ func TestEventRPCNotifier(t *testing.T) {
 	shardID := ShardIDType(1)
 	period := 2
 
-	// NotifyCollation
+	// send collation to the Host side
 	collation := &pbmsg.Collation{
 		ShardID: shardID,
 		Period:  PBInt(period),
 		Blobs:   []byte("123"),
 	}
-	isValid, err := eventNotifier.NotifyCollation(collation)
+	collationBytes := protoToBytes(t, collation)
+	isValidBytes, err := eventNotifier.Receive("", typeCollation, collationBytes)
 	if err != nil {
-		t.Errorf("something wrong when calling `eventNotifier.NotifyCollation`: %v", err)
+		t.Errorf("something wrong when calling `eventNotifier.Receive`: %v", err)
 	}
-	if !isValid {
-		t.Errorf("wrong reponse from `eventNotifier.NotifyCollation`")
+	if len(isValidBytes) != 1 || isValidBytes[0] == 0 {
+		t.Errorf("wrong reponse from `eventNotifier`, isValidBytes=%v", isValidBytes)
 	}
 
-	// GetCollation
-	collationHash := "123"
-	collationReceived, err := eventNotifier.GetCollation(shardID, period, collationHash)
+	// request collation
+	req := &pbmsg.CollationRequest{
+		ShardID: shardID,
+		Period:  PBInt(period),
+		Hash:    "123",
+	}
+	reqBytes := protoToBytes(t, req)
+	respBytes, err := eventNotifier.Receive("", typeCollationRequest, reqBytes)
 	if err != nil {
-		t.Errorf("something wrong when calling `eventNotifier.GetCollation`: %v", err)
+		t.Errorf("something wrong when calling `eventNotifier.Receive`: %v", err)
+	}
+	collationReceived := &pbmsg.Collation{}
+	err = proto.Unmarshal(respBytes, collationReceived)
+	if err != nil {
+		t.Errorf("failed to unmarshal collation bytes")
 	}
 	if ShardIDType(collationReceived.ShardID) != shardID &&
 		int(collationReceived.Period) != period {
-		t.Errorf("wrong response from `eventNotifier.GetCollation`")
+		t.Errorf("wrong response from `eventNotifier.Receive`")
 	}
 }
 
-func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
+func TestBroadcastCollationWithRPCEventNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -734,11 +748,16 @@ func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
 
 	// TODO: should be sure when is the validator executed, and how it will affect relaying
 	if err := nodes[0].broadcastCollation(ctx, shardID, 1, []byte{}); err != nil {
-		t.Error("Failed to broadcast collation")
+		t.Errorf("failed to broadcast collation in nodes[0]: %v", err)
 	}
 
 	select {
-	case collation := <-s1.collations:
+	case dataBytes := <-s1.receivedData:
+		collation := &pbmsg.Collation{}
+		err = proto.Unmarshal(dataBytes, collation)
+		if err != nil {
+			t.Errorf("failed to unmarshal collation bytes")
+		}
 		if ShardIDType(collation.ShardID) != shardID || int(collation.Period) != 1 {
 			t.Error("node1 received wrong collations")
 		}
@@ -747,7 +766,12 @@ func TestSubscribeCollationWithRPCEventNotifier(t *testing.T) {
 	}
 
 	select {
-	case collation := <-s2.collations:
+	case dataBytes := <-s2.receivedData:
+		collation := &pbmsg.Collation{}
+		err = proto.Unmarshal(dataBytes, collation)
+		if err != nil {
+			t.Errorf("failed to unmarshal collation bytes")
+		}
 		if ShardIDType(collation.ShardID) != shardID || int(collation.Period) != 1 {
 			t.Error("node2 received wrong collations")
 		}
@@ -766,12 +790,18 @@ func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 	// case: without RPCEventNotifier set
 	shardID := ShardIDType(1)
 	period := 2
-	collation, err := nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
-	if err != nil {
-		t.Errorf("request collation failed: %v", err)
+	req := &pbmsg.CollationRequest{
+		ShardID: shardID,
+		Period:  PBInt(period),
+		Hash:    "",
 	}
-	if collation != nil {
-		t.Errorf("collation should be nil because nodes[1] haven't setup a eventNotifier")
+	reqBytes := protoToBytes(t, req)
+	_, err := nodes[0].generalRequest(ctx, nodes[1].ID(), typeCollationRequest, reqBytes)
+	// `err != nil` because nodes[1] hasn't set the eventNotifier, failing to handle the request
+	if err == nil {
+		t.Errorf(
+			"should be unable to unmarshal because nodes[1] should send invalid collation, due to the lack of an eventNotifier",
+		)
 	}
 
 	// case: with RPCEventNotifier set, db in the event server has the collation
@@ -786,11 +816,22 @@ func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 	}
 	// explicitly set the eventNotifier
 	nodes[1].eventNotifier = eventNotifier
-
-	collation, err = nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, period)
+	req = &pbmsg.CollationRequest{
+		ShardID: shardID,
+		Period:  PBInt(period),
+		Hash:    "",
+	}
+	reqBytes = protoToBytes(t, req)
+	respBytes, err := nodes[0].generalRequest(ctx, nodes[1].ID(), typeCollationRequest, reqBytes)
 	if err != nil {
 		t.Errorf("request collation failed: %v", err)
 	}
+	collation := &pbmsg.Collation{}
+	err = proto.Unmarshal(respBytes, collation)
+	if err != nil {
+		t.Errorf("failed to unmarshal collation bytes")
+	}
+
 	if collation.ShardID != shardID || int(collation.Period) != period {
 		t.Errorf(
 			"responded collation does not correspond to the request: collation.ShardID=%v, request.shardID=%v, collation.Period=%v, request.period=%v",
@@ -802,12 +843,17 @@ func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 	}
 
 	// case: with RPCEventNotifier set, db in the event server doesn't have the collation
-	periodNotFound := 42
-	collation, err = nodes[0].requestCollation(ctx, nodes[1].ID(), shardID, periodNotFound)
-	if err != nil {
-		t.Errorf("request collation failed: %v", err)
+	periodNotFound := ShardIDType(42)
+	req = &pbmsg.CollationRequest{
+		ShardID: periodNotFound,
+		Period:  PBInt(period),
+		Hash:    "",
 	}
-	if collation != nil {
-		t.Errorf("collation should be nil because it it not found in the mock event server")
+	reqBytes = protoToBytes(t, req)
+	respBytes, err = nodes[0].generalRequest(ctx, nodes[1].ID(), typeCollationRequest, reqBytes)
+	if err == nil {
+		t.Errorf(
+			"should be unable to unmarshal because nodes[1] should send invalid collation, due to the lack of an eventNotifier",
+		)
 	}
 }

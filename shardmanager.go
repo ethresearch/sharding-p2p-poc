@@ -30,6 +30,14 @@ type ShardManager struct {
 const listeningShardTopic = "listeningShard"
 const collationTopicFmt = "shardCollations_%d"
 
+// FIXME: this should only be temporary, since this layer should not know the type of the data
+//		  Currently use it to support the legacy function `broadcastCollationMessage`
+const (
+	typeUnknown int = iota
+	typeCollation
+	typeCollationRequest
+)
+
 type TopicValidator = pubsub.Validator
 type TopicHandler = func(ctx context.Context, msg *pubsub.Message)
 
@@ -306,37 +314,52 @@ func extractProtoMsg(pubsubMsg *pubsub.Message, msg proto.Message) error {
 	return nil
 }
 
-func (n *ShardManager) makeCollationValidator() TopicValidator {
-	return func(ctx context.Context, msg *pubsub.Message) bool {
-		collation := &pbmsg.Collation{}
-		err := extractProtoMsg(msg, collation)
-		if err != nil {
-			return false
-		}
-		// FIXME: if no eventNotifier, just skip the verification
-		if n.eventNotifier != nil {
-			validity, _ := n.eventNotifier.NotifyCollation(collation)
-			return validity
-		}
-		return true
-	}
-}
-
-func (n *ShardManager) makeCollationHandler() TopicHandler {
-	return func(ctx context.Context, msg *pubsub.Message) {
-		// do nothing now
-	}
-}
-
 func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDType) error {
 	// Add span for SubscribeCollation of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.SubscribeCollation")
 	defer logger.Finish(spanctx)
 
 	topic := getCollationsTopic(shardID)
-	handler := n.makeCollationHandler()
-	validator := n.makeCollationValidator()
-	return n.SubscribeTopic(spanctx, topic, handler, validator)
+	return n.SubscribeGeneral(spanctx, topic)
+}
+
+func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
+	return func(ctx context.Context, msg *pubsub.Message) bool {
+		typedMessage := &pbmsg.MessageWithType{}
+		err := extractProtoMsg(msg, typedMessage)
+		if err != nil {
+			return false
+		}
+		// FIXME: if no eventNotifier, just skip the verification
+		if n.eventNotifier != nil {
+			validityBytes, err := n.eventNotifier.Receive(
+				msg.GetFrom(),
+				int(typedMessage.MsgType),
+				typedMessage.Data,
+			)
+			if err != nil {
+				return false
+			}
+			// TODO: `retVal` from `n.eventNotifier.Receive` should be a bool.
+			//		 validityByte == b"\x00" means false, otherwise true.
+			if len(validityBytes) != 1 || validityBytes[0] == 0 {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+func (n *ShardManager) makeGeneralHandler() TopicHandler {
+	return func(ctx context.Context, msg *pubsub.Message) {
+		// do nothing now
+	}
+}
+
+func (n *ShardManager) SubscribeGeneral(ctx context.Context, topic string) error {
+	handler := n.makeGeneralHandler()
+	validator := n.makeGeneralValidator(topic)
+	return n.SubscribeTopic(ctx, topic, handler, validator)
 }
 
 func (n *ShardManager) UnsubscribeCollation(ctx context.Context, shardID ShardIDType) {
@@ -384,39 +407,37 @@ func (n *ShardManager) broadcastCollation(
 	return nil
 }
 
+// FIXME: in this go layer, we shouldn't have knowledge that what we are broadcasting
+//		  This should be handled in the upper side, e.g. the Python host.
+// 		  However, this code makes us easier to test without spinning up the "remote host"
+//		  We should remove these "collation" specific messages when the host side is ready.
 func (n *ShardManager) broadcastCollationMessage(collation *pbmsg.Collation) error {
 	if !n.IsCollationSubscribed(collation.GetShardID()) {
 		return fmt.Errorf("broadcasting to a not subscribed shard")
 	}
 	collationsTopic := getCollationsTopic(collation.ShardID)
-	bytes, err := proto.Marshal(collation)
+	dataBytes, err := proto.Marshal(collation)
+	// FIXME: we shouldn't know MsgType in Go code.
+	typedMessage := &pbmsg.MessageWithType{
+		MsgType: PBInt(typeCollation),
+		Data:    dataBytes,
+	}
+	msgBytes, err := proto.Marshal(typedMessage)
 	if err != nil {
 		logger.Errorf("Failed to encode protobuf message: %v, err: %v", collation, err)
 		return err
 	}
-	err = n.pubsubService.Publish(collationsTopic, bytes)
+	err = n.pubsubService.Publish(collationsTopic, msgBytes)
 	if err != nil {
-		logger.Errorf("Failed to publish data '%v' to topic '%v', err: %v", bytes, collationsTopic, err)
+		logger.Errorf(
+			"Failed to publish data '%v' to topic '%v', err: %v",
+			msgBytes,
+			collationsTopic,
+			err,
+		)
 		return err
 	}
 	return nil
 }
 
 // TODO: beacon chain
-
-// notifier related
-
-func (n *ShardManager) getCollation(
-	shardID ShardIDType,
-	period int,
-	collationHash string) (*pbmsg.Collation, error) {
-	// get collations from remote clients only when `n.eventNotifier` is set
-	if n.eventNotifier != nil {
-		collation, err := n.eventNotifier.GetCollation(shardID, period, collationHash)
-		if err != nil {
-			return nil, err
-		}
-		return collation, nil
-	}
-	return nil, nil
-}
