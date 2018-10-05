@@ -20,9 +20,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmXScvRbYh9X9okLuX9YMnz1HR4WgRTU2hocjBs15nmCNG",
+      "hash": "QmUK4h113Hh7bR2gPpsMcbUEbbzc7hspocmPi91Bmi69nH",
       "name": "go-libp2p-floodsub",
-      "version": "0.9.21"
+      "version": "0.9.31"
     }
   ],
   "gxVersion": "0.12.1",
