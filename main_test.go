@@ -54,54 +54,6 @@ func protoToBytes(t *testing.T, data proto.Message) []byte {
 	return bytes
 }
 
-func TestNodeListeningShards(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	node := makeUnbootstrappedNode(t, ctx, 0)
-	var testingShardID ShardIDType = 42
-	// test `IsShardListened`
-	if node.IsShardListened(testingShardID) {
-		t.Errorf("Shard %v haven't been listened", testingShardID)
-	}
-	// test `ListenShard`
-	node.ListenShard(ctx, testingShardID)
-	node.PublishListeningShards(ctx)
-	if !node.IsShardListened(testingShardID) {
-		t.Errorf("Shard %v should have been listened", testingShardID)
-	}
-	if !node.IsCollationSubscribed(testingShardID) {
-		t.Errorf(
-			"shardCollations in shard [%v] should be subscribed",
-			testingShardID,
-		)
-	}
-	anotherShardID := testingShardID + 1
-	node.ListenShard(ctx, anotherShardID)
-	node.PublishListeningShards(ctx)
-	if !node.IsShardListened(anotherShardID) {
-		t.Errorf("Shard %v should have been listened", anotherShardID)
-	}
-	shardIDs := node.GetListeningShards()
-	if len(shardIDs) != 2 {
-		t.Errorf("We should have 2 shards being listened, instead of %v", len(shardIDs))
-	}
-	// test `UnlistenShard`
-	node.UnlistenShard(ctx, testingShardID)
-	node.PublishListeningShards(ctx)
-	if node.IsShardListened(testingShardID) {
-		t.Errorf("Shard %v should have been unlistened", testingShardID)
-	}
-	if node.IsCollationSubscribed(testingShardID) {
-		t.Errorf(
-			"shardCollations in shard [%v] should be already unsubscribed",
-			testingShardID,
-		)
-	}
-	node.UnlistenShard(ctx, testingShardID) // ensure no side effect
-	node.PublishListeningShards(ctx)
-}
-
 func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node {
 	return makeTestingNode(t, ctx, number, false, nil)
 }
