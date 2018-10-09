@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
@@ -25,4 +26,18 @@ func NewGlobalTable(ctx context.Context, h host.Host, pubsubService *pubsub.PubS
 		pubsubService:  pubsubService,
 		shardPrefTable: shardPrefTable,
 	}
+}
+
+func (gt *GlobalTable) Advertise(ctx context.Context, shardID ShardIDType) error {
+	// Modify local table
+	gt.shardPrefTable.AddPeerListeningShard(gt.host.ID(), shardID)
+
+	// Publish our preference in local table
+	selfListeningShards := gt.shardPrefTable.GetPeerListeningShard(gt.host.ID()).toBytes()
+	if err := gt.pubsubService.Publish(listeningShardTopic, selfListeningShards); err != nil {
+		logger.Error(fmt.Errorf("Failed to publish listening shards, err: %v", err))
+		return err
+	}
+
+	return nil
 }

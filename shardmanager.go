@@ -142,7 +142,12 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) err
 	if n.IsShardListened(shardID) {
 		return nil
 	}
-	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
+
+	if err := n.discovery.Advertise(spanctx, shardID); err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
+		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
+		return err
+	}
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	if err := n.connectShardNodes(spanctx, shardID); err != nil {
@@ -293,19 +298,6 @@ func (n *ShardManager) SubscribeListeningShards() error {
 
 func (n *ShardManager) UnsubscribeListeningShards() {
 	n.UnsubscribeTopic(context.Background(), listeningShardTopic)
-}
-
-func (n *ShardManager) PublishListeningShards(ctx context.Context) {
-	// Add span for PublishListeningShards of ShardManager
-	spanctx := logger.Start(ctx, "ShardManager.PublishListeningShards")
-	defer logger.Finish(spanctx)
-
-	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
-	bytes := selfListeningShards.toBytes()
-	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
-		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards, err: %v", err))
-		logger.Errorf("Failed to publish data '%v' to topic '%v', err: %v", bytes, listeningShardTopic, err)
-	}
 }
 
 // Collations
