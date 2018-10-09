@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	// gologging "gx/ipfs/QmQvJiADDe7JR4m968MwXobTCCzUqQkP87aRHe29MEBGHV/go-logging"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
 	logging "github.com/ipfs/go-log"
