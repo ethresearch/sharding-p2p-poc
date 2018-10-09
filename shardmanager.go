@@ -89,20 +89,11 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	defer logger.Finish(spanctx)
 	logger.SetTag(spanctx, "shard", shardID)
 
-	peerIDs := n.shardPrefTable.GetPeersInShard(shardID)
-	pinfos := []pstore.PeerInfo{}
-	for _, peerID := range peerIDs {
-		// don't connect ourselves
-		if peerID == n.host.ID() {
-			continue
-		}
-		// if already have conns, no need to add them
-		connsToPeer := n.host.Network().ConnsToPeer(peerID)
-		if len(connsToPeer) != 0 {
-			continue
-		}
-		pi := n.host.Peerstore().PeerInfo(peerID)
-		pinfos = append(pinfos, pi)
+	pinfos, err := n.discovery.FindPeers(spanctx, shardID)
+	if err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to find peers in shard %v", shardID))
+		logger.Errorf("Failed to find peers in shard %v", shardID)
+		return err
 	}
 
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested

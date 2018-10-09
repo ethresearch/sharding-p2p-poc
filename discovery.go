@@ -41,3 +41,14 @@ func (gt *GlobalTable) Advertise(ctx context.Context, shardID ShardIDType) error
 
 	return nil
 }
+
+func (gt *GlobalTable) FindPeers(ctx context.Context, shardID ShardIDType) ([]pstore.PeerInfo, error) {
+	// Get peer ID from local table and convert to PeerInfo format
+	peerIDs := gt.shardPrefTable.GetPeersInShard(shardID)
+	pinfos := []pstore.PeerInfo{}
+	for _, peerID := range peerIDs {
+		pi := gt.host.Peerstore().PeerInfo(peerID)
+		pinfos = append(pinfos, pi)
+	}
+	return pinfos, nil
+}
