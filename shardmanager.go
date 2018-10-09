@@ -24,6 +24,8 @@ type ShardManager struct {
 
 	eventNotifier EventNotifier
 
+	discovery Discovery
+
 	shardPrefTable *ShardPrefTable
 }
 
@@ -55,21 +57,24 @@ func getCollationsTopic(shardID ShardIDType) string {
 	return fmt.Sprintf(collationTopicFmt, shardID)
 }
 
-func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifier) *ShardManager {
-	service, err := pubsub.NewGossipSub(ctx, h)
-	if err != nil {
-		logger.Fatalf("Failed to create new pubsub service, err: %v", err)
-	}
+func NewShardManager(
+	ctx context.Context,
+	h host.Host,
+	pubsubService *pubsub.PubSub,
+	eventNotifier EventNotifier,
+	discovery Discovery,
+	shardPrefTable *ShardPrefTable) *ShardManager {
 	p := &ShardManager{
 		ctx:            ctx,
 		host:           h,
 		subs:           make(map[string]*pubsub.Subscription),
-		pubsubService:  service,
+		pubsubService:  pubsubService,
 		subsLock:       sync.RWMutex{},
 		eventNotifier:  eventNotifier,
-		shardPrefTable: NewShardPrefTable(),
+		discovery:      discovery,
+		shardPrefTable: shardPrefTable,
 	}
-	err = p.SubscribeListeningShards()
+	err := p.SubscribeListeningShards()
 	if err != nil {
 		logger.Fatalf("Failed to subscribe to global topic 'listeningShard', err: %v", err)
 	}
