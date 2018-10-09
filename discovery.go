@@ -7,6 +7,6 @@ import (
 )
 
 type Discovery interface {
-	Advertise(ctx context.Context, topic string) error
-	FindPeers(ctx context.Context, topic string) ([]pstore.PeerInfo, error)
+	Advertise(ctx context.Context, shardID ShardIDType) error
+	FindPeers(ctx context.Context, shardID ShardIDType) ([]pstore.PeerInfo, error)
 }
