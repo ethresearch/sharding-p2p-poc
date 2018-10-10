@@ -1,0 +1,5 @@
+---
+
+- name: call RPC broadcastcollation
+  command: "{{ docker_exec_cmd }} './sharding-p2p-poc -loglevel=DEBUG -client broadcastcollation {{ broadcastcollation_params['shard_id'] }} {{ broadcastcollation_params['num_collations'] }} {{ broadcastcollation_params['collation_size'] }} {{ broadcastcollation_params['frequency'] }}'"
+  register: rpc_broadcastcollation_result

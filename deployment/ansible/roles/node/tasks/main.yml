@@ -1,0 +1,14 @@
+---
+
+- name: Set up docker container
+  include_role:
+    name: common
+    tasks_from: run_docker
+
+- name: Sleep for a while, waiting servers to be initialized
+  pause: seconds=2
+
+- name: Connect each other
+  include_role:
+    name: common
+    tasks_from: cli_addpeer

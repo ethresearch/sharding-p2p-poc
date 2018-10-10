@@ -1,0 +1,4 @@
+---
+
+- name: call RPC subshard
+  command: "{{ docker_exec_cmd }} './sharding-p2p-poc -loglevel=DEBUG -client subshard {{ subshard_params['shard_id'] }}'"

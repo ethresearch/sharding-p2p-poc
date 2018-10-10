@@ -1,0 +1,7 @@
+---
+- name: rm the docker container with the name
+  command: "docker rm -f {{ ansible_ssh_host }}"
+  ignore_errors: True
+
+- name: run docker
+  command: "docker run --name {{ ansible_ssh_host }} --rm -d  -p {{ listenport }}:{{ default_listenport }} -p {{ rpcport }}:{{ default_rpcport }} ethereum/sharding-p2p:dev sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={{ seed }}\""

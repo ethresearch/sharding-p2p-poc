@@ -1,0 +1,4 @@
+---
+- name: call RPC addpeer
+  command: "{{ docker_exec_cmd }} './sharding-p2p-poc -loglevel=DEBUG -client addpeer {{ item }}'"
+  with_items: "{{ targets }}"

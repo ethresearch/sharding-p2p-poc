@@ -1,0 +1,16 @@
+# s1 ansible_host=127.0.0.1 ansible_port=2221 ansible_pass=docker
+# s2 ansible_host=127.0.0.1 ansible_port=2222 ansible_pass=docker
+# s3 ansible_host=127.0.0.1 ansible_port=2223 ansible_pass=docker
+
+# FIXME: docker_host ip should be modified every time. It should probably be fetched
+#        every time the script is run, or written in the inventory file every time it is generated
+s0 ansible_connection=local
+s0_0 ansible_connection=local docker_name="s0_0" listenport=10000 rpcport=13000 seed=0 targets='["192.168.10.153 10001 1"]'
+s0_1 ansible_connection=local docker_name="s0_1" listenport=10001 rpcport=13001 seed=1 targets='[]'
+
+[servers]
+s0
+
+[nodes]
+s0_0
+s0_1

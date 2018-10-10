@@ -1,0 +1,4 @@
+---
+- name: call RPC getsubshard
+  command: "{{ docker_exec_cmd }} './sharding-p2p-poc -loglevel=DEBUG -client getsubshard'"
+  register: rpc_getsubshard_result

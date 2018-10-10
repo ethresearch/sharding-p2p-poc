@@ -1,0 +1,9 @@
+---
+
+- include_role:
+    name: common
+    tasks_from: cli_subshard
+
+- include_role:
+    name: common
+    tasks_from: cli_broadcastcollation

@@ -1,0 +1,9 @@
+---
+subshard_params:
+  shard_id: 0
+
+broadcastcollation_params:
+  shard_id: 0
+  num_collations: 10
+  collation_size: 100
+  frequency: 50
