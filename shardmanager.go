@@ -106,6 +106,13 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 			defer logger.Finish(childSpanctx)
 
 			defer wg.Done()
+
+			// Skip if we already have connection with the peer
+			connsToPeer := n.host.Network().ConnsToPeer(p.ID)
+			if len(connsToPeer) != 0 {
+				return
+			}
+
 			if err := n.host.Connect(spanctx, p); err != nil {
 				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v, err: %v", p.ID, shardID, err))
 				logger.Errorf(

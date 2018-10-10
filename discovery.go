@@ -47,6 +47,10 @@ func (gt *GlobalTable) FindPeers(ctx context.Context, shardID ShardIDType) ([]ps
 	peerIDs := gt.shardPrefTable.GetPeersInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
 	for _, peerID := range peerIDs {
+		// Exclude ourself
+		if peerID == gt.host.ID() {
+			continue
+		}
 		pi := gt.host.Peerstore().PeerInfo(peerID)
 		pinfos = append(pinfos, pi)
 	}
