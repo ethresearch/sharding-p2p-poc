@@ -173,7 +173,11 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) e
 	if !n.IsShardListened(shardID) {
 		return nil
 	}
-	n.shardPrefTable.RemovePeerListeningShard(n.host.ID(), shardID)
+	if err := n.discovery.Advertise(spanctx, shardID); err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
+		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
+		return err
+	}
 
 	// listeningShards protocol
 	// TODO: should we remove some peers in this shard?

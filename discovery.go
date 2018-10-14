@@ -29,8 +29,13 @@ func NewGlobalTable(ctx context.Context, h host.Host, pubsubService *pubsub.PubS
 }
 
 func (gt *GlobalTable) Advertise(ctx context.Context, shardID ShardIDType) error {
-	// Modify local table
-	gt.shardPrefTable.AddPeerListeningShard(gt.host.ID(), shardID)
+	// If we've not yet subscribed to this shard, subscribe it
+	// If we've already subscribed to this shard, unsubscribe it
+	if gt.shardPrefTable.IsPeerListeningShard(gt.host.ID(), shardID) {
+		gt.shardPrefTable.RemovePeerListeningShard(gt.host.ID(), shardID)
+	} else {
+		gt.shardPrefTable.AddPeerListeningShard(gt.host.ID(), shardID)
+	}
 
 	// Publish our preference in local table
 	selfListeningShards := gt.shardPrefTable.GetPeerListeningShard(gt.host.ID()).toBytes()
