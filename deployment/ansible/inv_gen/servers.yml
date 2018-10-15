@@ -1,0 +1,18 @@
+uniform_distribution: false  # this overrides the `portion` field in each server
+servers:
+  - region: local
+    list:
+      - name: local
+        ip: 192.168.0.15
+        portion: 1
+  # - region: aws-tokyo
+  #   list:
+  #     - name: aws-tokyo-1
+  #       ip: 123.456.789.012
+  #       port: 22
+  #       user: docker
+  #       password: docker
+  #       portion: 0.5
+
+nodes:
+  number: 5
