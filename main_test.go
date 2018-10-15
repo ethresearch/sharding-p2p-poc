@@ -467,11 +467,6 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	connectBarbell(t, ctx, nodes)
 	waitForPubSubMeshBuilt()
 
-	// ensure notifyShards message is propagated through node1
-	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
-		t.Error()
-	}
-
 	if err := nodes[0].ListenShard(ctx, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
@@ -479,10 +474,10 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
-		t.Error()
+		t.Error("Node 0 should subscribe to exactly one shard")
 	}
 	if len(nodes[2].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
-		t.Error()
+		t.Error("Node 0 should subscribe to exactly one shard")
 	}
 
 	if err := nodes[1].ListenShard(ctx, 42); err != nil {
@@ -509,7 +504,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
-		t.Error()
+		t.Error("Node 0 should not be subscribing to any shard")
 	}
 }
 
