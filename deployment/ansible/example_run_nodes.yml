@@ -1,0 +1,11 @@
+---
+
+- name: spin up servers
+  hosts: nodes
+  roles:
+    - role: node
+
+- name: assume everyone is a proposer
+  hosts: nodes
+  roles:
+    - role: proposer

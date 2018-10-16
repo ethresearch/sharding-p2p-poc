@@ -1,0 +1,5 @@
+---
+- name: call RPC getsubshard
+  # FIXME: should use the module `docker_container` instead
+  command: "{{ docker_exec_cmd }} './sharding-p2p-poc -loglevel=DEBUG -client getsubshard'"
+  register: rpc_getsubshard_result

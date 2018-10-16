@@ -1,0 +1,4 @@
+---
+- name: call RPC unsubshard
+  # FIXME: should use the module `docker_container` instead
+  command: "{{ docker_exec_cmd }} './sharding-p2p-poc -loglevel=DEBUG -client unsubshard {{ unsubshard_param['shard_id'] }}'"

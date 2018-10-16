@@ -1,0 +1,5 @@
+---
+docker_exec_cmd: "docker exec -t {{ ansible_ssh_host }} /bin/sh -c "
+default_listenport: 10000
+default_rpcport: 13000
+remote_user: docker
