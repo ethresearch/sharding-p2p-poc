@@ -1,4 +1,5 @@
 ---
 
 - name: call RPC subshard
+  # FIXME: should use the module `docker_container` instead
   command: "{{ docker_exec_cmd }} './sharding-p2p-poc -loglevel=DEBUG -client subshard {{ subshard_params['shard_id'] }}'"
