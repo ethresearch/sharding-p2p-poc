@@ -1,8 +1,0 @@
-- hosts: example
-  become: true
-  tasks:
-    - apt: name=cowsay
-    - command: /usr/games/cowsay "hello, {{inventory_hostname}}!"
-      register: shell_result
-    - debug:
-        var: shell_result.stdout_lines
