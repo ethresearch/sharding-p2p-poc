@@ -9,7 +9,7 @@ resource "aws_key_pair" "auth" {
 
 resource "aws_instance" "example" {
   
-  ami           = "ami-06b5810be11add0e2"
+  ami           = "ami-059eeca93cf09eebd"
   instance_type = "t2.micro"
   tags          = "${var.tags}"
   key_name      = "${var.key_name}"

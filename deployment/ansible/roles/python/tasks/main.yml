@@ -1,0 +1,5 @@
+- name: Install python2
+  raw: apt -y update && apt install -y python-simplejson htop
+
+- name: Install pip
+  apt: name=python-pip
