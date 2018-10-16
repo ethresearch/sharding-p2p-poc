@@ -126,9 +126,15 @@ func (n *ShardPrefTable) IsPeerListeningShard(peerID peer.ID, shardID ShardIDTyp
 	return shardPref.isShardSet(shardID)
 }
 
-func (n *ShardPrefTable) AddPeerListeningShard(peerID peer.ID, shardID ShardIDType) {
+func (n *ShardPrefTable) AddPeerListeningShard(peerID peer.ID, shardID ShardIDType) error {
 	if shardID >= numShards {
-		return
+		return fmt.Errorf("Invalid shard ID: %v", shardID)
+	}
+	if !n.isPeerRecorded(peerID) {
+		return nil
+	}
+	if !n.IsPeerListeningShard(peerID, shardID) {
+		return nil
 	}
 	n.lock.RLock()
 	shardPref, prs := n.shardPrefMap[peerID]
@@ -140,18 +146,23 @@ func (n *ShardPrefTable) AddPeerListeningShard(peerID peer.ID, shardID ShardIDTy
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	n.shardPrefMap[peerID] = shardPref
+	return nil
 }
 
-func (n *ShardPrefTable) RemovePeerListeningShard(peerID peer.ID, shardID ShardIDType) {
+func (n *ShardPrefTable) RemovePeerListeningShard(peerID peer.ID, shardID ShardIDType) error {
+	if shardID >= numShards {
+		return fmt.Errorf("Invalid shard ID: %v", shardID)
+	}
 	if !n.isPeerRecorded(peerID) {
-		return
+		return nil
 	}
 	if !n.IsPeerListeningShard(peerID, shardID) {
-		return
+		return nil
 	}
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	n.shardPrefMap[peerID].unsetShard(shardID)
+	return nil
 }
 
 func (n *ShardPrefTable) GetPeerListeningShard(peerID peer.ID) *ListeningShards {

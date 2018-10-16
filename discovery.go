@@ -32,9 +32,13 @@ func (gt *GlobalTable) Advertise(ctx context.Context, shardID ShardIDType) error
 	// If we've not yet subscribed to this shard, subscribe it
 	// If we've already subscribed to this shard, unsubscribe it
 	if gt.shardPrefTable.IsPeerListeningShard(gt.host.ID(), shardID) {
-		gt.shardPrefTable.RemovePeerListeningShard(gt.host.ID(), shardID)
+		if err := gt.shardPrefTable.RemovePeerListeningShard(gt.host.ID(), shardID); err != nil {
+			return err
+		}
 	} else {
-		gt.shardPrefTable.AddPeerListeningShard(gt.host.ID(), shardID)
+		if err := gt.shardPrefTable.AddPeerListeningShard(gt.host.ID(), shardID); err != nil {
+			return err
+		}
 	}
 
 	// Publish our preference in local table
