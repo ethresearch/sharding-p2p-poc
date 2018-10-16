@@ -1,5 +1,14 @@
 ---
 
+- name: setup servers
+  hosts: nodes
+  become: true
+  gather_facts: False
+  roles:
+    - role: python
+    - role: docker
+
+
 - name: spin up servers
   hosts: nodes
   roles:

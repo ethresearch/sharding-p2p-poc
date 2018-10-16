@@ -1,0 +1,21 @@
+- name: ensure repository key is installed
+  apt_key:
+    id: "58118E89F3A912897C070ADBF76221572C52609D"
+    keyserver: "hkp://p80.pool.sks-keyservers.net:80"
+    state: present
+
+- name: ensure docker registry is available
+  apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-xenial main' state=present
+
+- name: ensure docker and dependencies are installed
+  apt: name=docker-engine update_cache=yes
+
+- service: name=docker state=started
+
+- pip:
+    name: docker-py
+
+- user:
+    name: ubuntu
+    groups: docker
+    append: yes
