@@ -21,7 +21,7 @@ func NewListeningShards() *ListeningShards {
 
 func shardIDToBitIndex(shardID ShardIDType) (byte, byte, error) {
 	if shardID >= numShards {
-		return 0, 0, fmt.Errorf("Wrong shardID %v", shardID)
+		return 0, 0, fmt.Errorf("Invalid shardID: %v", shardID)
 	}
 	byteIndex := byte(shardID / byteSize)
 	bitIndex := byte(shardID % byteSize)
@@ -31,7 +31,7 @@ func shardIDToBitIndex(shardID ShardIDType) (byte, byte, error) {
 func (ls *ListeningShards) unsetShard(shardID ShardIDType) error {
 	byteIndex, bitIndex, err := shardIDToBitIndex(shardID)
 	if err != nil {
-		return fmt.Errorf("")
+		return err
 	}
 	if int(byteIndex) >= len(ls.shardBits) {
 		return fmt.Errorf(
@@ -47,7 +47,7 @@ func (ls *ListeningShards) unsetShard(shardID ShardIDType) error {
 func (ls *ListeningShards) setShard(shardID ShardIDType) error {
 	byteIndex, bitIndex, err := shardIDToBitIndex(shardID)
 	if err != nil {
-		return fmt.Errorf("")
+		return err
 	}
 	if int(byteIndex) >= len(ls.shardBits) {
 		return fmt.Errorf(
@@ -63,7 +63,7 @@ func (ls *ListeningShards) setShard(shardID ShardIDType) error {
 func (ls *ListeningShards) isShardSet(shardID ShardIDType) bool {
 	byteIndex, bitIndex, err := shardIDToBitIndex(shardID)
 	if err != nil {
-		fmt.Errorf("")
+		return false
 	}
 	index := ls.shardBits[byteIndex] & (1 << bitIndex)
 	return index != 0
@@ -127,22 +127,15 @@ func (n *ShardPrefTable) IsPeerListeningShard(peerID peer.ID, shardID ShardIDTyp
 }
 
 func (n *ShardPrefTable) AddPeerListeningShard(peerID peer.ID, shardID ShardIDType) error {
-	if shardID >= numShards {
-		return fmt.Errorf("Invalid shard ID: %v", shardID)
-	}
-	if !n.isPeerRecorded(peerID) {
-		return nil
-	}
-	if !n.IsPeerListeningShard(peerID, shardID) {
-		return nil
-	}
 	n.lock.RLock()
 	shardPref, prs := n.shardPrefMap[peerID]
 	n.lock.RUnlock()
 	if !prs {
 		shardPref = NewListeningShards()
 	}
-	shardPref.setShard(shardID)
+	if err := shardPref.setShard(shardID); err != nil {
+		return err
+	}
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	n.shardPrefMap[peerID] = shardPref
@@ -150,9 +143,6 @@ func (n *ShardPrefTable) AddPeerListeningShard(peerID peer.ID, shardID ShardIDTy
 }
 
 func (n *ShardPrefTable) RemovePeerListeningShard(peerID peer.ID, shardID ShardIDType) error {
-	if shardID >= numShards {
-		return fmt.Errorf("Invalid shard ID: %v", shardID)
-	}
 	if !n.isPeerRecorded(peerID) {
 		return nil
 	}
@@ -161,8 +151,7 @@ func (n *ShardPrefTable) RemovePeerListeningShard(peerID peer.ID, shardID ShardI
 	}
 	n.lock.Lock()
 	defer n.lock.Unlock()
-	n.shardPrefMap[peerID].unsetShard(shardID)
-	return nil
+	return n.shardPrefMap[peerID].unsetShard(shardID)
 }
 
 func (n *ShardPrefTable) GetPeerListeningShard(peerID peer.ID) *ListeningShards {
