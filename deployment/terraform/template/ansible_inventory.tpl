@@ -1,0 +1,2 @@
+[nodes]
+${nodes_hosts}

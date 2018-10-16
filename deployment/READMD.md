@@ -10,7 +10,6 @@ To understand how p2p nodes perform in real environments, we need to:
 
 1. Terraform
 2. Ansible
-3. terraform-inventory `brew install terraform-inventory`
 
 
 ## Getting started
@@ -20,12 +19,13 @@ To understand how p2p nodes perform in real environments, we need to:
 ```bash
 cd terraform
 terraform apply
+sh ansible_inventory_from_terraform_state.sh
 ```
+This dumps the output of terraform state as an ansible inventory file.
 
 2. Run commands with Ansible-playbook
 
 ```bash
 cd ansible
-export TF_STATE=../terraform/terraform.tfstate
-ansible-playbook --inventory-file=$(which terraform-inventory) example.yml
+ansible-playbook example.yml
 ```
