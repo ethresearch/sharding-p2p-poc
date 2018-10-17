@@ -52,20 +52,20 @@ def barbell_topology(_inventories):
 def topology_to_yaml(topology):
     results = {}
     for me, others in topology.items():
+        commands = [
+            f"docker exec -t {me.container_name} sh -c './sharding-p2p-poc -loglevel=DEBUG -client addpeer {peer.public_ip} {peer.listen_port} {peer.seed}'"
+            for peer in others
+        ]
         if me.host in results:
-            for peer in others:
-                command = f"docker exec -t {me.container_name} sh -c './sharding-p2p-poc -loglevel=DEBUG -client addpeer {peer.public_ip} {peer.listen_port} {peer.seed}'"
-                results[me.host].append(command)
+            results[me.host].extend(commands)
         else:
-            results[me.host] = []
+            results[me.host] = commands
 
     return yaml.dump(results, default_flow_style=False, width=1000)
 
 
 if __name__ == '__main__':
     inventories = read_inventories(sys.argv[1])
-    print(inventories)
-    print(len(inventories))
     topology = barbell_topology(inventories)
     for p, l in topology.items():
         print(p.container_name, p.public_ip, l)
