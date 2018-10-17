@@ -54,12 +54,12 @@ def topology_to_yaml(topology):
     for me, others in topology.items():
         if me.host in results:
             for peer in others:
-                command = f"docker exec -t {me.container_name} sh -c './sharding-p2p-poc -loglevel=DEBUG -client addpeer {peer.public_ip} {peer.rpc_port} {peer.seed}'"
+                command = f"docker exec -t {me.container_name} sh -c './sharding-p2p-poc -loglevel=DEBUG -client addpeer {peer.public_ip} {peer.listen_port} {peer.seed}'"
                 results[me.host].append(command)
         else:
             results[me.host] = []
 
-    return yaml.dump(results, default_flow_style=False)
+    return yaml.dump(results, default_flow_style=False, width=1000)
 
 
 if __name__ == '__main__':
