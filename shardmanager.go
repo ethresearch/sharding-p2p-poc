@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 
 	pubsub "github.com/libp2p/go-floodsub"
@@ -89,7 +90,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	defer logger.Finish(spanctx)
 	logger.SetTag(spanctx, "shard", shardID)
 
-	pinfos, err := n.discovery.FindPeers(spanctx, shardID)
+	pinfos, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
 	if err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to find peers in shard %v", shardID))
 		logger.Errorf("Failed to find peers in shard %v", shardID)
@@ -140,7 +141,7 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) err
 		return nil
 	}
 
-	if err := n.discovery.Advertise(spanctx, shardID); err != nil {
+	if err := n.discovery.Advertise(spanctx, strconv.FormatInt(shardID, 10)); err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
 		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
 		return err
@@ -172,7 +173,7 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) e
 	if !n.IsShardListened(shardID) {
 		return nil
 	}
-	if err := n.discovery.Advertise(spanctx, shardID); err != nil {
+	if err := n.discovery.Advertise(spanctx, strconv.FormatInt(shardID, 10)); err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
 		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
 		return err

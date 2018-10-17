@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
@@ -10,8 +11,8 @@ import (
 )
 
 type Discovery interface {
-	Advertise(ctx context.Context, shardID ShardIDType) error
-	FindPeers(ctx context.Context, shardID ShardIDType) ([]pstore.PeerInfo, error)
+	Advertise(ctx context.Context, topic string) error
+	FindPeers(ctx context.Context, topic string) ([]pstore.PeerInfo, error)
 }
 
 type GlobalTable struct {
@@ -28,7 +29,11 @@ func NewGlobalTable(ctx context.Context, h host.Host, pubsubService *pubsub.PubS
 	}
 }
 
-func (gt *GlobalTable) Advertise(ctx context.Context, shardID ShardIDType) error {
+func (gt *GlobalTable) Advertise(ctx context.Context, topic string) error {
+	shardID, err := strconv.ParseInt(topic, 10, 64)
+	if err != nil {
+		return err
+	}
 	// If we've not yet subscribed to this shard, add it to shardPrefTable
 	// If we've already subscribed to this shard, remove it from shardPrefTable
 	if gt.shardPrefTable.IsPeerListeningShard(gt.host.ID(), shardID) {
@@ -51,7 +56,11 @@ func (gt *GlobalTable) Advertise(ctx context.Context, shardID ShardIDType) error
 	return nil
 }
 
-func (gt *GlobalTable) FindPeers(ctx context.Context, shardID ShardIDType) ([]pstore.PeerInfo, error) {
+func (gt *GlobalTable) FindPeers(ctx context.Context, topic string) ([]pstore.PeerInfo, error) {
+	shardID, err := strconv.ParseInt(topic, 10, 64)
+	if err != nil {
+		return nil, err
+	}
 	// Get peer ID from local table and convert to PeerInfo format
 	peerIDs := gt.shardPrefTable.GetPeersInShard(shardID)
 	pinfos := []pstore.PeerInfo{}
