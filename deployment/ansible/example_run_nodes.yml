@@ -1,5 +1,4 @@
 ---
-
 - name: setup servers
   hosts: nodes
   become: true
@@ -17,20 +16,11 @@
   tasks:
   - command: python scripts/topology.py hosts
 
-
-- name: add peers
+- name: spin up servers
   hosts: nodes
   gather_facts: false
   vars_files:
     - group_vars/all/topology.yml
-  tasks:
-  - include_role:
-      name: common
-      tasks_from: cli_addpeer
-
-
-- name: spin up servers
-  hosts: nodes
   roles:
     - role: node
 
