@@ -99,6 +99,11 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
 	var wg sync.WaitGroup
 	for _, p := range pinfos {
+		// Skip if we already have connection with the peer
+		connsToPeer := n.host.Network().ConnsToPeer(p.ID)
+		if len(connsToPeer) != 0 {
+			continue
+		}
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
 			// Add span for Connect of ShardManager.connectShardNodes
@@ -106,12 +111,6 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 			defer logger.Finish(childSpanctx)
 
 			defer wg.Done()
-
-			// Skip if we already have connection with the peer
-			connsToPeer := n.host.Network().ConnsToPeer(p.ID)
-			if len(connsToPeer) != 0 {
-				return
-			}
 
 			if err := n.host.Connect(spanctx, p); err != nil {
 				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v, err: %v", p.ID, shardID, err))
