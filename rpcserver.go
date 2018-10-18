@@ -138,7 +138,6 @@ func (s *server) SubscribeShard(
 		}
 		time.Sleep(time.Millisecond * 30)
 	}
-	s.node.PublishListeningShards(spanctx)
 	replyMsg := fmt.Sprintf(
 		"Subscribed shard %v",
 		req.ShardIDs,
@@ -171,7 +170,6 @@ func (s *server) UnsubscribeShard(
 		}
 		time.Sleep(time.Millisecond * 30)
 	}
-	s.node.PublishListeningShards(spanctx)
 	replyMsg := fmt.Sprintf(
 		"Unsubscribed shard %v",
 		req.ShardIDs,

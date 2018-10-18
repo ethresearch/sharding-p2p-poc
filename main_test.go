@@ -435,12 +435,10 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	if err := nodes[0].ListenShard(ctx, 0); err != nil {
 		t.Errorf("Failed to listen to shard 0")
 	}
-	nodes[0].PublishListeningShards(ctx)
 
 	if err := nodes[2].ListenShard(ctx, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
-	nodes[2].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
@@ -452,7 +450,6 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	if err := nodes[0].ListenShard(ctx, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
-	nodes[0].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
@@ -470,29 +467,22 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	connectBarbell(t, ctx, nodes)
 	waitForPubSubMeshBuilt()
 
-	// ensure notifyShards message is propagated through node1
-	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
-		t.Error()
-	}
-
 	if err := nodes[0].ListenShard(ctx, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
-	nodes[0].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
-		t.Error()
+		t.Error("Node 0 should subscribe to exactly one shard")
 	}
 	if len(nodes[2].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 1 {
-		t.Error()
+		t.Error("Node 0 should subscribe to exactly one shard")
 	}
 
 	if err := nodes[1].ListenShard(ctx, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
-	nodes[1].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
@@ -510,12 +500,11 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	if err := nodes[0].UnlistenShard(ctx, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
-	nodes[0].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
 	if len(nodes[1].shardPrefTable.GetPeerListeningShardSlice(nodes[0].ID())) != 0 {
-		t.Error()
+		t.Error("Node 0 should not be subscribing to any shard")
 	}
 }
 
@@ -530,7 +519,6 @@ func TestBroadcastCollation(t *testing.T) {
 	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
-	nodes[0].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
@@ -538,7 +526,6 @@ func TestBroadcastCollation(t *testing.T) {
 	if err := nodes[1].ListenShard(ctx, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
-	nodes[1].PublishListeningShards(ctx)
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 	// TODO: fail: if the collation's shardID does not correspond to the protocol's shardID,

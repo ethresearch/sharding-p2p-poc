@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 
 	pubsub "github.com/libp2p/go-floodsub"
@@ -23,6 +24,8 @@ type ShardManager struct {
 	subsLock      sync.RWMutex
 
 	eventNotifier EventNotifier
+
+	discovery Discovery
 
 	shardPrefTable *ShardPrefTable
 }
@@ -55,21 +58,24 @@ func getCollationsTopic(shardID ShardIDType) string {
 	return fmt.Sprintf(collationTopicFmt, shardID)
 }
 
-func NewShardManager(ctx context.Context, h host.Host, eventNotifier EventNotifier) *ShardManager {
-	service, err := pubsub.NewGossipSub(ctx, h)
-	if err != nil {
-		logger.Fatalf("Failed to create new pubsub service, err: %v", err)
-	}
+func NewShardManager(
+	ctx context.Context,
+	h host.Host,
+	pubsubService *pubsub.PubSub,
+	eventNotifier EventNotifier,
+	discovery Discovery,
+	shardPrefTable *ShardPrefTable) *ShardManager {
 	p := &ShardManager{
 		ctx:            ctx,
 		host:           h,
 		subs:           make(map[string]*pubsub.Subscription),
-		pubsubService:  service,
+		pubsubService:  pubsubService,
 		subsLock:       sync.RWMutex{},
 		eventNotifier:  eventNotifier,
-		shardPrefTable: NewShardPrefTable(),
+		discovery:      discovery,
+		shardPrefTable: shardPrefTable,
 	}
-	err = p.SubscribeListeningShards()
+	err := p.SubscribeListeningShards()
 	if err != nil {
 		logger.Fatalf("Failed to subscribe to global topic 'listeningShard', err: %v", err)
 	}
@@ -84,25 +90,21 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	defer logger.Finish(spanctx)
 	logger.SetTag(spanctx, "shard", shardID)
 
-	peerIDs := n.shardPrefTable.GetPeersInShard(shardID)
-	pinfos := []pstore.PeerInfo{}
-	for _, peerID := range peerIDs {
-		// don't connect ourselves
-		if peerID == n.host.ID() {
-			continue
-		}
-		// if already have conns, no need to add them
-		connsToPeer := n.host.Network().ConnsToPeer(peerID)
-		if len(connsToPeer) != 0 {
-			continue
-		}
-		pi := n.host.Peerstore().PeerInfo(peerID)
-		pinfos = append(pinfos, pi)
+	pinfos, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
+	if err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to find peers in shard %v", shardID))
+		logger.Errorf("Failed to find peers in shard %v", shardID)
+		return err
 	}
 
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
 	var wg sync.WaitGroup
 	for _, p := range pinfos {
+		// Skip if we already have connection with the peer
+		connsToPeer := n.host.Network().ConnsToPeer(p.ID)
+		if len(connsToPeer) != 0 {
+			continue
+		}
 		wg.Add(1)
 		go func(p pstore.PeerInfo) {
 			// Add span for Connect of ShardManager.connectShardNodes
@@ -110,6 +112,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 			defer logger.Finish(childSpanctx)
 
 			defer wg.Done()
+
 			if err := n.host.Connect(spanctx, p); err != nil {
 				logger.SetErr(childSpanctx, fmt.Errorf("Failed to connect peer %v in shard %v, err: %v", p.ID, shardID, err))
 				logger.Errorf(
@@ -137,7 +140,12 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) err
 	if n.IsShardListened(shardID) {
 		return nil
 	}
-	n.shardPrefTable.AddPeerListeningShard(n.host.ID(), shardID)
+
+	if err := n.discovery.Advertise(spanctx, strconv.FormatInt(shardID, 10)); err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
+		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
+		return err
+	}
 
 	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
 	if err := n.connectShardNodes(spanctx, shardID); err != nil {
@@ -165,7 +173,11 @@ func (n *ShardManager) UnlistenShard(ctx context.Context, shardID ShardIDType) e
 	if !n.IsShardListened(shardID) {
 		return nil
 	}
-	n.shardPrefTable.RemovePeerListeningShard(n.host.ID(), shardID)
+	if err := n.discovery.Advertise(spanctx, strconv.FormatInt(shardID, 10)); err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
+		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
+		return err
+	}
 
 	// listeningShards protocol
 	// TODO: should we remove some peers in this shard?
@@ -288,19 +300,6 @@ func (n *ShardManager) SubscribeListeningShards() error {
 
 func (n *ShardManager) UnsubscribeListeningShards() {
 	n.UnsubscribeTopic(context.Background(), listeningShardTopic)
-}
-
-func (n *ShardManager) PublishListeningShards(ctx context.Context) {
-	// Add span for PublishListeningShards of ShardManager
-	spanctx := logger.Start(ctx, "ShardManager.PublishListeningShards")
-	defer logger.Finish(spanctx)
-
-	selfListeningShards := n.shardPrefTable.GetPeerListeningShard(n.host.ID())
-	bytes := selfListeningShards.toBytes()
-	if err := n.pubsubService.Publish(listeningShardTopic, bytes); err != nil {
-		logger.SetErr(spanctx, fmt.Errorf("Failed to publish listening shards, err: %v", err))
-		logger.Errorf("Failed to publish data '%v' to topic '%v', err: %v", bytes, listeningShardTopic, err)
-	}
 }
 
 // Collations

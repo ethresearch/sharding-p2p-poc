@@ -10,28 +10,28 @@ func TestListeningShards(t *testing.T) {
 	ls := NewListeningShards()
 	lsSlice := ls.getShards()
 	if len(lsSlice) != 0 {
-		t.Error()
+		t.Error("Should not have subscribed to any shard")
 	}
 
 	ls.setShard(1)
 	lsSlice = ls.getShards()
 	if (len(lsSlice) != 1) || lsSlice[0] != ShardIDType(1) {
-		t.Error()
+		t.Error("Should only subscribe to shard 1")
 	}
 	ls.setShard(42)
 	if len(ls.getShards()) != 2 {
-		t.Error()
+		t.Error("Should subscribe to exactly two shards")
 	}
 	// test `toBytes` and `fromBytes`
 	bytes := ls.toBytes()
 	lsNew := ls.fromBytes(bytes)
 	if len(ls.getShards()) != len(lsNew.getShards()) {
-		t.Error()
+		t.Error("Failed to convert listening shards between toBytes and fromBytes")
 	}
 	lsNewSlice := lsNew.getShards()
 	for index, value := range ls.getShards() {
 		if value != lsNewSlice[index] {
-			t.Error()
+			t.Error("Shards in the new listerning shard do not match the ones in the old listening shard")
 		}
 	}
 }
