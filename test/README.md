@@ -3,6 +3,8 @@
 ## Overview
 The network is segmented into X number of shards. Every ~10 minutes, validators are randomly assigned to a shard, so the stress point is observing and testing the ability of validators to subscribe to new topics and send/receive messages pertaining to this new topic in an adequate amount of time.
 
+Please reference [this document](https://notes.ethereum.org/s/ByYhlJBs7) for further details pertaining to the test plan. 
+
 ## Test Utility
 We will perform tests using the [Whiteblock](www.whiteblock.io) testing platform. The following functionalities would likely be most relevant to this particular test series:
 
