@@ -1,5 +1,4 @@
 ---
-
 - name: setup servers
   hosts: nodes
   become: true
@@ -7,10 +6,21 @@
   roles:
     - role: python
     - role: docker
+  tasks:
+  - include_role:
+      name: common
+      tasks_from: build_image
 
+- name: Create topology
+  hosts: localhost
+  tasks:
+  - command: python scripts/topology.py hosts
 
 - name: spin up servers
   hosts: nodes
+  gather_facts: false
+  vars_files:
+    - group_vars/all/topology.yml
   roles:
     - role: node
 
