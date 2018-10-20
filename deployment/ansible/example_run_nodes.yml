@@ -19,8 +19,6 @@
 - name: spin up servers
   hosts: nodes
   gather_facts: false
-  vars_files:
-    - group_vars/all/topology.yml
   roles:
     - role: node
 
