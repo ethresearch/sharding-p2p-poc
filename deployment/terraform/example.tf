@@ -14,6 +14,7 @@ resource "aws_instance" "example" {
   tags          = "${var.tags}"
   key_name      = "${var.key_name}"
   count         = "${var.cluster_size}"
+  security_groups=["${aws_security_group.sharding_sim.name}"]
 
   provisioner "remote-exec" {
     # The connection will use the local SSH agent for authentication
@@ -23,5 +24,42 @@ resource "aws_instance" "example" {
     connection {
       user = "${var.vm_user}"
     }
+  }
+}
+
+
+resource "aws_security_group" "sharding_sim" {
+  name        = "Sharding simulation"
+  tags = "${var.tags}"
+
+  # SSH access from anywhere
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTP access from anywhere
+  ingress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # outbound internet access
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }

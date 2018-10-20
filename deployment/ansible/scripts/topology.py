@@ -72,5 +72,5 @@ if __name__ == '__main__':
     print("\n")
     yml = topology_to_yaml(topology)
     print(yml)
-    with open("group_vars/all/topology.yml", "w") as f:
+    with open("topology.yml", "w") as f:
         f.write(yml)
