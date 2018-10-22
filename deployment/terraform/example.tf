@@ -7,8 +7,8 @@ resource "aws_key_pair" "auth" {
   public_key = "${file(var.public_key_path)}"
 }
 
-resource "aws_instance" "example" {
-  
+resource "aws_instance" "nodes_hosts" {
+
   ami           = "ami-059eeca93cf09eebd"
   instance_type = "t2.micro"
   tags          = "${var.tags}"
@@ -27,6 +27,22 @@ resource "aws_instance" "example" {
   }
 }
 
+resource "aws_instance" "log_collector" {
+
+  ami           = "ami-059eeca93cf09eebd"
+  instance_type = "t2.micro"
+  tags          = "${var.collector_tags}"
+  key_name      = "${var.key_name}"
+  count         = 1
+  security_groups=["${aws_security_group.sharding_sim.name}"]
+
+  provisioner "remote-exec" {
+    inline = ["echo Log collector successfully connected"]
+    connection {
+      user = "${var.vm_user}"
+    }
+  }
+}
 
 resource "aws_security_group" "sharding_sim" {
   name        = "Sharding simulation"
