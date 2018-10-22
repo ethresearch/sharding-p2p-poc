@@ -27,17 +27,31 @@ def parse_inventory(line):
     return host, start, end
 
 
-def read_inventories(path):
-    with open(path, "r") as f:
-        lines = f.readlines()
-
-    inventories = []
-    for line in lines[1:]:
+def hosts_to_peers(lines):
+    peers = []
+    for line in lines:
         host, start, end = parse_inventory(line)
         for i in range(start, end + 1):
             peer = Peer(host, i)
-            inventories.append(peer)
-    return inventories
+            peers.append(peer)
+    return peers
+
+
+def read_inventories(path):
+    with open(path, "r") as f:
+        lines = f.readlines()
+    key = lines[0].strip()
+    inventories = {key: []}
+    for _line in lines[1:]:
+        line = _line.strip()
+        if not line.startswith("["):
+            inventories[key].append(line)
+        else:
+            key = line
+            inventories[key] = []
+    print(inventories)
+    peers = hosts_to_peers(inventories["[nodes]"])
+    return peers
 
 
 def barbell_topology(_inventories):

@@ -1,0 +1,20 @@
+---
+- name: Start jaeger
+  docker_container:
+    name: jaeger
+    image: jaegertracing/all-in-one:1.7
+    state: started
+    restart_policy: always
+    memory: 4g
+    privileged: true
+    published_ports:
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686 # frontend
+      - 14268:14268
+    env:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+
+- debug:
+    msg: "Checkout this beautiful dashboard here http://{{hostvars[inventory_hostname]['groups']['log_collector'][0].split('@')[1]}}:16686"
