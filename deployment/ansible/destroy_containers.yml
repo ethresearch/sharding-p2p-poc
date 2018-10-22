@@ -1,0 +1,9 @@
+- name: Destroy containers
+  hosts: nodes
+  gather_facts: false
+  tasks:
+
+  - docker_container:
+      name: peer_{{ item }}
+      state: absent
+    with_sequence: end="{{ p2p_nodes_end }}" start="{{ p2p_nodes_start }}"
