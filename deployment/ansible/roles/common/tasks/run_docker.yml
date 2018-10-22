@@ -3,7 +3,7 @@
   become: true
   docker_container:
     name: peer_{{ item }}
-    image: chihchengliang/sharding-p2p:dev
+    image: ethresearch/sharding-p2p:dev
     pull: yes
     state: started
     restart_policy: always
