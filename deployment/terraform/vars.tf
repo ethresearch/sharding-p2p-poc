@@ -18,6 +18,14 @@ variable "tags" {
   type = "map"
 
   default = {
-    Name = "Sharding simulation"
+    Name = "Nodes Host"
+  }
+}
+
+variable "collector_tags" {
+  type = "map"
+
+  default = {
+    Name = "Log Collector"
   }
 }

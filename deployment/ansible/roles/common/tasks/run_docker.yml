@@ -3,7 +3,8 @@
   become: true
   docker_container:
     name: peer_{{ item }}
-    image: ethereum/sharding-p2p:dev
+    image: ethresearch/sharding-p2p:dev
+    pull: yes
     state: started
     restart_policy: always
     memory: 4g
@@ -14,4 +15,7 @@
     command: [
       "sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={{ item }}\""
     ]
+    env:
+      JAEGER_AGENT_HOST: "{{hostvars[inventory_hostname]['groups']['log_collector'][0].split('@')[1]}}"
+      JAEGER_AGENT_PORT: 6831
   with_sequence: end="{{ p2p_nodes_end }}" start="{{ p2p_nodes_start }}"
