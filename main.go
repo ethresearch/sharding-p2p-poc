@@ -153,9 +153,10 @@ func runServer(
 	}
 	tracerName := fmt.Sprintf("RPC Server@%v", rpcAddr)
 	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
-	defer closer.Close()
 	if err != nil {
 		logger.Debugf("Failed to create tracer, err: %v", err)
+	} else {
+		defer closer.Close()
 	}
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
