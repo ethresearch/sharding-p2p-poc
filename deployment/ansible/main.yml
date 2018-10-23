@@ -30,7 +30,7 @@
   gather_facts: false
   tasks:
   - include_vars:
-      file: commands.yml
+      file: artifacts/commands.yml
 
 - name: spin up servers
   hosts: nodes

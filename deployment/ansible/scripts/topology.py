@@ -122,6 +122,26 @@ def to_broadcastcollation_commands(topology):
     ]
     return commands
 
+def visualize(topology):
+    import networkx as nx
+    G = nx.Graph()
+    for item in topology:
+        me = item["peer"].container_name
+        G.add_node(me, shard_id = item["shard_id"])
+        for other in item['connect_to']:
+            G.add_edge(me, other.container_name)
+    import matplotlib.pyplot as plt
+    pos_nodes = nx.spring_layout(G)
+    nx.draw(G, pos_nodes, with_labels=True)
+
+    pos_attrs = {node: (coords[0], coords[1] + 0.08) for node, coords in pos_nodes.items()}
+
+    node_attrs = nx.get_node_attributes(G, 'shard_id')
+    custom_node_attrs = {node: attr for node, attr in node_attrs.items()}
+    nx.draw_networkx_labels(G, pos_attrs, labels=custom_node_attrs)
+
+    plt.savefig("artifacts/network.png")
+
 
 if __name__ == '__main__':
     inventories = read_inventories(sys.argv[1])
@@ -150,5 +170,7 @@ if __name__ == '__main__':
 
     print("\n--- [ Commands ] ---\n")
     print(yml)
-    with open("commands.yml", "w") as f:
+    with open("artifacts/commands.yml", "w") as f:
         f.write(yml)
+
+    visualize(topology)
