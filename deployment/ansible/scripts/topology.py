@@ -62,10 +62,10 @@ def barbell_topology(_peers):
     n = len(peers)
     topology = [{
         'peer': peer,
-        'connect_to': [peers[(i + 1) % n]],
+        'connect_to': [peers[(i + 1)]],
         'shard_id': int(i/3),
         'is_broadcasting': i == 0
-    } for i, peer in enumerate(peers)]
+    } for i, peer in enumerate(peers[:-1])]
 
     return topology
 
