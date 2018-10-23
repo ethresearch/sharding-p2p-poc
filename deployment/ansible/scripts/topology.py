@@ -2,9 +2,14 @@ import sys
 import random
 from copy import deepcopy
 import yaml
-from itertools import groupby
+from collections import defaultdict
 
 RPC_PORT_GAP = 100
+
+# broadcast collation parameters
+NUM_COLLATIONS = 10
+COLLATION_SIZE = 100
+FREQUENCY = 50
 
 
 class Peer:
@@ -40,51 +45,110 @@ def hosts_to_peers(lines):
 def read_inventories(path):
     with open(path, "r") as f:
         lines = f.readlines()
-    key = lines[0].strip()
-    inventories = {key: []}
-    for _line in lines[1:]:
+    inventories = defaultdict(list)
+    for _line in lines:
         line = _line.strip()
         if not line.startswith("["):
             inventories[key].append(line)
         else:
             key = line
-            inventories[key] = []
-    print(inventories)
-    peers = hosts_to_peers(inventories["[nodes]"])
-    return peers
+    return inventories
 
 
-def barbell_topology(_inventories):
-    inventories = deepcopy(_inventories)
-    random.shuffle(inventories)
-    n = len(inventories)
-    topology = {peer: [inventories[(i + 1) % n]]
-                for i, peer in enumerate(inventories)}
+def barbell_topology(_peers):
+    peers = deepcopy(_peers)
+    random.seed(5566)
+    random.shuffle(peers)
+    n = len(peers)
+    topology = [{
+        'peer': peer,
+        'connect_to': [peers[(i + 1) % n]],
+        'shard_id': int(i/3),
+        'is_broadcasting': i == 0
+    } for i, peer in enumerate(peers)]
+
     return topology
 
 
-def topology_to_yaml(topology):
-    results = {}
-    for me, others in topology.items():
-        commands = [
-            f"docker exec -t {me.container_name} sh -c './sharding-p2p-poc -loglevel=DEBUG -client addpeer {peer.public_ip} {peer.listen_port} {peer.seed}'"
-            for peer in others
-        ]
-        if me.host in results:
-            results[me.host].extend(commands)
-        else:
-            results[me.host] = commands
+def groupby_host(commands, hosts):
+    groups = {host: [] for host in hosts}
+    for item in commands:
+        groups[item["host"]].append(item["command"])
+    return groups
 
-    return yaml.dump(results, default_flow_style=False, width=1000)
+
+def to_addpeer_commands(topology):
+    commands = [
+        {
+            "host": item["peer"].host,
+            "command": (
+                f"docker exec -t {item['peer'].container_name} sh -c "
+                f"'./sharding-p2p-poc -loglevel=DEBUG "
+                f"-client addpeer {other.public_ip} {other.listen_port} {other.seed}'"
+            )
+        }
+        for item in topology
+        for other in item["connect_to"]
+    ]
+
+    return commands
+
+
+def to_subshard_commands(topology):
+    commands = [
+        {
+            "host": item["peer"].host,
+            "command": (
+                f"docker exec -t {item['peer'].container_name} sh -c "
+                f"'./sharding-p2p-poc -loglevel=DEBUG "
+                f"-client subshard {item['shard_id']}'")
+        }
+        for item in topology
+    ]
+    return commands
+
+
+def to_broadcastcollation_commands(topology):
+    commands = [
+        {
+            "host": item["peer"].host,
+            "command": (
+                f"docker exec -t {item['peer'].container_name} sh -c "
+                f"'./sharding-p2p-poc -loglevel=DEBUG "
+                f"-client broadcastcollation {item['shard_id']} {NUM_COLLATIONS} {COLLATION_SIZE} {FREQUENCY}'"
+            )
+        }
+        for item in topology if item["is_broadcasting"]
+    ]
+    return commands
 
 
 if __name__ == '__main__':
     inventories = read_inventories(sys.argv[1])
-    topology = barbell_topology(inventories)
-    for p, l in topology.items():
-        print(p.container_name, p.public_ip, l)
-    print("\n")
-    yml = topology_to_yaml(topology)
+    nodes = inventories["[nodes]"]
+    hosts = list(map(lambda x: x.split(" ")[0], nodes))
+    print(hosts)
+    peers = hosts_to_peers(nodes)
+
+    print("\n--- [ Network Nodes ] ---\n")
+
+    for peer in peers:
+        print(peer.container_name, peer.public_ip)
+
+    topology = barbell_topology(peers)
+    functions = {
+        "addpeer": to_addpeer_commands,
+        "subshard": to_subshard_commands,
+        "broadcastcollation": to_broadcastcollation_commands
+    }
+    results = {
+        k: groupby_host(v(topology), hosts)
+        for k, v in functions.items()
+    }
+
+    yml = yaml.dump(results, default_flow_style=False, width=1000)
+
+    print("\n--- [ Commands ] ---\n")
     print(yml)
-    with open("topology.yml", "w") as f:
+    with open("commands.yml", "w") as f:
         f.write(yml)

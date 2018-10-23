@@ -20,10 +20,17 @@
   roles:
     - role: log_collector
 
-- name: Create topology
+- name: Generate commands
   hosts: localhost
   tasks:
   - command: python scripts/topology.py hosts
+
+- name: Load commands
+  hosts: nodes
+  gather_facts: false
+  tasks:
+  - include_vars:
+      file: commands.yml
 
 - name: spin up servers
   hosts: nodes

@@ -1,8 +1,5 @@
 ---
-- name: load topology
-  include_vars:
-    file: topology.yml
 
 - name: call RPC addpeer
   command: "{{item}}"
-  with_items: "{{ hostvars[inventory_hostname][inventory_hostname]}} "
+  with_items: "{{ hostvars[inventory_hostname]['addpeer'][inventory_hostname]}} "
