@@ -1,16 +1,20 @@
-FROM golang:1.10.3-alpine
-WORKDIR /go/src/github.com/ethresearch/sharding-p2p-poc
-RUN apk add git python3 make
+FROM golang:1.11-alpine
+
+RUN apk add git
 RUN go get -u -v github.com/whyrusleeping/gx &&\
     go get -u -v github.com/whyrusleeping/gx-go
 
-COPY *.go ./
-COPY pb ./pb
+WORKDIR /sharding-p2p-poc
 
-RUN go get -d -v .
-
+COPY go.mod .
+COPY go.sum .
 COPY package.json .
+
+RUN go mod download
 RUN gx install
-RUN go build
+
+COPY . .
+
+RUN CGO_ENABLED=0 go build
 
 CMD ["./sharding-p2p-poc"]
