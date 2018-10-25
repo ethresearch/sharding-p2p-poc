@@ -31,7 +31,7 @@ add_peer() {
     `cli_prompt $seed0` addpeer $IP $((PORT+seed1)) $seed1
 }
 
-make partial-gx-rw
+# make partial-gx-rw
 go build
 
 killall $EXE_NAME
@@ -51,5 +51,5 @@ multiaddr1=/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck
 
 spinup_node 3 -bootstrap -bootnodes=$multiaddr0,$multiaddr1
 
-make gx-uw
+# make gx-uw
 

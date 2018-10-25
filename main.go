@@ -149,8 +149,8 @@ func runServer(
 			Param: 1,
 		},
 		Reporter: &jaegerconfig.ReporterConfig{
-		LogSpans: true,
-		LocalAgentHostPort: fmt.Sprintf("%v:%v", os.Getenv("JAEGER_AGENT_HOST"), os.Getenv("JAEGER_AGENT_PORT")),
+			LogSpans: true,
+			LocalAgentHostPort: fmt.Sprintf("%v:%v", os.Getenv("JAEGER_AGENT_HOST"), os.Getenv("JAEGER_AGENT_PORT")),
 		},
 	}
 	var tracerName string
@@ -169,7 +169,6 @@ func runServer(
 	// End of tracer setup
 
 	logger.Infof("listening: seed=%v, peerID=%v", seed, node.ID().Pretty())
-	logger.Info(cfg.Reporter.LocalAgentHostPort)
 	runRPCServer(node, rpcAddr)
 }
 

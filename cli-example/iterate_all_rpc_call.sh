@@ -68,7 +68,7 @@ stop_server() {
     `cli_prompt $seed` stop
 }
 
-make partial-gx-rw
+# make partial-gx-rw
 go build
 
 for i in `seq 0 1`;
@@ -113,4 +113,4 @@ done
 
 sleep 1
 
-make gx-uw
+# make gx-uw
