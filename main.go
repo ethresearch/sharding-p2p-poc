@@ -154,10 +154,11 @@ func runServer(
 		LocalAgentHostPort: fmt.Sprintf("%v:%v", os.Getenv("JAEGER_AGENT_HOST"), os.Getenv("JAEGER_AGENT_PORT")),
 		},
 	}
+	var tracerName string
 	if os.Getenv("NODE_NAME") != "" {
-		tracerName := fmt.Sprintf("%v's RPC server", os.Getenv("NODE_NAME"))
+		tracerName = fmt.Sprintf("%v's RPC server", os.Getenv("NODE_NAME"))
 	} else {
-		tracerName := fmt.Sprintf("RPC Server@%v", rpcAddr)
+		tracerName = fmt.Sprintf("RPC Server@%v", rpcAddr)
 	}
 	tracer, closer, err := cfg.New(tracerName, jaegerconfig.Logger(jaeger.StdLogger))
 	if err != nil {
