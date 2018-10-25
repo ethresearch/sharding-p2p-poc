@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"context"
 	"flag"
 	"fmt"
