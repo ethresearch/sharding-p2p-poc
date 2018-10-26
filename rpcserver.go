@@ -143,7 +143,7 @@ func (s *server) SubscribeShard(
 		req.ShardIDs,
 	)
 
-	// Tag the shardIDs which are successfully subscribed to
+	// Tag the span with shardIDs which are successfully subscribed to
 	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("%v", subscribedShardID))
 	return makePlainResponse(true, replyMsg), nil
 }
@@ -174,8 +174,8 @@ func (s *server) UnsubscribeShard(
 		"Unsubscribed shard %v",
 		req.ShardIDs,
 	)
-	// Tag the span with shard info
-	logger.SetTag(spanctx, "Shard info", fmt.Sprintf("shard %v", unsubscribedShardID))
+	// Tag the span with shardIDs which are successfully unsubscribed from
+	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("shard %v", unsubscribedShardID))
 	return makePlainResponse(true, replyMsg), nil
 }
 
@@ -196,11 +196,14 @@ func (s *server) GetSubscribedShard(
 		Response: makeResponse(true, ""),
 		ShardIDs: shardIDs,
 	}
-	// Tag the span with shards info
+	// Tag the span with shardIDs returned
 	logger.SetTag(spanctx, "shardIDs", shardIDs)
 	return res, nil
 }
 
+// This is the BroadcastCollation for testing purpose.
+// Given ShardID, Number and Size,
+// it broadcasts Number collations of shard ShardID each with size Size bytes.
 func (s *server) BroadcastCollation(
 	ctx context.Context,
 	req *pbrpc.RPCBroadcastCollationRequest) (*pbrpc.RPCPlainResponse, error) {
@@ -244,13 +247,15 @@ func (s *server) BroadcastCollation(
 		sizeInBytes,
 		shardID,
 	)
-	// Tag collations info if nothing goes wrong
+	// Tag the span with collations info if nothing goes wrong
 	logger.SetTag(spanctx, "shardID", req.ShardID)
 	logger.SetTag(spanctx, "numCollations", numCollations)
 	logger.SetTag(spanctx, "sizeInBytes", sizeInBytes)
 	return makePlainResponse(true, replyMsg), nil
 }
 
+// This is the real BroadcastCollation.
+// TODO: Replace BroadcastCollation with this one.
 func (s *server) SendCollation(
 	ctx context.Context,
 	req *pbrpc.RPCSendCollationRequest) (*pbrpc.RPCPlainResponse, error) {

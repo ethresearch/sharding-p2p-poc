@@ -322,11 +322,16 @@ func (n *ShardManager) SubscribeCollation(ctx context.Context, shardID ShardIDTy
 	return n.SubscribeGeneral(spanctx, topic)
 }
 
-func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
+func (n *ShardManager) makeGeneralValidator(current_ctx context.Context, topic string) TopicValidator {
 	return func(ctx context.Context, msg *pubsub.Message) bool {
+		// Add span for Topic Validator
+		spanctx := logger.Start(current_ctx, "Topic Validator")
+		defer logger.Finish(spanctx)
+
 		typedMessage := &pbmsg.MessageWithType{}
 		err := extractProtoMsg(msg, typedMessage)
 		if err != nil {
+			logger.FinishWithErr(spanctx, fmt.Errorf("Failed to parse message, err: %v", err))
 			return false
 		}
 		// FIXME: if no eventNotifier, just skip the verification
@@ -337,11 +342,13 @@ func (n *ShardManager) makeGeneralValidator(topic string) TopicValidator {
 				typedMessage.Data,
 			)
 			if err != nil {
+				logger.FinishWithErr(spanctx, fmt.Errorf("Failed to receive response from event notifier, err: %v", err))
 				return false
 			}
 			// TODO: `retVal` from `n.eventNotifier.Receive` should be a bool.
 			//		 validityByte == b"\x00" means false, otherwise true.
 			if len(validityBytes) != 1 || validityBytes[0] == 0 {
+				logger.SetErr(spanctx, fmt.Errorf("Validation error, validation result: %v", validityBytes))
 				return false
 			}
 		}
@@ -357,7 +364,7 @@ func (n *ShardManager) makeGeneralHandler() TopicHandler {
 
 func (n *ShardManager) SubscribeGeneral(ctx context.Context, topic string) error {
 	handler := n.makeGeneralHandler()
-	validator := n.makeGeneralValidator(topic)
+	validator := n.makeGeneralValidator(ctx, topic)
 	return n.SubscribeTopic(ctx, topic, handler, validator)
 }
 
