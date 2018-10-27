@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
 	peer "github.com/libp2p/go-libp2p-peer"
@@ -23,9 +24,9 @@ type rpcEventNotifier struct {
 }
 
 func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier, error) {
-	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second*1))
 	if err != nil {
-		logger.Errorf("failed to connect to the rpc server: %v", err)
+		logger.Errorf("Failed to connect to the event notifier rpc server: %v", err)
 		return nil, err
 	}
 	client := pbevent.NewEventClient(conn)
