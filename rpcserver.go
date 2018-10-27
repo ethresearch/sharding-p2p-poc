@@ -10,12 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
-	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"github.com/golang/protobuf/proto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
+	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
 )
 
@@ -306,9 +307,7 @@ func (s *server) StopServer(
 		logger.Info("Closing RPC server by rpc call...")
 		s.rpcServer.Stop()
 	}()
-
-	replyMsg := fmt.Sprintf("Closed RPC server")
-	return makePlainResponse(true, replyMsg), nil
+	return makePlainResponse(true, "Closed RPC server"), nil
 }
 
 func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendResponse, error) {
@@ -377,6 +376,63 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 		Response: makeResponse(true, ""),
 		Data:     dataBytes,
 	}, nil
+}
+
+func (s *server) ListPeer(
+	ctx context.Context,
+	req *pbrpc.RPCListPeerRequest) (*pbrpc.RPCListPeerResponse, error) {
+	peerIDs := s.node.Network().Peers()
+	return &pbrpc.RPCListPeerResponse{
+		Response: makeResponse(true, ""),
+		Peers:    peerIDsToPBPeers(peerIDs),
+	}, nil
+}
+
+func (s *server) ListTopicPeer(
+	ctx context.Context,
+	req *pbrpc.RPCListTopicPeerRequest) (*pbrpc.RPCListTopicPeerResponse, error) {
+	var topics []string
+	if len(req.Topics) == 0 {
+		topics = s.node.pubsubService.GetTopics()
+	} else {
+		topics = req.Topics
+	}
+	topicPeers := make(map[string]*pbmsg.Peers)
+	for _, topic := range topics {
+		peerIDs := s.node.pubsubService.ListPeers(topic)
+		topicPeers[topic] = peerIDsToPBPeers(peerIDs)
+	}
+	return &pbrpc.RPCListTopicPeerResponse{
+		Response:   makeResponse(true, ""),
+		TopicPeers: topicPeers,
+	}, nil
+}
+
+func (s *server) RemovePeer(
+	ctx context.Context,
+	req *pbrpc.RPCRemovePeerRequest) (*pbrpc.RPCPlainResponse, error) {
+	// Add span for StopServer
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.RemovePeer", s.serializedSpanCtx)
+	if err != nil {
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.RemovePeer")
+	}
+	defer logger.Finish(spanctx)
+
+	peerID, err := stringToPeerID(req.PeerID)
+	if err != nil {
+		errorMsg := fmt.Sprintf("failed to parse the peerID: %v", req.PeerID)
+		return makePlainResponse(false, errorMsg), nil
+	}
+	err = s.node.Network().ClosePeer(peerID)
+	if err != nil {
+		errorMsg := fmt.Sprintf("failed to close the connection to peer: %v", err)
+		return makePlainResponse(false, errorMsg), nil
+	}
+	logger.Debugf("rpcserver:RemovePeer: receive=%v", req)
+
+	// TODO: consider the record in Peerstore
+	return makePlainResponse(true, ""), nil
 }
 
 func runRPCServer(n *Node, addr string) {

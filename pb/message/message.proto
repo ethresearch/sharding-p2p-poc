@@ -43,9 +43,6 @@ message ShardPeerRequest {
 
 message ShardPeerResponse {
     Response response = 1;
-    message Peers {
-        repeated string peers = 1;
-    }
     map<int64, Peers> shardPeers = 2;
 }
 
@@ -66,3 +63,8 @@ message MessageWithType {
     int64 msgType = 1;
     bytes data = 2;
 }
+
+message Peers {
+    repeated string peers = 1;
+}
+

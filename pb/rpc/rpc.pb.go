@@ -44,7 +44,7 @@ func (x Response_Status) String() string {
 	return proto.EnumName(Response_Status_name, int32(x))
 }
 func (Response_Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{7, 0}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{7, 0}
 }
 
 // Request
@@ -61,7 +61,7 @@ func (m *RPCAddPeerRequest) Reset()         { *m = RPCAddPeerRequest{} }
 func (m *RPCAddPeerRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCAddPeerRequest) ProtoMessage()    {}
 func (*RPCAddPeerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{0}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{0}
 }
 func (m *RPCAddPeerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCAddPeerRequest.Unmarshal(m, b)
@@ -113,7 +113,7 @@ func (m *RPCSubscribeShardRequest) Reset()         { *m = RPCSubscribeShardReque
 func (m *RPCSubscribeShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCSubscribeShardRequest) ProtoMessage()    {}
 func (*RPCSubscribeShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{1}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{1}
 }
 func (m *RPCSubscribeShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCSubscribeShardRequest.Unmarshal(m, b)
@@ -151,7 +151,7 @@ func (m *RPCUnsubscribeShardRequest) Reset()         { *m = RPCUnsubscribeShardR
 func (m *RPCUnsubscribeShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCUnsubscribeShardRequest) ProtoMessage()    {}
 func (*RPCUnsubscribeShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{2}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{2}
 }
 func (m *RPCUnsubscribeShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCUnsubscribeShardRequest.Unmarshal(m, b)
@@ -188,7 +188,7 @@ func (m *RPCGetSubscribedShardRequest) Reset()         { *m = RPCGetSubscribedSh
 func (m *RPCGetSubscribedShardRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCGetSubscribedShardRequest) ProtoMessage()    {}
 func (*RPCGetSubscribedShardRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{3}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{3}
 }
 func (m *RPCGetSubscribedShardRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCGetSubscribedShardRequest.Unmarshal(m, b)
@@ -222,7 +222,7 @@ func (m *RPCBroadcastCollationRequest) Reset()         { *m = RPCBroadcastCollat
 func (m *RPCBroadcastCollationRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCBroadcastCollationRequest) ProtoMessage()    {}
 func (*RPCBroadcastCollationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{4}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{4}
 }
 func (m *RPCBroadcastCollationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCBroadcastCollationRequest.Unmarshal(m, b)
@@ -281,7 +281,7 @@ func (m *RPCSendCollationRequest) Reset()         { *m = RPCSendCollationRequest
 func (m *RPCSendCollationRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCSendCollationRequest) ProtoMessage()    {}
 func (*RPCSendCollationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{5}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{5}
 }
 func (m *RPCSendCollationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCSendCollationRequest.Unmarshal(m, b)
@@ -318,7 +318,7 @@ func (m *RPCStopServerRequest) Reset()         { *m = RPCStopServerRequest{} }
 func (m *RPCStopServerRequest) String() string { return proto.CompactTextString(m) }
 func (*RPCStopServerRequest) ProtoMessage()    {}
 func (*RPCStopServerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{6}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{6}
 }
 func (m *RPCStopServerRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCStopServerRequest.Unmarshal(m, b)
@@ -351,7 +351,7 @@ func (m *Response) Reset()         { *m = Response{} }
 func (m *Response) String() string { return proto.CompactTextString(m) }
 func (*Response) ProtoMessage()    {}
 func (*Response) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{7}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{7}
 }
 func (m *Response) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Response.Unmarshal(m, b)
@@ -396,7 +396,7 @@ func (m *RPCPlainResponse) Reset()         { *m = RPCPlainResponse{} }
 func (m *RPCPlainResponse) String() string { return proto.CompactTextString(m) }
 func (*RPCPlainResponse) ProtoMessage()    {}
 func (*RPCPlainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{8}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{8}
 }
 func (m *RPCPlainResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCPlainResponse.Unmarshal(m, b)
@@ -435,7 +435,7 @@ func (m *RPCGetSubscribedShardResponse) Reset()         { *m = RPCGetSubscribedS
 func (m *RPCGetSubscribedShardResponse) String() string { return proto.CompactTextString(m) }
 func (*RPCGetSubscribedShardResponse) ProtoMessage()    {}
 func (*RPCGetSubscribedShardResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{9}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{9}
 }
 func (m *RPCGetSubscribedShardResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RPCGetSubscribedShardResponse.Unmarshal(m, b)
@@ -483,7 +483,7 @@ func (m *SendRequest) Reset()         { *m = SendRequest{} }
 func (m *SendRequest) String() string { return proto.CompactTextString(m) }
 func (*SendRequest) ProtoMessage()    {}
 func (*SendRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{10}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{10}
 }
 func (m *SendRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SendRequest.Unmarshal(m, b)
@@ -543,7 +543,7 @@ func (m *SendResponse) Reset()         { *m = SendResponse{} }
 func (m *SendResponse) String() string { return proto.CompactTextString(m) }
 func (*SendResponse) ProtoMessage()    {}
 func (*SendResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_8f40528141eba4bc, []int{11}
+	return fileDescriptor_rpc_db036003c8440bb3, []int{11}
 }
 func (m *SendResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SendResponse.Unmarshal(m, b)
@@ -577,6 +577,204 @@ func (m *SendResponse) GetData() []byte {
 	return nil
 }
 
+type RPCListPeerRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RPCListPeerRequest) Reset()         { *m = RPCListPeerRequest{} }
+func (m *RPCListPeerRequest) String() string { return proto.CompactTextString(m) }
+func (*RPCListPeerRequest) ProtoMessage()    {}
+func (*RPCListPeerRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_db036003c8440bb3, []int{12}
+}
+func (m *RPCListPeerRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCListPeerRequest.Unmarshal(m, b)
+}
+func (m *RPCListPeerRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCListPeerRequest.Marshal(b, m, deterministic)
+}
+func (dst *RPCListPeerRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCListPeerRequest.Merge(dst, src)
+}
+func (m *RPCListPeerRequest) XXX_Size() int {
+	return xxx_messageInfo_RPCListPeerRequest.Size(m)
+}
+func (m *RPCListPeerRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCListPeerRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCListPeerRequest proto.InternalMessageInfo
+
+type RPCListPeerResponse struct {
+	Response             *Response      `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	Peers                *message.Peers `protobuf:"bytes,2,opt,name=peers,proto3" json:"peers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
+}
+
+func (m *RPCListPeerResponse) Reset()         { *m = RPCListPeerResponse{} }
+func (m *RPCListPeerResponse) String() string { return proto.CompactTextString(m) }
+func (*RPCListPeerResponse) ProtoMessage()    {}
+func (*RPCListPeerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_db036003c8440bb3, []int{13}
+}
+func (m *RPCListPeerResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCListPeerResponse.Unmarshal(m, b)
+}
+func (m *RPCListPeerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCListPeerResponse.Marshal(b, m, deterministic)
+}
+func (dst *RPCListPeerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCListPeerResponse.Merge(dst, src)
+}
+func (m *RPCListPeerResponse) XXX_Size() int {
+	return xxx_messageInfo_RPCListPeerResponse.Size(m)
+}
+func (m *RPCListPeerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCListPeerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCListPeerResponse proto.InternalMessageInfo
+
+func (m *RPCListPeerResponse) GetResponse() *Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *RPCListPeerResponse) GetPeers() *message.Peers {
+	if m != nil {
+		return m.Peers
+	}
+	return nil
+}
+
+type RPCListTopicPeerRequest struct {
+	Topics               []string `protobuf:"bytes,1,rep,name=topics,proto3" json:"topics,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RPCListTopicPeerRequest) Reset()         { *m = RPCListTopicPeerRequest{} }
+func (m *RPCListTopicPeerRequest) String() string { return proto.CompactTextString(m) }
+func (*RPCListTopicPeerRequest) ProtoMessage()    {}
+func (*RPCListTopicPeerRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_db036003c8440bb3, []int{14}
+}
+func (m *RPCListTopicPeerRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCListTopicPeerRequest.Unmarshal(m, b)
+}
+func (m *RPCListTopicPeerRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCListTopicPeerRequest.Marshal(b, m, deterministic)
+}
+func (dst *RPCListTopicPeerRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCListTopicPeerRequest.Merge(dst, src)
+}
+func (m *RPCListTopicPeerRequest) XXX_Size() int {
+	return xxx_messageInfo_RPCListTopicPeerRequest.Size(m)
+}
+func (m *RPCListTopicPeerRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCListTopicPeerRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCListTopicPeerRequest proto.InternalMessageInfo
+
+func (m *RPCListTopicPeerRequest) GetTopics() []string {
+	if m != nil {
+		return m.Topics
+	}
+	return nil
+}
+
+type RPCListTopicPeerResponse struct {
+	Response             *Response                 `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	TopicPeers           map[string]*message.Peers `protobuf:"bytes,2,rep,name=topicPeers,proto3" json:"topicPeers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
+}
+
+func (m *RPCListTopicPeerResponse) Reset()         { *m = RPCListTopicPeerResponse{} }
+func (m *RPCListTopicPeerResponse) String() string { return proto.CompactTextString(m) }
+func (*RPCListTopicPeerResponse) ProtoMessage()    {}
+func (*RPCListTopicPeerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_db036003c8440bb3, []int{15}
+}
+func (m *RPCListTopicPeerResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCListTopicPeerResponse.Unmarshal(m, b)
+}
+func (m *RPCListTopicPeerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCListTopicPeerResponse.Marshal(b, m, deterministic)
+}
+func (dst *RPCListTopicPeerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCListTopicPeerResponse.Merge(dst, src)
+}
+func (m *RPCListTopicPeerResponse) XXX_Size() int {
+	return xxx_messageInfo_RPCListTopicPeerResponse.Size(m)
+}
+func (m *RPCListTopicPeerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCListTopicPeerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCListTopicPeerResponse proto.InternalMessageInfo
+
+func (m *RPCListTopicPeerResponse) GetResponse() *Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *RPCListTopicPeerResponse) GetTopicPeers() map[string]*message.Peers {
+	if m != nil {
+		return m.TopicPeers
+	}
+	return nil
+}
+
+type RPCRemovePeerRequest struct {
+	PeerID               string   `protobuf:"bytes,1,opt,name=peerID,proto3" json:"peerID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RPCRemovePeerRequest) Reset()         { *m = RPCRemovePeerRequest{} }
+func (m *RPCRemovePeerRequest) String() string { return proto.CompactTextString(m) }
+func (*RPCRemovePeerRequest) ProtoMessage()    {}
+func (*RPCRemovePeerRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_db036003c8440bb3, []int{16}
+}
+func (m *RPCRemovePeerRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RPCRemovePeerRequest.Unmarshal(m, b)
+}
+func (m *RPCRemovePeerRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RPCRemovePeerRequest.Marshal(b, m, deterministic)
+}
+func (dst *RPCRemovePeerRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RPCRemovePeerRequest.Merge(dst, src)
+}
+func (m *RPCRemovePeerRequest) XXX_Size() int {
+	return xxx_messageInfo_RPCRemovePeerRequest.Size(m)
+}
+func (m *RPCRemovePeerRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RPCRemovePeerRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RPCRemovePeerRequest proto.InternalMessageInfo
+
+func (m *RPCRemovePeerRequest) GetPeerID() string {
+	if m != nil {
+		return m.PeerID
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*RPCAddPeerRequest)(nil), "proto.rpc.RPCAddPeerRequest")
 	proto.RegisterType((*RPCSubscribeShardRequest)(nil), "proto.rpc.RPCSubscribeShardRequest")
@@ -590,6 +788,12 @@ func init() {
 	proto.RegisterType((*RPCGetSubscribedShardResponse)(nil), "proto.rpc.RPCGetSubscribedShardResponse")
 	proto.RegisterType((*SendRequest)(nil), "proto.rpc.SendRequest")
 	proto.RegisterType((*SendResponse)(nil), "proto.rpc.SendResponse")
+	proto.RegisterType((*RPCListPeerRequest)(nil), "proto.rpc.RPCListPeerRequest")
+	proto.RegisterType((*RPCListPeerResponse)(nil), "proto.rpc.RPCListPeerResponse")
+	proto.RegisterType((*RPCListTopicPeerRequest)(nil), "proto.rpc.RPCListTopicPeerRequest")
+	proto.RegisterType((*RPCListTopicPeerResponse)(nil), "proto.rpc.RPCListTopicPeerResponse")
+	proto.RegisterMapType((map[string]*message.Peers)(nil), "proto.rpc.RPCListTopicPeerResponse.TopicPeersEntry")
+	proto.RegisterType((*RPCRemovePeerRequest)(nil), "proto.rpc.RPCRemovePeerRequest")
 	proto.RegisterEnum("proto.rpc.Response_Status", Response_Status_name, Response_Status_value)
 }
 
@@ -613,6 +817,9 @@ type PocClient interface {
 	SendCollation(ctx context.Context, in *RPCSendCollationRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
 	StopServer(ctx context.Context, in *RPCStopServerRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
+	ListPeer(ctx context.Context, in *RPCListPeerRequest, opts ...grpc.CallOption) (*RPCListPeerResponse, error)
+	ListTopicPeer(ctx context.Context, in *RPCListTopicPeerRequest, opts ...grpc.CallOption) (*RPCListTopicPeerResponse, error)
+	RemovePeer(ctx context.Context, in *RPCRemovePeerRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error)
 }
 
 type pocClient struct {
@@ -695,6 +902,33 @@ func (c *pocClient) Send(ctx context.Context, in *SendRequest, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *pocClient) ListPeer(ctx context.Context, in *RPCListPeerRequest, opts ...grpc.CallOption) (*RPCListPeerResponse, error) {
+	out := new(RPCListPeerResponse)
+	err := c.cc.Invoke(ctx, "/proto.rpc.Poc/ListPeer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pocClient) ListTopicPeer(ctx context.Context, in *RPCListTopicPeerRequest, opts ...grpc.CallOption) (*RPCListTopicPeerResponse, error) {
+	out := new(RPCListTopicPeerResponse)
+	err := c.cc.Invoke(ctx, "/proto.rpc.Poc/ListTopicPeer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pocClient) RemovePeer(ctx context.Context, in *RPCRemovePeerRequest, opts ...grpc.CallOption) (*RPCPlainResponse, error) {
+	out := new(RPCPlainResponse)
+	err := c.cc.Invoke(ctx, "/proto.rpc.Poc/RemovePeer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PocServer is the server API for Poc service.
 type PocServer interface {
 	AddPeer(context.Context, *RPCAddPeerRequest) (*RPCPlainResponse, error)
@@ -705,6 +939,9 @@ type PocServer interface {
 	SendCollation(context.Context, *RPCSendCollationRequest) (*RPCPlainResponse, error)
 	StopServer(context.Context, *RPCStopServerRequest) (*RPCPlainResponse, error)
 	Send(context.Context, *SendRequest) (*SendResponse, error)
+	ListPeer(context.Context, *RPCListPeerRequest) (*RPCListPeerResponse, error)
+	ListTopicPeer(context.Context, *RPCListTopicPeerRequest) (*RPCListTopicPeerResponse, error)
+	RemovePeer(context.Context, *RPCRemovePeerRequest) (*RPCPlainResponse, error)
 }
 
 func RegisterPocServer(s *grpc.Server, srv PocServer) {
@@ -855,6 +1092,60 @@ func _Poc_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Poc_ListPeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RPCListPeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PocServer).ListPeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.rpc.Poc/ListPeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PocServer).ListPeer(ctx, req.(*RPCListPeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Poc_ListTopicPeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RPCListTopicPeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PocServer).ListTopicPeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.rpc.Poc/ListTopicPeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PocServer).ListTopicPeer(ctx, req.(*RPCListTopicPeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Poc_RemovePeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RPCRemovePeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PocServer).RemovePeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.rpc.Poc/RemovePeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PocServer).RemovePeer(ctx, req.(*RPCRemovePeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Poc_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.rpc.Poc",
 	HandlerType: (*PocServer)(nil),
@@ -891,53 +1182,76 @@ var _Poc_serviceDesc = grpc.ServiceDesc{
 			MethodName: "Send",
 			Handler:    _Poc_Send_Handler,
 		},
+		{
+			MethodName: "ListPeer",
+			Handler:    _Poc_ListPeer_Handler,
+		},
+		{
+			MethodName: "ListTopicPeer",
+			Handler:    _Poc_ListTopicPeer_Handler,
+		},
+		{
+			MethodName: "RemovePeer",
+			Handler:    _Poc_RemovePeer_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "rpc.proto",
 }
 
-func init() { proto.RegisterFile("rpc.proto", fileDescriptor_rpc_8f40528141eba4bc) }
+func init() { proto.RegisterFile("rpc.proto", fileDescriptor_rpc_db036003c8440bb3) }
 
-var fileDescriptor_rpc_8f40528141eba4bc = []byte{
-	// 629 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x5d, 0x4f, 0xdb, 0x3c,
-	0x14, 0xa6, 0x2d, 0x14, 0x7a, 0xe0, 0x45, 0x7d, 0x3d, 0x04, 0x51, 0xc6, 0x36, 0xe4, 0x69, 0x5a,
-	0x6f, 0x48, 0xa5, 0x4e, 0x42, 0xdb, 0xdd, 0x58, 0x06, 0x13, 0x1a, 0x17, 0x99, 0x03, 0xd2, 0x2e,
-	0x76, 0x93, 0x26, 0x56, 0x6b, 0xa9, 0xc4, 0x9e, 0xed, 0x4e, 0x1a, 0xe2, 0xdf, 0xec, 0x8f, 0x4e,
-	0x71, 0xe2, 0xb4, 0x49, 0xa9, 0xa2, 0x71, 0x65, 0x1f, 0xfb, 0x39, 0xcf, 0xf9, 0x3e, 0xd0, 0x93,
-	0x22, 0xf6, 0x84, 0xe4, 0x9a, 0xa3, 0x9e, 0x39, 0x3c, 0x29, 0x62, 0xf7, 0xe3, 0x84, 0xe9, 0xe9,
-	0x7c, 0xec, 0xc5, 0xfc, 0x6e, 0x48, 0xf5, 0x54, 0x52, 0x45, 0x23, 0x19, 0x4f, 0x87, 0x6a, 0x1a,
-	0xc9, 0x84, 0xa5, 0x93, 0x53, 0x31, 0x12, 0xa7, 0x82, 0xc7, 0x43, 0x31, 0x1e, 0xde, 0x51, 0xa5,
-	0xa2, 0x09, 0xb5, 0x67, 0x4e, 0x86, 0xbf, 0xc2, 0xff, 0x24, 0xf0, 0xcf, 0x93, 0x24, 0xa0, 0x54,
-	0x12, 0xfa, 0x73, 0x4e, 0x95, 0x46, 0xfb, 0xd0, 0x66, 0xc2, 0x69, 0x9d, 0xb4, 0x06, 0x3d, 0xd2,
-	0x66, 0x02, 0x21, 0xd8, 0x14, 0x5c, 0x6a, 0xa7, 0x7d, 0xd2, 0x1a, 0x74, 0x88, 0xb9, 0x67, 0x6f,
-	0x8a, 0xd2, 0xc4, 0xe9, 0xe4, 0x6f, 0xd9, 0x1d, 0x9f, 0x81, 0x43, 0x02, 0x3f, 0x9c, 0x8f, 0x55,
-	0x2c, 0xd9, 0x98, 0x86, 0x99, 0x17, 0x96, 0xd3, 0x85, 0x1d, 0xe3, 0xd5, 0xd5, 0x67, 0xe5, 0xb4,
-	0x4e, 0x3a, 0x83, 0x0e, 0x29, 0x65, 0xfc, 0x1e, 0x5c, 0x12, 0xf8, 0xb7, 0xa9, 0xfa, 0x67, 0xcd,
-	0x97, 0x70, 0x4c, 0x02, 0xff, 0x0b, 0xd5, 0xa5, 0xd1, 0x64, 0x59, 0x17, 0x3f, 0x98, 0xff, 0x4f,
-	0x92, 0x47, 0x49, 0x1c, 0x29, 0xed, 0xf3, 0xd9, 0x2c, 0xd2, 0x8c, 0xa7, 0x96, 0xdb, 0x81, 0xed,
-	0x82, 0xcb, 0x84, 0xdb, 0x21, 0x56, 0x44, 0x87, 0xd0, 0x4d, 0xe7, 0x77, 0x63, 0x2a, 0x8b, 0xa8,
-	0x0b, 0xc9, 0xc4, 0xcd, 0xee, 0x69, 0x19, 0x37, 0xbb, 0xa7, 0x19, 0x56, 0x50, 0xc9, 0x78, 0xe2,
-	0x6c, 0xe6, 0xd8, 0x5c, 0xc2, 0xdf, 0xe0, 0x28, 0xcb, 0x07, 0x4d, 0x93, 0x15, 0xc3, 0x67, 0xd0,
-	0x8b, 0xed, 0x9b, 0x31, 0xbd, 0x3b, 0x72, 0xf2, 0x92, 0x78, 0xb6, 0x40, 0x0b, 0x9d, 0x05, 0x14,
-	0x1f, 0xc2, 0x41, 0x46, 0xa9, 0xb9, 0x08, 0xa9, 0xfc, 0x55, 0x96, 0x0c, 0x3f, 0xc0, 0x0e, 0xa1,
-	0x4a, 0xf0, 0x54, 0x51, 0x34, 0x82, 0xae, 0xd2, 0x91, 0x9e, 0x2b, 0x43, 0xbc, 0x3f, 0x72, 0xbd,
-	0xb2, 0x63, 0x3c, 0x0b, 0xf2, 0x42, 0x83, 0x20, 0x05, 0x32, 0x4b, 0x44, 0x61, 0xd7, 0xc4, 0xdb,
-	0x23, 0x56, 0xc4, 0x18, 0xba, 0x39, 0x16, 0xed, 0xc2, 0x76, 0x78, 0xeb, 0xfb, 0x17, 0x61, 0xd8,
-	0xdf, 0xc8, 0x84, 0xcb, 0xf3, 0xab, 0xeb, 0x5b, 0x72, 0xd1, 0x6f, 0x61, 0x1f, 0xfa, 0x24, 0xf0,
-	0x83, 0x59, 0xc4, 0xd2, 0xd2, 0x8b, 0x21, 0xec, 0xc8, 0xe2, 0x5e, 0x04, 0xf8, 0xec, 0x11, 0x3f,
-	0x48, 0x09, 0xc2, 0x33, 0x78, 0xb1, 0xa6, 0x96, 0x4f, 0x64, 0xac, 0x74, 0x4e, 0xbb, 0xd6, 0x39,
-	0x0c, 0x76, 0xb3, 0xc2, 0xd8, 0x7a, 0x98, 0x12, 0x52, 0x59, 0xf4, 0x41, 0x8f, 0x14, 0x12, 0x3a,
-	0x80, 0x2d, 0xcd, 0x05, 0x8b, 0x8b, 0xac, 0xe4, 0x82, 0xc9, 0x96, 0x9a, 0xdc, 0xfc, 0x16, 0xb6,
-	0x0f, 0xac, 0x98, 0xb5, 0x47, 0x12, 0xe9, 0xc8, 0x34, 0xc2, 0x1e, 0x31, 0x77, 0x1c, 0xc2, 0x5e,
-	0x6e, 0xea, 0xa9, 0x71, 0x58, 0xd2, 0xf6, 0x82, 0x74, 0xf4, 0x67, 0x0b, 0x3a, 0x01, 0x8f, 0xd1,
-	0x25, 0x6c, 0x17, 0xd3, 0x8b, 0x8e, 0x97, 0x59, 0xea, 0x43, 0xed, 0x3e, 0xaf, 0xfe, 0x56, 0x8a,
-	0x85, 0x37, 0xd0, 0x0d, 0xec, 0x57, 0x07, 0x17, 0xbd, 0xae, 0x2a, 0x3c, 0x3a, 0xd6, 0x4d, 0xac,
-	0xdf, 0xa1, 0x5f, 0x1f, 0x6b, 0xf4, 0xa6, 0xaa, 0xb2, 0x66, 0xec, 0x9b, 0x98, 0x19, 0xa0, 0xd5,
-	0x56, 0x41, 0x6f, 0xab, 0x4a, 0x6b, 0x17, 0x83, 0x3b, 0x68, 0x06, 0x96, 0xa6, 0x7e, 0x00, 0x5a,
-	0xdd, 0x20, 0x75, 0x53, 0x6b, 0x77, 0x4c, 0x53, 0x20, 0x04, 0xfe, 0xab, 0x6c, 0x08, 0x84, 0x6b,
-	0x79, 0x7f, 0x64, 0x7d, 0x34, 0x71, 0x5e, 0x03, 0x2c, 0x56, 0x04, 0x7a, 0x55, 0x23, 0xac, 0x2f,
-	0x8f, 0x26, 0xb6, 0x0f, 0xb0, 0x99, 0x39, 0x81, 0x0e, 0x97, 0x60, 0x4b, 0xb3, 0xe3, 0x1e, 0xad,
-	0xbc, 0x5b, 0xd5, 0x71, 0xd7, 0xfc, 0xbc, 0xfb, 0x1b, 0x00, 0x00, 0xff, 0xff, 0xa4, 0x64, 0x44,
-	0x49, 0xbf, 0x06, 0x00, 0x00,
+var fileDescriptor_rpc_db036003c8440bb3 = []byte{
+	// 810 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0x5d, 0x4f, 0xf3, 0x36,
+	0x14, 0xa6, 0x2d, 0xf4, 0xe3, 0x14, 0x58, 0x67, 0xaa, 0x12, 0x65, 0xc0, 0x90, 0xd1, 0xb4, 0x6a,
+	0x12, 0xa9, 0x56, 0x24, 0xc4, 0x76, 0x35, 0x96, 0xc1, 0x84, 0xe0, 0x22, 0x73, 0x40, 0x9a, 0xa6,
+	0xdd, 0xa4, 0x89, 0xd5, 0x46, 0x6b, 0x93, 0xcc, 0x76, 0x91, 0x40, 0xfc, 0x92, 0xfd, 0xcf, 0xdd,
+	0x4f, 0x76, 0x3e, 0x9a, 0xa4, 0xed, 0xfa, 0xbe, 0xbd, 0xb2, 0x8f, 0x7d, 0xce, 0x73, 0x7c, 0x9e,
+	0xf3, 0x61, 0x68, 0xb1, 0xc8, 0x35, 0x22, 0x16, 0x8a, 0x10, 0xb5, 0xd4, 0x62, 0xb0, 0xc8, 0xd5,
+	0x7f, 0x1a, 0xfb, 0x62, 0x32, 0x1f, 0x19, 0x6e, 0x38, 0x1b, 0x50, 0x31, 0x61, 0x94, 0x53, 0x87,
+	0xb9, 0x93, 0x01, 0x9f, 0x38, 0xcc, 0xf3, 0x83, 0xf1, 0x65, 0x34, 0x8c, 0x2e, 0xa3, 0xd0, 0x1d,
+	0x44, 0xa3, 0xc1, 0x8c, 0x72, 0xee, 0x8c, 0x69, 0xba, 0xc6, 0x60, 0xf8, 0x11, 0xbe, 0x24, 0x96,
+	0x79, 0xeb, 0x79, 0x16, 0xa5, 0x8c, 0xd0, 0xbf, 0xe7, 0x94, 0x0b, 0x74, 0x08, 0x55, 0x3f, 0xd2,
+	0x2a, 0xe7, 0x95, 0x7e, 0x8b, 0x54, 0xfd, 0x08, 0x21, 0xd8, 0x8d, 0x42, 0x26, 0xb4, 0xea, 0x79,
+	0xa5, 0x5f, 0x23, 0x6a, 0x2f, 0xcf, 0x38, 0xa5, 0x9e, 0x56, 0x8b, 0xcf, 0xe4, 0x1e, 0x5f, 0x83,
+	0x46, 0x2c, 0xd3, 0x9e, 0x8f, 0xb8, 0xcb, 0xfc, 0x11, 0xb5, 0xe5, 0x2b, 0x52, 0x4c, 0x1d, 0x9a,
+	0xea, 0x55, 0x0f, 0xbf, 0x70, 0xad, 0x72, 0x5e, 0xeb, 0xd7, 0x48, 0x26, 0xe3, 0x1b, 0xd0, 0x89,
+	0x65, 0xbe, 0x04, 0xfc, 0xb3, 0x2d, 0xcf, 0xe0, 0x84, 0x58, 0xe6, 0xaf, 0x54, 0x64, 0x4e, 0xbd,
+	0xbc, 0x2d, 0xfe, 0x50, 0xf7, 0x3f, 0xb3, 0xd0, 0xf1, 0x5c, 0x87, 0x0b, 0x33, 0x9c, 0x4e, 0x1d,
+	0xe1, 0x87, 0x41, 0x8a, 0xad, 0x41, 0x23, 0xc1, 0x52, 0xe1, 0xd6, 0x48, 0x2a, 0xa2, 0x1e, 0xd4,
+	0x83, 0xf9, 0x6c, 0x44, 0x59, 0x12, 0x75, 0x22, 0xa9, 0xb8, 0xfd, 0x77, 0x9a, 0xc5, 0xed, 0xbf,
+	0x53, 0xa9, 0x1b, 0x51, 0xe6, 0x87, 0x9e, 0xb6, 0x1b, 0xeb, 0xc6, 0x12, 0xfe, 0x0d, 0x8e, 0x25,
+	0x1f, 0x34, 0xf0, 0x96, 0x1c, 0x5f, 0x43, 0xcb, 0x4d, 0xcf, 0x94, 0xeb, 0xf6, 0x50, 0x8b, 0x53,
+	0x62, 0xa4, 0x09, 0x5a, 0xd8, 0x2c, 0x54, 0x71, 0x0f, 0xba, 0x12, 0x52, 0x84, 0x91, 0x4d, 0xd9,
+	0x6b, 0x96, 0x32, 0xfc, 0x01, 0x4d, 0x42, 0x79, 0x14, 0x06, 0x9c, 0xa2, 0x21, 0xd4, 0xb9, 0x70,
+	0xc4, 0x9c, 0x2b, 0xe0, 0xc3, 0xa1, 0x6e, 0x64, 0x15, 0x63, 0xa4, 0x4a, 0x86, 0xad, 0x34, 0x48,
+	0xa2, 0x29, 0x89, 0x48, 0xfc, 0xaa, 0x78, 0x5b, 0x24, 0x15, 0x31, 0x86, 0x7a, 0xac, 0x8b, 0xda,
+	0xd0, 0xb0, 0x5f, 0x4c, 0xf3, 0xce, 0xb6, 0x3b, 0x3b, 0x52, 0xb8, 0xbf, 0x7d, 0x78, 0x7a, 0x21,
+	0x77, 0x9d, 0x0a, 0x36, 0xa1, 0x43, 0x2c, 0xd3, 0x9a, 0x3a, 0x7e, 0x90, 0xbd, 0x62, 0x00, 0x4d,
+	0x96, 0xec, 0x93, 0x00, 0x8f, 0x56, 0xbc, 0x83, 0x64, 0x4a, 0x78, 0x0a, 0xa7, 0x6b, 0x72, 0xb9,
+	0x25, 0x62, 0xa1, 0x72, 0xaa, 0xa5, 0xca, 0xf1, 0xa1, 0x2d, 0x13, 0x93, 0xe6, 0x43, 0xa5, 0x90,
+	0xb2, 0xa4, 0x0e, 0x5a, 0x24, 0x91, 0x50, 0x17, 0xf6, 0x44, 0x18, 0xf9, 0x6e, 0xc2, 0x4a, 0x2c,
+	0x28, 0xb6, 0xf8, 0xf8, 0xf9, 0x2d, 0x4a, 0xeb, 0x20, 0x15, 0x65, 0x79, 0x78, 0x8e, 0x70, 0x54,
+	0x21, 0xec, 0x13, 0xb5, 0xc7, 0x36, 0xec, 0xc7, 0xae, 0xb6, 0x8d, 0x23, 0x05, 0xad, 0xe6, 0x40,
+	0xbb, 0x80, 0x88, 0x65, 0x3e, 0xf9, 0x5c, 0xe4, 0x3a, 0x17, 0x33, 0x38, 0x2a, 0x9c, 0x6e, 0xeb,
+	0xf1, 0x3b, 0xd8, 0x93, 0x04, 0x70, 0xe5, 0xb2, 0x3d, 0xec, 0x96, 0x4a, 0x53, 0x82, 0x73, 0x12,
+	0xab, 0xe0, 0xef, 0x55, 0x95, 0x4b, 0x9f, 0xcf, 0x92, 0x9c, 0xfc, 0x20, 0xe9, 0x41, 0x5d, 0x11,
+	0x16, 0x37, 0x6e, 0x8b, 0x24, 0x12, 0xfe, 0xb7, 0xa2, 0x26, 0x45, 0xc9, 0x66, 0xdb, 0xc7, 0xda,
+	0x00, 0x22, 0x45, 0x89, 0x13, 0xdd, 0x1e, 0x5e, 0xe5, 0x4d, 0xd6, 0x78, 0x32, 0xb2, 0x13, 0x7e,
+	0x17, 0x08, 0xf6, 0x46, 0x72, 0x30, 0xba, 0x0d, 0x5f, 0x94, 0xae, 0x51, 0x07, 0x6a, 0x7f, 0xd1,
+	0xb7, 0xa4, 0x40, 0xe4, 0x56, 0xd2, 0xf4, 0xea, 0x4c, 0xe7, 0xf4, 0xff, 0x69, 0x52, 0x2a, 0x3f,
+	0x56, 0x6f, 0x2a, 0xd8, 0x50, 0xdd, 0x4b, 0xe8, 0x2c, 0x7c, 0xa5, 0x25, 0x9e, 0x56, 0x55, 0xdf,
+	0xf0, 0x9f, 0x06, 0xd4, 0xac, 0xd0, 0x45, 0xf7, 0xd0, 0x48, 0x46, 0x34, 0x3a, 0x29, 0x06, 0x56,
+	0x9c, 0xdc, 0xfa, 0x57, 0xc5, 0xdb, 0x42, 0x47, 0xe2, 0x1d, 0xf4, 0x0c, 0x87, 0xc5, 0xe9, 0x8c,
+	0x2e, 0x8a, 0x06, 0x2b, 0x67, 0xf7, 0x26, 0xd4, 0xdf, 0xa1, 0x53, 0x9e, 0xdd, 0xe8, 0x9b, 0xa2,
+	0xc9, 0x9a, 0xd9, 0xbe, 0x09, 0xd9, 0x07, 0xb4, 0x3c, 0x0f, 0xd0, 0xb7, 0x45, 0xa3, 0xb5, 0xd3,
+	0x5f, 0xef, 0x6f, 0x56, 0xcc, 0x5c, 0xfd, 0x09, 0x68, 0xf9, 0x9b, 0x28, 0xbb, 0x5a, 0xfb, 0x91,
+	0x6c, 0x0a, 0x84, 0xc0, 0x41, 0xe1, 0x1b, 0x40, 0xb8, 0xc4, 0xfb, 0x8a, 0x3f, 0x62, 0x13, 0xe6,
+	0x13, 0xc0, 0xe2, 0x1f, 0x40, 0x5f, 0x97, 0x00, 0xcb, 0x3f, 0xc4, 0x26, 0xb4, 0x1f, 0x60, 0x57,
+	0x3e, 0x02, 0xf5, 0x72, 0x6a, 0xb9, 0x01, 0xa9, 0x1f, 0x2f, 0x9d, 0x67, 0xa6, 0x8f, 0xd0, 0x4c,
+	0x27, 0x0e, 0x3a, 0x5d, 0xee, 0xbb, 0x7c, 0x7d, 0x9e, 0xad, 0xbb, 0xce, 0xc0, 0xfe, 0x80, 0x83,
+	0x42, 0xb3, 0x96, 0x99, 0x5a, 0x35, 0x67, 0xf4, 0x8b, 0x4f, 0xe8, 0xf6, 0x98, 0xb1, 0x45, 0xef,
+	0x95, 0x19, 0x5b, 0xea, 0xca, 0x0d, 0x8c, 0x8d, 0xea, 0xea, 0xf6, 0xea, 0xbf, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0x2f, 0x1e, 0x04, 0x92, 0x9b, 0x09, 0x00, 0x00,
 }

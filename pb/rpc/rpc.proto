@@ -13,6 +13,9 @@ service Poc {
   rpc SendCollation(RPCSendCollationRequest) returns (RPCPlainResponse) {}
   rpc StopServer(RPCStopServerRequest) returns (RPCPlainResponse) {}
   rpc Send (SendRequest) returns (SendResponse) {}
+  rpc ListPeer(RPCListPeerRequest) returns (RPCListPeerResponse) {}
+  rpc ListTopicPeer(RPCListTopicPeerRequest) returns (RPCListTopicPeerResponse) {}
+  rpc RemovePeer(RPCRemovePeerRequest) returns (RPCPlainResponse) {}
 }
 
 // Request
@@ -69,4 +72,23 @@ message SendRequest {
 message SendResponse {
   Response response = 1;
   bytes data = 2;
+}
+
+message RPCListPeerRequest {
+}
+message RPCListPeerResponse {
+  Response response = 1;
+  proto.message.Peers peers = 2;
+}
+
+message RPCListTopicPeerRequest {
+  repeated string topics = 1;
+}
+message RPCListTopicPeerResponse {
+  Response response = 1;
+  map<string, proto.message.Peers> topicPeers = 2;
+}
+
+message RPCRemovePeerRequest {
+  string peerID = 1;
 }
