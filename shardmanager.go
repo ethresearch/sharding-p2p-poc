@@ -335,7 +335,7 @@ func (n *ShardManager) makeGeneralValidator(current_ctx context.Context, topic s
 			return false
 		}
 		// FIXME: if no eventNotifier, just skip the verification
-		if n.eventNotifier != (*rpcEventNotifier)(nil) {
+		if n.eventNotifier != (*rpcEventNotifier)(nil) && n.eventNotifier != nil {
 			validityBytes, err := n.eventNotifier.Receive(
 				msg.GetFrom(),
 				int(typedMessage.MsgType),
