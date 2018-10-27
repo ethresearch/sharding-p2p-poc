@@ -117,10 +117,6 @@ func runServer(
 	notifierAddr string) {
 	ctx := context.Background()
 	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
-	if err != nil {
-		// TODO: don't use eventNotifier if it is not available
-		eventNotifier = nil
-	}
 	var bootnodes = []pstore.PeerInfo{}
 	if bootnodesStr != "" {
 		bootnodes, err = convertPeers(strings.Split(bootnodesStr, ","))
@@ -149,7 +145,7 @@ func runServer(
 			Param: 1,
 		},
 		Reporter: &jaegerconfig.ReporterConfig{
-			LogSpans: true,
+			LogSpans:           true,
 			LocalAgentHostPort: fmt.Sprintf("%v:%v", os.Getenv("JAEGER_AGENT_HOST"), os.Getenv("JAEGER_AGENT_PORT")),
 		},
 	}
