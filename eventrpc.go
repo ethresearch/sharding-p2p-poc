@@ -11,7 +11,7 @@ import (
 )
 
 type EventNotifier interface {
-	Receive(peerID peer.ID, msgType int, data []byte) ([]byte, error)
+	Receive(ctx context.Context, peerID peer.ID, msgType int, data []byte) ([]byte, error)
 }
 
 type mockEventNotifier struct {
@@ -19,7 +19,6 @@ type mockEventNotifier struct {
 
 type rpcEventNotifier struct {
 	client pbevent.EventClient
-	ctx    context.Context
 }
 
 func NewMockEventNotifier() *mockEventNotifier {
@@ -27,6 +26,7 @@ func NewMockEventNotifier() *mockEventNotifier {
 }
 
 func (notifier *mockEventNotifier) Receive(
+	ctx context.Context,
 	peerID peer.ID,
 	msgType int,
 	data []byte) ([]byte, error) {
@@ -43,12 +43,12 @@ func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier
 	client := pbevent.NewEventClient(conn)
 	n := &rpcEventNotifier{
 		client: client,
-		ctx:    ctx,
 	}
 	return n, nil
 }
 
 func (notifier *rpcEventNotifier) Receive(
+	ctx context.Context,
 	peerID peer.ID,
 	msgType int,
 	data []byte) ([]byte, error) {
@@ -57,7 +57,7 @@ func (notifier *rpcEventNotifier) Receive(
 		MsgType: PBInt(msgType),
 		Data:    data,
 	}
-	res, err := notifier.client.Receive(notifier.ctx, req)
+	res, err := notifier.client.Receive(ctx, req)
 	if err != nil {
 		return nil, err
 	}

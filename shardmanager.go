@@ -336,6 +336,7 @@ func (n *ShardManager) makeGeneralValidator(current_ctx context.Context, topic s
 		}
 
 		validityBytes, err := n.eventNotifier.Receive(
+			spanctx,
 			msg.GetFrom(),
 			int(typedMessage.MsgType),
 			typedMessage.Data,

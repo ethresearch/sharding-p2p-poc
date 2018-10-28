@@ -656,7 +656,7 @@ func TestEventRPCNotifier(t *testing.T) {
 		Blobs:   []byte("123"),
 	}
 	collationBytes := protoToBytes(t, collation)
-	isValidBytes, err := eventNotifier.Receive("", typeCollation, collationBytes)
+	isValidBytes, err := eventNotifier.Receive(ctx, "", typeCollation, collationBytes)
 	if err != nil {
 		t.Errorf("something wrong when calling `eventNotifier.Receive`: %v", err)
 	}
@@ -671,7 +671,7 @@ func TestEventRPCNotifier(t *testing.T) {
 		Hash:    "123",
 	}
 	reqBytes := protoToBytes(t, req)
-	respBytes, err := eventNotifier.Receive("", typeCollationRequest, reqBytes)
+	respBytes, err := eventNotifier.Receive(ctx, "", typeCollationRequest, reqBytes)
 	if err != nil {
 		t.Errorf("something wrong when calling `eventNotifier.Receive`: %v", err)
 	}
