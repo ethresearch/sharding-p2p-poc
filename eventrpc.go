@@ -10,17 +10,28 @@ import (
 	"google.golang.org/grpc"
 )
 
-var (
-	defulatEventRPCPort = 35566
-)
-
 type EventNotifier interface {
 	Receive(peerID peer.ID, msgType int, data []byte) ([]byte, error)
+}
+
+type mockEventNotifier struct {
 }
 
 type rpcEventNotifier struct {
 	client pbevent.EventClient
 	ctx    context.Context
+}
+
+func NewMockEventNotifier() *mockEventNotifier {
+	return &mockEventNotifier{}
+}
+
+func (notifier *mockEventNotifier) Receive(
+	peerID peer.ID,
+	msgType int,
+	data []byte) ([]byte, error) {
+	// Always return 1
+	return []byte{1}, nil
 }
 
 func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier, error) {

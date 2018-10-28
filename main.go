@@ -62,7 +62,7 @@ func main() {
 	rpcPort := flag.Int("rpcport", defaultRPCPort, "RPC port listened by the RPC server")
 	notifierPort := flag.Int(
 		"notifierport",
-		defulatEventRPCPort,
+		0,
 		"notifier port listened by the event rpc server",
 	)
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
@@ -116,7 +116,17 @@ func runServer(
 	rpcAddr string,
 	notifierAddr string) {
 	ctx := context.Background()
-	eventNotifier, err := NewRpcEventNotifier(ctx, notifierAddr)
+	var eventNotifier EventNotifier
+	var err error
+	// Check if notifier port is 0 and use mock event notifier if so
+	if strings.Split(notifierAddr, ":")[1] == "0" {
+		eventNotifier = NewMockEventNotifier()
+	} else {
+		eventNotifier, err = NewRpcEventNotifier(ctx, notifierAddr)
+		if err != nil {
+			logger.Fatalf("Failed to connect RPC event notifier: %v", err)
+		}
+	}
 	var bootnodes = []pstore.PeerInfo{}
 	if bootnodesStr != "" {
 		bootnodes, err = convertPeers(strings.Split(bootnodesStr, ","))
