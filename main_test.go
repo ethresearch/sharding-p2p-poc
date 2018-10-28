@@ -775,7 +775,6 @@ func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 	nodes := makeNodes(t, ctx, 2)
 	connectBarbell(t, ctx, nodes)
 
-	// case: without RPCEventNotifier set
 	shardID := ShardIDType(1)
 	period := 2
 	req := &pbmsg.CollationRequest{
@@ -784,17 +783,10 @@ func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 		Hash:    "",
 	}
 	reqBytes := protoToBytes(t, req)
-	_, err := nodes[0].generalRequest(ctx, nodes[1].ID(), typeCollationRequest, reqBytes)
-	// `err != nil` because nodes[1] hasn't set the eventNotifier, failing to handle the request
-	if err == nil {
-		t.Errorf(
-			"should be unable to unmarshal because nodes[1] should send invalid collation, due to the lack of an eventNotifier",
-		)
-	}
 
 	// case: with RPCEventNotifier set, db in the event server has the collation
 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", 55669)
-	_, err = runEventServer(ctx, notifierAddr)
+	_, err := runEventServer(ctx, notifierAddr)
 	if err != nil {
 		t.Error("failed to run event server")
 	}
