@@ -40,7 +40,7 @@ func makeTestingNode(
 	//		2. Avoid reuse of listeningPort in the entire test, to avoid `dial error`s
 	listeningPort := 20000 + nodeCount
 	nodeCount++
-	node, err := makeNode(ctx, defaultIP, listeningPort, number, nil, doBootstrapping, bootstrapPeers)
+	node, err := makeNode(ctx, defaultIP, listeningPort, number, NewMockEventNotifier(), doBootstrapping, bootstrapPeers)
 	if err != nil {
 		t.Error("Failed to create node")
 	}
@@ -656,7 +656,7 @@ func TestEventRPCNotifier(t *testing.T) {
 		Blobs:   []byte("123"),
 	}
 	collationBytes := protoToBytes(t, collation)
-	isValidBytes, err := eventNotifier.Receive("", typeCollation, collationBytes)
+	isValidBytes, err := eventNotifier.Receive(ctx, "", typeCollation, collationBytes)
 	if err != nil {
 		t.Errorf("something wrong when calling `eventNotifier.Receive`: %v", err)
 	}
@@ -671,7 +671,7 @@ func TestEventRPCNotifier(t *testing.T) {
 		Hash:    "123",
 	}
 	reqBytes := protoToBytes(t, req)
-	respBytes, err := eventNotifier.Receive("", typeCollationRequest, reqBytes)
+	respBytes, err := eventNotifier.Receive(ctx, "", typeCollationRequest, reqBytes)
 	if err != nil {
 		t.Errorf("something wrong when calling `eventNotifier.Receive`: %v", err)
 	}
@@ -774,7 +774,6 @@ func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 	nodes := makeNodes(t, ctx, 2)
 	connectBarbell(t, ctx, nodes)
 
-	// case: without RPCEventNotifier set
 	shardID := ShardIDType(1)
 	period := 2
 	req := &pbmsg.CollationRequest{
@@ -783,17 +782,10 @@ func TestRequestCollationWithRPCEventNotifier(t *testing.T) {
 		Hash:    "",
 	}
 	reqBytes := protoToBytes(t, req)
-	_, err := nodes[0].generalRequest(ctx, nodes[1].ID(), typeCollationRequest, reqBytes)
-	// `err != nil` because nodes[1] hasn't set the eventNotifier, failing to handle the request
-	if err == nil {
-		t.Errorf(
-			"should be unable to unmarshal because nodes[1] should send invalid collation, due to the lack of an eventNotifier",
-		)
-	}
 
 	// case: with RPCEventNotifier set, db in the event server has the collation
 	notifierAddr := fmt.Sprintf("127.0.0.1:%v", 55669)
-	_, err = runEventServer(ctx, notifierAddr)
+	_, err := runEventServer(ctx, notifierAddr)
 	if err != nil {
 		t.Error("failed to run event server")
 	}

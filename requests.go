@@ -134,15 +134,11 @@ func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
 		)
 		return
 	}
-	if p.node.eventNotifier == nil {
-		logger.Error("onGeneralRequest: no eventNotifier set")
-		return
-	}
 	peerID := s.Conn().RemotePeer()
-	dataBytes, err := p.node.eventNotifier.Receive(peerID, int(req.MsgType), req.Data)
+	dataBytes, err := p.node.eventNotifier.Receive(context.Background(), peerID, int(req.MsgType), req.Data)
 	if err != nil {
 		logger.Errorf(
-			"onGeneralRequest: failed to read proto message, reason=%v",
+			"onGeneralRequest: failed to receive response from event notifier, reason=%v",
 			err,
 		)
 		return

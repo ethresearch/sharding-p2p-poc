@@ -3,40 +3,52 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pbevent "github.com/ethresearch/sharding-p2p-poc/pb/event"
 	peer "github.com/libp2p/go-libp2p-peer"
 	"google.golang.org/grpc"
 )
 
-var (
-	defulatEventRPCPort = 35566
-)
-
 type EventNotifier interface {
-	Receive(peerID peer.ID, msgType int, data []byte) ([]byte, error)
+	Receive(ctx context.Context, peerID peer.ID, msgType int, data []byte) ([]byte, error)
+}
+
+type mockEventNotifier struct {
 }
 
 type rpcEventNotifier struct {
 	client pbevent.EventClient
-	ctx    context.Context
+}
+
+func NewMockEventNotifier() *mockEventNotifier {
+	return &mockEventNotifier{}
+}
+
+func (notifier *mockEventNotifier) Receive(
+	ctx context.Context,
+	peerID peer.ID,
+	msgType int,
+	data []byte) ([]byte, error) {
+	// Always return 1
+	return []byte{1}, nil
 }
 
 func NewRpcEventNotifier(ctx context.Context, rpcAddr string) (*rpcEventNotifier, error) {
-	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second*1))
 	if err != nil {
-		logger.Errorf("failed to connect to the rpc server: %v", err)
+		logger.Errorf("Failed to connect to the event notifier rpc server: %v", err)
 		return nil, err
 	}
 	client := pbevent.NewEventClient(conn)
 	n := &rpcEventNotifier{
 		client: client,
-		ctx:    ctx,
 	}
 	return n, nil
 }
 
 func (notifier *rpcEventNotifier) Receive(
+	ctx context.Context,
 	peerID peer.ID,
 	msgType int,
 	data []byte) ([]byte, error) {
@@ -45,7 +57,7 @@ func (notifier *rpcEventNotifier) Receive(
 		MsgType: PBInt(msgType),
 		Data:    data,
 	}
-	res, err := notifier.client.Receive(notifier.ctx, req)
+	res, err := notifier.client.Receive(ctx, req)
 	if err != nil {
 		return nil, err
 	}

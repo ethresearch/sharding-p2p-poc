@@ -334,23 +334,24 @@ func (n *ShardManager) makeGeneralValidator(current_ctx context.Context, topic s
 			logger.FinishWithErr(spanctx, fmt.Errorf("Failed to parse message, err: %v", err))
 			return false
 		}
-		// FIXME: if no eventNotifier, just skip the verification
-		if n.eventNotifier != nil {
-			validityBytes, err := n.eventNotifier.Receive(
-				msg.GetFrom(),
-				int(typedMessage.MsgType),
-				typedMessage.Data,
-			)
-			if err != nil {
-				logger.FinishWithErr(spanctx, fmt.Errorf("Failed to receive response from event notifier, err: %v", err))
-				return false
-			}
-			// TODO: `retVal` from `n.eventNotifier.Receive` should be a bool.
-			//		 validityByte == b"\x00" means false, otherwise true.
-			if len(validityBytes) != 1 || validityBytes[0] == 0 {
-				logger.SetErr(spanctx, fmt.Errorf("Validation error, validation result: %v", validityBytes))
-				return false
-			}
+
+		validityBytes, err := n.eventNotifier.Receive(
+			spanctx,
+			msg.GetFrom(),
+			int(typedMessage.MsgType),
+			typedMessage.Data,
+		)
+		if err != nil {
+			logger.FinishWithErr(spanctx, fmt.Errorf("Failed to receive response from event notifier, err: %v", err))
+			logger.Error(fmt.Errorf("Failed to receive response from event notifier, err: %v", err))
+			return false
+		}
+		// TODO: `retVal` from `n.eventNotifier.Receive` should be a bool.
+		//		 validityByte == b"\x00" means false, otherwise true.
+		if len(validityBytes) != 1 || validityBytes[0] == 0 {
+			logger.SetErr(spanctx, fmt.Errorf("Validation error, validation result: %v", validityBytes))
+			logger.Error(fmt.Errorf("Validation error, validation result: %v", validityBytes))
+			return false
 		}
 		return true
 	}
