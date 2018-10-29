@@ -40,7 +40,7 @@ func makeTestingNode(
 	//		2. Avoid reuse of listeningPort in the entire test, to avoid `dial error`s
 	listeningPort := 20000 + nodeCount
 	nodeCount++
-	node, err := makeNode(ctx, defaultIP, listeningPort, number, nil, doBootstrapping, bootstrapPeers)
+	node, err := makeNode(ctx, defaultIP, listeningPort, number, NewMockEventNotifier(), doBootstrapping, bootstrapPeers)
 	if err != nil {
 		t.Error("Failed to create node")
 	}
@@ -705,7 +705,6 @@ func TestBroadcastCollationWithRPCEventNotifier(t *testing.T) {
 	}
 	waitForPubSubMeshBuilt()
 
-	nodes[0].eventNotifier = NewMockEventNotifier()
 	// setup 2 event server and notifier(stub), for node1 and node2 respectively
 	// event server and notifier for node1
 	eventRPCPort := 55667

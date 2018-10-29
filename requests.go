@@ -138,7 +138,7 @@ func (p *RequestProtocol) onGeneralRequest(s inet.Stream) {
 	dataBytes, err := p.node.eventNotifier.Receive(context.Background(), peerID, int(req.MsgType), req.Data)
 	if err != nil {
 		logger.Errorf(
-			"onGeneralRequest: failed to read proto message, reason=%v",
+			"onGeneralRequest: failed to receive response from event notifier, reason=%v",
 			err,
 		)
 		return
