@@ -10,7 +10,9 @@ import time
 # --I <interface> eno4 
 # example: 
 # os.system("./umba --i sharding --I eno4 --n 20")
-# os.system("docker exec -it whiteblock-node0 -port=8080")10.1.0.2
+# os.system("docker exec -it whiteblock-node0 -port=8080")
+# ip eample: 10.1.0.2 would be whiteblock-node0
+# 10.1.0.6 would be whiteblock-node1 ++
 
 #TEST SERIES A
 #LATENCY
