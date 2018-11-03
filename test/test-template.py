@@ -13,6 +13,8 @@ import time
 # os.system("docker exec -it whiteblock-node0 -port=8080")
 # ip eample: 10.1.0.2 would be whiteblock-node0
 # 10.1.0.6 would be whiteblock-node1 ++
+# just add the flags and commands that are needed
+# we will handle logic of collecting data and configuring umba
 
 #TEST SERIES A
 #LATENCY
@@ -22,7 +24,7 @@ import time
 print("A1 Start")
 os.chdir("/home/appo/umba")
 os.system("./umba -i sharding -n 22 --servers alpha,bravo,charlie,echo,foxtrot --verbose --bp 22 --clients 24 --number-of-tx 4000") 
-
+# os.system("docker exec -it whiteblock-node0 -port=8080")
 
 print("A1 Complete")
 print("Going To Sleep")
