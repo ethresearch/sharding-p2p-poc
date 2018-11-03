@@ -329,48 +329,37 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 		}
 		msgBytes, err := proto.Marshal(typedMessage)
 		if err != nil {
-			response := makeResponse(
-				false,
-				fmt.Sprintf(
-					"failed to marshall typedMessage %v. reason: %v",
-					typedMessage,
-					err,
-				),
+			errMsg := fmt.Errorf(
+				"failed to marshall typedMessage %v. reason: %v",
+				typedMessage,
+				err,
 			)
-			// TODO: try return error as non-nil
-			return &pbrpc.SendResponse{Response: response}, nil
+			logger.FinishWithErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
 		}
 		err = s.node.pubsubService.Publish(req.Topic, msgBytes)
 		if err != nil {
-			response := makeResponse(
-				false,
-				fmt.Sprintf(
-					"failed to publish %v bytes in topic %v. reason: %v",
-					len(req.Data),
-					req.Topic,
-					err,
-				),
+			errMsg := fmt.Errorf(
+				"failed to publish %v bytes in topic %v. reason: %v",
+				len(req.Data),
+				req.Topic,
+				err,
 			)
-			// TODO: try return error as non-nil
-			return &pbrpc.SendResponse{Response: response}, nil
+			logger.FinishWithErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
 		}
 		return &pbrpc.SendResponse{Response: makeResponse(true, "")}, nil
 	}
 	// direct request
 	peerID, err := peer.IDB58Decode(req.PeerID)
 	if err != nil {
-		return &pbrpc.SendResponse{
-			Response: makeResponse(false, fmt.Sprintf("invalid peerID %v", peerID)),
-		}, nil
+		return nil, fmt.Errorf("invalid peerID %v", peerID)
 	}
 	dataBytes, err := s.node.generalRequest(ctx, peerID, int(req.MsgType), req.Data)
 	if err != nil {
-		return &pbrpc.SendResponse{
-			Response: makeResponse(
-				false,
-				fmt.Sprintf("failed to make request to peer %v", peerID),
-			),
-		}, nil
+		return nil, fmt.Errorf("failed to make request to peer %v", peerID)
 	}
 	return &pbrpc.SendResponse{
 		Response: makeResponse(true, ""),
@@ -381,6 +370,7 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 func (s *server) ListPeer(
 	ctx context.Context,
 	req *pbrpc.RPCListPeerRequest) (*pbrpc.RPCListPeerResponse, error) {
+	logger.Debugf("rpcserver:ListPeer: receive=%v", req)
 	peerIDs := s.node.Network().Peers()
 	return &pbrpc.RPCListPeerResponse{
 		Response: makeResponse(true, ""),
@@ -391,6 +381,7 @@ func (s *server) ListPeer(
 func (s *server) ListTopicPeer(
 	ctx context.Context,
 	req *pbrpc.RPCListTopicPeerRequest) (*pbrpc.RPCListTopicPeerResponse, error) {
+	logger.Debugf("rpcserver:ListTopicPeer: receive=%v", req)
 	var topics []string
 	if len(req.Topics) == 0 {
 		topics = s.node.pubsubService.GetTopics()
@@ -411,7 +402,7 @@ func (s *server) ListTopicPeer(
 func (s *server) RemovePeer(
 	ctx context.Context,
 	req *pbrpc.RPCRemovePeerRequest) (*pbrpc.RPCPlainResponse, error) {
-	// Add span for StopServer
+	// Add span for RemovePeer
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.RemovePeer", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
@@ -419,17 +410,22 @@ func (s *server) RemovePeer(
 	}
 	defer logger.Finish(spanctx)
 
+	logger.Debugf("rpcserver:RemovePeer: receive=%v", req)
+
 	peerID, err := stringToPeerID(req.PeerID)
 	if err != nil {
-		errorMsg := fmt.Sprintf("failed to parse the peerID: %v", req.PeerID)
-		return makePlainResponse(false, errorMsg), nil
+		errMsg := fmt.Errorf("failed to parse the peerID: %v", req.PeerID)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg.Error())
+		return nil, errMsg
 	}
 	err = s.node.Network().ClosePeer(peerID)
 	if err != nil {
-		errorMsg := fmt.Sprintf("failed to close the connection to peer: %v", err)
-		return makePlainResponse(false, errorMsg), nil
+		errMsg := fmt.Errorf("failed to close the connection to peer: %v", err)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg.Error())
+		return nil, errMsg
 	}
-	logger.Debugf("rpcserver:RemovePeer: receive=%v", req)
 
 	// TODO: consider the record in Peerstore
 	return makePlainResponse(true, ""), nil

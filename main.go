@@ -174,7 +174,12 @@ func runServer(
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
 
-	logger.Infof("listening: seed=%v, peerID=%v", seed, node.ID().Pretty())
+	logger.Infof(
+		"Node is listening: seed=%v, addr=%v, peerID=%v",
+		seed,
+		fmt.Sprintf("%v:%v", listenIP, listenPort),
+		node.ID().Pretty(),
+	)
 	runRPCServer(node, rpcAddr)
 }
 
@@ -269,7 +274,7 @@ func doRemovePeer(rpcArgs []string, rpcAddr string) {
 	peerID, err := stringToPeerID(peerIDString)
 	if err != nil {
 		logger.Fatalf(
-			"Malformed peerID %v, err: %v",
+			"Invalid peerID=%v, err: %v",
 			peerIDString,
 			err,
 		)

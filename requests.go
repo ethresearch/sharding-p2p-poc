@@ -109,7 +109,10 @@ func (p *RequestProtocol) requestShardPeer(
 	for shardID, peers := range res.ShardPeers {
 		peerIDs, err := pbPeersToPeerIDs(peers)
 		if err != nil {
-			return nil, fmt.Errorf("peerID in wrong format: %v", err)
+			return nil, fmt.Errorf(
+				"Failed to convert peer ID from PB string to peerID format, err: %v",
+				err,
+			)
 		}
 		shardPeers[shardID] = peerIDs
 	}
