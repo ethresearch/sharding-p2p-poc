@@ -44,21 +44,9 @@ message RPCSendCollationRequest {
 message RPCStopServerRequest {
 }
 
-// Response
-message Response {
-  Status status = 1;
-  string message = 2;
-
-  enum Status {
-      SUCCESS = 0;
-      FAILURE = 1;
-  }
-}
 message RPCPlainResponse {
-  Response response = 1;
 }
 message RPCGetSubscribedShardResponse {
-  Response response = 1;
   repeated int64 shardIDs = 2;
 }
 
@@ -70,14 +58,12 @@ message SendRequest {
 }
 
 message SendResponse {
-  Response response = 1;
   bytes data = 2;
 }
 
 message RPCListPeerRequest {
 }
 message RPCListPeerResponse {
-  Response response = 1;
   proto.message.Peers peers = 2;
 }
 
@@ -85,7 +71,6 @@ message RPCListTopicPeerRequest {
   repeated string topics = 1;
 }
 message RPCListTopicPeerResponse {
-  Response response = 1;
   map<string, proto.message.Peers> topicPeers = 2;
 }
 
