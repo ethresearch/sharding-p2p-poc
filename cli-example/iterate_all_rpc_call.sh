@@ -68,6 +68,31 @@ stop_server() {
     `cli_prompt $seed` stop
 }
 
+# listpeer {seed}
+list_peer() {
+    p=$@
+    seed=$1
+    `cli_prompt $seed` listpeer
+}
+
+
+# listtopicpeer {seed} {topic0} {topic1} ...
+list_topic_peer() {
+    p=$@
+    seed=$1
+    `cli_prompt $seed` listtopicpeer
+}
+
+# remove_peer {seed} peerID
+remove_peer() {
+    p=$@
+    seed=$1
+    params=${@:2}
+    `cli_prompt $seed` removepeer $params
+}
+
+
+
 go build
 
 for i in `seq 0 1`;
@@ -104,6 +129,12 @@ fi
 unsubscribe_shard 0 2 4
 
 get_subscribe_shard 0
+
+list_peer 0
+
+list_topic_peer 0
+
+remove_peer 0 QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX
 
 for i in `seq 0 1`;
 do

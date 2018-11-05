@@ -102,6 +102,12 @@ func runClient(rpcAddr string, cliArgs []string) {
 		doBroadcastCollation(rpcArgs, rpcAddr)
 	case "stop":
 		callRPCStopServer(rpcAddr)
+	case "listpeer":
+		callRPCListPeer(rpcAddr)
+	case "listtopicpeer":
+		doListTopicPeer(rpcArgs, rpcAddr)
+	case "removepeer":
+		doRemovePeer(rpcArgs, rpcAddr)
 	default:
 		logger.Fatalf("Client: Invalid cmd '%v'", rpcCmd)
 	}
@@ -174,7 +180,12 @@ func runServer(
 	opentracing.SetGlobalTracer(tracer)
 	// End of tracer setup
 
-	logger.Infof("listening: seed=%v, peerID=%v", seed, node.ID().Pretty())
+	logger.Infof(
+		"Node is listening: seed=%v, addr=%v, peerID=%v",
+		seed,
+		fmt.Sprintf("%v:%v", listenIP, listenPort),
+		node.ID().Pretty(),
+	)
 	runRPCServer(node, rpcAddr)
 }
 
@@ -227,7 +238,7 @@ func doUnsubShard(rpcArgs []string, rpcAddr string) {
 func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 4 {
 		logger.Fatal(
-			"Client: usage: broadcastcollation shardID, numCollations, collationSize, timeInMs",
+			"Client: usage: broadcastcollation shardID numCollations collationSize timeInMs",
 		)
 	}
 	shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
@@ -253,6 +264,28 @@ func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
 		collationSize,
 		timeInMs,
 	)
+}
+
+func doListTopicPeer(rpcArgs []string, rpcAddr string) {
+	callRPCListTopicPeer(rpcAddr, rpcArgs)
+}
+
+func doRemovePeer(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 1 {
+		logger.Fatal(
+			"Client: usage: removepeer shardID",
+		)
+	}
+	peerIDString := rpcArgs[0]
+	peerID, err := stringToPeerID(peerIDString)
+	if err != nil {
+		logger.Fatalf(
+			"Invalid peerID=%v, err: %v",
+			peerIDString,
+			err,
+		)
+	}
+	callRPCRemovePeer(rpcAddr, peerID)
 }
 
 func makeKey(seed int) (ic.PrivKey, peer.ID, error) {

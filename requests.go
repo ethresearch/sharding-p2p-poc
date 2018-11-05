@@ -5,13 +5,15 @@ import (
 	"context"
 	"fmt"
 
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 	"github.com/golang/protobuf/proto"
+
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
 
 	inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
 
 	protocol "github.com/libp2p/go-libp2p-protocol"
+
 	protobufCodec "github.com/multiformats/go-multicodec/protobuf"
 )
 
@@ -61,16 +63,10 @@ func (p *RequestProtocol) onShardPeerRequest(s inet.Stream) {
 	if err := readProtoMessage(req, s); err != nil {
 		return
 	}
-	shardPeers := make(map[ShardIDType]*pbmsg.ShardPeerResponse_Peers)
+	shardPeers := make(map[ShardIDType]*pbmsg.Peers)
 	for _, shardID := range req.ShardIDs {
 		peerIDs := p.node.shardPrefTable.GetPeersInShard(shardID)
-		peerIDStrings := []string{}
-		for _, peerID := range peerIDs {
-			peerIDStrings = append(peerIDStrings, peerID.Pretty())
-		}
-		shardPeers[shardID] = &pbmsg.ShardPeerResponse_Peers{
-			Peers: peerIDStrings,
-		}
+		shardPeers[shardID] = peerIDsToPBPeers(peerIDs)
 	}
 
 	res := &pbmsg.ShardPeerResponse{
@@ -111,13 +107,12 @@ func (p *RequestProtocol) requestShardPeer(
 
 	shardPeers := make(map[ShardIDType][]peer.ID)
 	for shardID, peers := range res.ShardPeers {
-		peerIDs := []peer.ID{}
-		for _, peerString := range peers.Peers {
-			peerID, err := peer.IDB58Decode(peerString)
-			if err != nil {
-				return nil, fmt.Errorf("error occurred when parsing peerID: %s", peerString)
-			}
-			peerIDs = append(peerIDs, peerID)
+		peerIDs, err := pbPeersToPeerIDs(peers)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"Failed to convert peer ID from PB string to peerID format, err: %v",
+				err,
+			)
 		}
 		shardPeers[shardID] = peerIDs
 	}

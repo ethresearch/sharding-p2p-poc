@@ -10,12 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
-	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"github.com/golang/protobuf/proto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+
+	pbmsg "github.com/ethresearch/sharding-p2p-poc/pb/message"
+	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
 )
 
@@ -51,22 +52,6 @@ func parseAddr(addrString string) (peer.ID, ma.Multiaddr, error) {
 	)
 	targetAddr := ipfsaddr.Decapsulate(targetPeerAddr)
 	return peerid, targetAddr, nil
-}
-
-func makeResponse(success bool, message string) *pbrpc.Response {
-	var status pbrpc.Response_Status
-	if success {
-		status = pbrpc.Response_SUCCESS
-	} else {
-		status = pbrpc.Response_FAILURE
-	}
-	return &pbrpc.Response{Status: status, Message: message}
-}
-
-func makePlainResponse(success bool, message string) *pbrpc.RPCPlainResponse {
-	return &pbrpc.RPCPlainResponse{
-		Response: makeResponse(success, message),
-	}
 }
 
 func (s *server) AddPeer(
@@ -113,7 +98,7 @@ func (s *server) AddPeer(
 
 	// Tag the span with peer info
 	logger.SetTag(spanctx, "Added peer", fmt.Sprintf("%v:%v", req.Ip, req.Port))
-	return makePlainResponse(true, fmt.Sprintf("Added Peer %v:%v, pid=%v!", req.Ip, req.Port, targetPID)), nil
+	return &pbrpc.RPCPlainResponse{}, nil
 }
 
 func (s *server) SubscribeShard(
@@ -138,14 +123,9 @@ func (s *server) SubscribeShard(
 		}
 		time.Sleep(time.Millisecond * 30)
 	}
-	replyMsg := fmt.Sprintf(
-		"Subscribed shard %v",
-		req.ShardIDs,
-	)
-
 	// Tag the span with shardIDs which are successfully subscribed to
 	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("%v", subscribedShardID))
-	return makePlainResponse(true, replyMsg), nil
+	return &pbrpc.RPCPlainResponse{}, nil
 }
 
 func (s *server) UnsubscribeShard(
@@ -170,13 +150,9 @@ func (s *server) UnsubscribeShard(
 		}
 		time.Sleep(time.Millisecond * 30)
 	}
-	replyMsg := fmt.Sprintf(
-		"Unsubscribed shard %v",
-		req.ShardIDs,
-	)
 	// Tag the span with shardIDs which are successfully unsubscribed from
 	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("shard %v", unsubscribedShardID))
-	return makePlainResponse(true, replyMsg), nil
+	return &pbrpc.RPCPlainResponse{}, nil
 }
 
 func (s *server) GetSubscribedShard(
@@ -193,7 +169,6 @@ func (s *server) GetSubscribedShard(
 	logger.Debugf("rpcserver:GetSubscribedShard: receive=%v", req)
 	shardIDs := s.node.GetListeningShards()
 	res := &pbrpc.RPCGetSubscribedShardResponse{
-		Response: makeResponse(true, ""),
 		ShardIDs: shardIDs,
 	}
 	// Tag the span with shardIDs returned
@@ -241,17 +216,11 @@ func (s *server) BroadcastCollation(
 			return nil, errMsg
 		}
 	}
-	replyMsg := fmt.Sprintf(
-		"Finished sending %v size=%v collations in shard %v",
-		numCollations,
-		sizeInBytes,
-		shardID,
-	)
 	// Tag the span with collations info if nothing goes wrong
 	logger.SetTag(spanctx, "shardID", req.ShardID)
 	logger.SetTag(spanctx, "numCollations", numCollations)
 	logger.SetTag(spanctx, "sizeInBytes", sizeInBytes)
-	return makePlainResponse(true, replyMsg), nil
+	return &pbrpc.RPCPlainResponse{}, nil
 }
 
 // This is the real BroadcastCollation.
@@ -276,17 +245,11 @@ func (s *server) SendCollation(
 		logger.Error(errMsg.Error())
 		return nil, errMsg
 	}
-	replyMsg := fmt.Sprintf(
-		"Finished sending collation shardID=%v, period=%v, len(blobs)=%v",
-		collation.ShardID,
-		collation.Period,
-		len(collation.Blobs),
-	)
 	// Tag collation info if nothing goes wrong
 	logger.SetTag(spanctx, "Shard", collation.ShardID)
 	logger.SetTag(spanctx, "Period of collation", collation.Period)
 	logger.SetTag(spanctx, "Blobs of collation", collation.Blobs)
-	return makePlainResponse(true, replyMsg), nil
+	return &pbrpc.RPCPlainResponse{}, nil
 }
 
 func (s *server) StopServer(
@@ -306,9 +269,7 @@ func (s *server) StopServer(
 		logger.Info("Closing RPC server by rpc call...")
 		s.rpcServer.Stop()
 	}()
-
-	replyMsg := fmt.Sprintf("Closed RPC server")
-	return makePlainResponse(true, replyMsg), nil
+	return &pbrpc.RPCPlainResponse{}, nil
 }
 
 func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendResponse, error) {
@@ -330,53 +291,103 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 		}
 		msgBytes, err := proto.Marshal(typedMessage)
 		if err != nil {
-			response := makeResponse(
-				false,
-				fmt.Sprintf(
-					"failed to marshall typedMessage %v. reason: %v",
-					typedMessage,
-					err,
-				),
+			errMsg := fmt.Errorf(
+				"failed to marshall typedMessage %v. reason: %v",
+				typedMessage,
+				err,
 			)
-			// TODO: try return error as non-nil
-			return &pbrpc.SendResponse{Response: response}, nil
+			logger.FinishWithErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
 		}
 		err = s.node.pubsubService.Publish(req.Topic, msgBytes)
 		if err != nil {
-			response := makeResponse(
-				false,
-				fmt.Sprintf(
-					"failed to publish %v bytes in topic %v. reason: %v",
-					len(req.Data),
-					req.Topic,
-					err,
-				),
+			errMsg := fmt.Errorf(
+				"failed to publish %v bytes in topic %v. reason: %v",
+				len(req.Data),
+				req.Topic,
+				err,
 			)
-			// TODO: try return error as non-nil
-			return &pbrpc.SendResponse{Response: response}, nil
+			logger.FinishWithErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
 		}
-		return &pbrpc.SendResponse{Response: makeResponse(true, "")}, nil
+		return &pbrpc.SendResponse{}, nil
 	}
 	// direct request
 	peerID, err := peer.IDB58Decode(req.PeerID)
 	if err != nil {
-		return &pbrpc.SendResponse{
-			Response: makeResponse(false, fmt.Sprintf("invalid peerID %v", peerID)),
-		}, nil
+		return nil, fmt.Errorf("invalid peerID %v", peerID)
 	}
 	dataBytes, err := s.node.generalRequest(ctx, peerID, int(req.MsgType), req.Data)
 	if err != nil {
-		return &pbrpc.SendResponse{
-			Response: makeResponse(
-				false,
-				fmt.Sprintf("failed to make request to peer %v", peerID),
-			),
-		}, nil
+		return nil, fmt.Errorf("failed to make request to peer %v", peerID)
 	}
 	return &pbrpc.SendResponse{
-		Response: makeResponse(true, ""),
-		Data:     dataBytes,
+		Data: dataBytes,
 	}, nil
+}
+
+func (s *server) ListPeer(
+	ctx context.Context,
+	req *pbrpc.RPCListPeerRequest) (*pbrpc.RPCListPeerResponse, error) {
+	logger.Debugf("rpcserver:ListPeer: receive=%v", req)
+	peerIDs := s.node.Network().Peers()
+	return &pbrpc.RPCListPeerResponse{
+		Peers: peerIDsToPBPeers(peerIDs),
+	}, nil
+}
+
+func (s *server) ListTopicPeer(
+	ctx context.Context,
+	req *pbrpc.RPCListTopicPeerRequest) (*pbrpc.RPCListTopicPeerResponse, error) {
+	logger.Debugf("rpcserver:ListTopicPeer: receive=%v", req)
+	var topics []string
+	if len(req.Topics) == 0 {
+		topics = s.node.pubsubService.GetTopics()
+	} else {
+		topics = req.Topics
+	}
+	topicPeers := make(map[string]*pbmsg.Peers)
+	for _, topic := range topics {
+		peerIDs := s.node.pubsubService.ListPeers(topic)
+		topicPeers[topic] = peerIDsToPBPeers(peerIDs)
+	}
+	return &pbrpc.RPCListTopicPeerResponse{
+		TopicPeers: topicPeers,
+	}, nil
+}
+
+func (s *server) RemovePeer(
+	ctx context.Context,
+	req *pbrpc.RPCRemovePeerRequest) (*pbrpc.RPCPlainResponse, error) {
+	// Add span for RemovePeer
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.RemovePeer", s.serializedSpanCtx)
+	if err != nil {
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.RemovePeer")
+	}
+	defer logger.Finish(spanctx)
+
+	logger.Debugf("rpcserver:RemovePeer: receive=%v", req)
+
+	peerID, err := stringToPeerID(req.PeerID)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to parse the peerID: %v", req.PeerID)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg.Error())
+		return nil, errMsg
+	}
+	err = s.node.Network().ClosePeer(peerID)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to close the connection to peer: %v", err)
+		logger.FinishWithErr(spanctx, errMsg)
+		logger.Error(errMsg.Error())
+		return nil, errMsg
+	}
+
+	// TODO: consider the record in Peerstore
+	return &pbrpc.RPCPlainResponse{}, nil
 }
 
 func runRPCServer(n *Node, addr string) {
