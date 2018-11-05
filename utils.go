@@ -44,7 +44,7 @@ func pbPeersToPeerIDs(msg *pbmsg.Peers) ([]peer.ID, error) {
 	return peerIDs, nil
 }
 func peerIDsToPBPeers(peerIDs []peer.ID) *pbmsg.Peers {
-	peerStrs := []string{}
+	peerStrs := make([]string, 0)
 	for _, peerID := range peerIDs {
 		peerStrs = append(peerStrs, peerIDToString(peerID))
 	}

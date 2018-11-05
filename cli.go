@@ -5,12 +5,126 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	peer "github.com/libp2p/go-libp2p-peer"
 
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
 )
+
+func doAddPeer(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 3 {
+		errMsg := fmt.Sprintf("Client: usage: addpeer ip port seed")
+		emitCLIFailure(errMsg)
+	}
+	targetIP := rpcArgs[0]
+	targetPort, err := strconv.Atoi(rpcArgs[1])
+	if err != nil {
+		errMsg := fmt.Sprintf("Failed to convert string '%v' to integer, err: %v", rpcArgs[1], err)
+		emitCLIFailure(errMsg)
+	}
+	targetSeed, err := strconv.Atoi(rpcArgs[2])
+	if err != nil {
+		errMsg := fmt.Sprintf("Failed to convert string '%v' to integer, err: %v", rpcArgs[2], err)
+		emitCLIFailure(errMsg)
+	}
+	callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
+}
+
+func doSubShard(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 {
+		errMsg := fmt.Sprintf("Client: usage: subshard shard0 shard1 ...")
+		emitCLIFailure(errMsg)
+	}
+	shardIDs := []ShardIDType{}
+	for _, shardIDString := range rpcArgs {
+		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+		if err != nil {
+			errMsg := fmt.Sprintf(
+				"Failed to convert string '%v' to integer, err: %v",
+				shardIDString,
+				err,
+			)
+			emitCLIFailure(errMsg)
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+	callRPCSubscribeShard(rpcAddr, shardIDs)
+}
+
+func doUnsubShard(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 {
+		errMsg := fmt.Sprintf("Client: usage: unsubshard shard0 shard1 ...")
+		emitCLIFailure(errMsg)
+	}
+	shardIDs := []ShardIDType{}
+	for _, shardIDString := range rpcArgs {
+		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+		if err != nil {
+			errMsg := fmt.Sprintf(
+				"Failed to convert string '%v' to integer, err: %v",
+				shardIDString,
+				err,
+			)
+			emitCLIFailure(errMsg)
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+	callRPCUnsubscribeShard(rpcAddr, shardIDs)
+}
+
+func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 4 {
+		emitCLIFailure(
+			"Client: usage: broadcastcollation shardID numCollations collationSize timeInMs",
+		)
+	}
+	shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
+	if err != nil {
+		errMsg := fmt.Sprintf("Invalid shard: %v", rpcArgs[0])
+		emitCLIFailure(errMsg)
+	}
+	numCollations, err := strconv.Atoi(rpcArgs[1])
+	if err != nil {
+		errMsg := fmt.Sprintf("Invalid numCollations: %v", rpcArgs[1])
+		emitCLIFailure(errMsg)
+	}
+	collationSize, err := strconv.Atoi(rpcArgs[2])
+	if err != nil {
+		errMsg := fmt.Sprintf("Invalid collationSize: %v", rpcArgs[2])
+		emitCLIFailure(errMsg)
+	}
+	timeInMs, err := strconv.Atoi(rpcArgs[3])
+	if err != nil {
+		errMsg := fmt.Sprintf("Invalid timeInMs: %v", rpcArgs[3])
+		emitCLIFailure(errMsg)
+	}
+	callRPCBroadcastCollation(
+		rpcAddr,
+		shardID,
+		numCollations,
+		collationSize,
+		timeInMs,
+	)
+}
+
+func doListTopicPeer(rpcArgs []string, rpcAddr string) {
+	callRPCListTopicPeer(rpcAddr, rpcArgs)
+}
+
+func doRemovePeer(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 1 {
+		emitCLIFailure("Client: usage: removepeer shardID")
+	}
+	peerIDString := rpcArgs[0]
+	peerID, err := stringToPeerID(peerIDString)
+	if err != nil {
+		errMsg := fmt.Sprintf("Invalid peerID=%v, err: %v", peerIDString, err)
+		emitCLIFailure(errMsg)
+	}
+	callRPCRemovePeer(rpcAddr, peerID)
+}
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
@@ -120,7 +234,14 @@ func callRPCBroadcastCollation(
 	}
 	logger.Debugf("rpcclient:BroadcastCollation: sending=%v", broadcastCollationReq)
 	if res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq); err != nil {
-		errMsg := fmt.Sprintf("Failed to broadcast %v collations of size %v in period %v in shard %v, err: %v", numCollations, collationSize, period, shardID, err)
+		errMsg := fmt.Sprintf(
+			"Failed to broadcast %v collations of size %v in period %v in shard %v, err: %v",
+			numCollations,
+			collationSize,
+			period,
+			shardID,
+			err,
+		)
 		emitCLIFailure(errMsg)
 	} else {
 		logger.Debugf("rpcclient:BroadcastCollation: result=%v", res)

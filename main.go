@@ -6,7 +6,6 @@ import (
 	"fmt"
 	mrand "math/rand"
 	"os"
-	"strconv"
 	"strings"
 
 	ds "github.com/ipfs/go-datastore"
@@ -188,105 +187,6 @@ func runServer(
 		node.ID().Pretty(),
 	)
 	runRPCServer(node, rpcAddr)
-}
-
-func doAddPeer(rpcArgs []string, rpcAddr string) {
-	if len(rpcArgs) != 3 {
-		logger.Fatal("Client: usage: addpeer ip port seed")
-	}
-	targetIP := rpcArgs[0]
-	targetPort, err := strconv.Atoi(rpcArgs[1])
-	if err != nil {
-		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[1])
-	}
-	targetSeed, err := strconv.Atoi(rpcArgs[2])
-	if err != nil {
-		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[2])
-	}
-	callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
-}
-
-func doSubShard(rpcArgs []string, rpcAddr string) {
-	if len(rpcArgs) == 0 {
-		logger.Fatal("Client: usage: subshard shard0 shard1 ...")
-	}
-	shardIDs := []ShardIDType{}
-	for _, shardIDString := range rpcArgs {
-		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-		if err != nil {
-			logger.Fatalf("Failed to convert string '%v' to integer, err: %v", shardIDString, err)
-		}
-		shardIDs = append(shardIDs, shardID)
-	}
-	callRPCSubscribeShard(rpcAddr, shardIDs)
-}
-
-func doUnsubShard(rpcArgs []string, rpcAddr string) {
-	if len(rpcArgs) == 0 {
-		logger.Fatal("Client: usage: unsubshard shard0 shard1 ...")
-	}
-	shardIDs := []ShardIDType{}
-	for _, shardIDString := range rpcArgs {
-		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
-		if err != nil {
-			logger.Fatalf("Failed to convert string '%v' to integer, err: %v", shardIDString, err)
-		}
-		shardIDs = append(shardIDs, shardID)
-	}
-	callRPCUnsubscribeShard(rpcAddr, shardIDs)
-}
-
-func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
-	if len(rpcArgs) != 4 {
-		logger.Fatal(
-			"Client: usage: broadcastcollation shardID numCollations collationSize timeInMs",
-		)
-	}
-	shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
-	if err != nil {
-		logger.Fatalf("Invalid shard: %v", rpcArgs[0])
-	}
-	numCollations, err := strconv.Atoi(rpcArgs[1])
-	if err != nil {
-		logger.Fatalf("Invalid numCollations: %v", rpcArgs[1])
-	}
-	collationSize, err := strconv.Atoi(rpcArgs[2])
-	if err != nil {
-		logger.Fatalf("Invalid collationSize: %v", rpcArgs[2])
-	}
-	timeInMs, err := strconv.Atoi(rpcArgs[3])
-	if err != nil {
-		logger.Fatalf("Invalid timeInMs: %v", rpcArgs[3])
-	}
-	callRPCBroadcastCollation(
-		rpcAddr,
-		shardID,
-		numCollations,
-		collationSize,
-		timeInMs,
-	)
-}
-
-func doListTopicPeer(rpcArgs []string, rpcAddr string) {
-	callRPCListTopicPeer(rpcAddr, rpcArgs)
-}
-
-func doRemovePeer(rpcArgs []string, rpcAddr string) {
-	if len(rpcArgs) != 1 {
-		logger.Fatal(
-			"Client: usage: removepeer shardID",
-		)
-	}
-	peerIDString := rpcArgs[0]
-	peerID, err := stringToPeerID(peerIDString)
-	if err != nil {
-		logger.Fatalf(
-			"Invalid peerID=%v, err: %v",
-			peerIDString,
-			err,
-		)
-	}
-	callRPCRemovePeer(rpcAddr, peerID)
 }
 
 func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
