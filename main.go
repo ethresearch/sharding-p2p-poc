@@ -20,6 +20,7 @@ import (
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
 
 	opentracing "github.com/opentracing/opentracing-go"
+
 	jaeger "github.com/uber/jaeger-client-go"
 	jaegerconfig "github.com/uber/jaeger-client-go/config"
 
