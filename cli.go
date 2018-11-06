@@ -282,6 +282,8 @@ func callRPCListPeer(rpcAddr string) {
 	if err != nil {
 		errMsg := fmt.Sprintf("Failed to call RPC ListPeer at %v, err: %v", rpcAddr, err)
 		emitCLIFailure(errMsg)
+	} else {
+		logger.Debugf("rpcclient:ListPeer: result=%v", res)
 	}
 	peers := &PeerResponse{
 		Peers: res.Peers.Peers,
@@ -305,6 +307,8 @@ func callRPCListTopicPeer(rpcAddr string, topics []string) {
 	if err != nil {
 		errMsg := fmt.Sprintf("Failed to call RPC ListTopicPeer at %v, err: %v", rpcAddr, err)
 		emitCLIFailure(errMsg)
+	} else {
+		logger.Debugf("rpcclient:ListTopicPeer: result=%v", res)
 	}
 	topicPeers := make(map[string][]string)
 	for topic, peers := range res.TopicPeers {
