@@ -64,7 +64,7 @@ message SendResponse {
 message RPCListPeerRequest {
 }
 message RPCListPeerResponse {
-  proto.message.Peers peers = 2;
+  repeated string peers = 2;
 }
 
 message RPCListTopicPeerRequest {

@@ -334,7 +334,7 @@ func (s *server) ListPeer(
 	logger.Debugf("rpcserver:ListPeer: receive=%v", req)
 	peerIDs := s.node.Network().Peers()
 	return &pbrpc.RPCListPeerResponse{
-		Peers: peerIDsToPBPeers(peerIDs),
+		Peers: peerIDsToPeersString(peerIDs),
 	}, nil
 }
 

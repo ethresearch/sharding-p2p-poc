@@ -32,9 +32,10 @@ func stringToPeerID(peerIDStr string) (peer.ID, error) {
 	}
 	return peerID, nil
 }
-func pbPeersToPeerIDs(msg *pbmsg.Peers) ([]peer.ID, error) {
+
+func peersStringToPeerIDs(peersStr []string) ([]peer.ID, error) {
 	peerIDs := []peer.ID{}
-	for _, peerStr := range msg.Peers {
+	for _, peerStr := range peersStr {
 		peerID, err := stringToPeerID(peerStr)
 		if err != nil {
 			return nil, err
@@ -43,10 +44,19 @@ func pbPeersToPeerIDs(msg *pbmsg.Peers) ([]peer.ID, error) {
 	}
 	return peerIDs, nil
 }
-func peerIDsToPBPeers(peerIDs []peer.ID) *pbmsg.Peers {
+
+func peerIDsToPeersString(peerIDs []peer.ID) []string {
 	peerStrs := make([]string, 0)
 	for _, peerID := range peerIDs {
 		peerStrs = append(peerStrs, peerIDToString(peerID))
 	}
-	return &pbmsg.Peers{Peers: peerStrs}
+	return peerStrs
+}
+
+func pbPeersToPeerIDs(msg *pbmsg.Peers) ([]peer.ID, error) {
+	return peersStringToPeerIDs(msg.Peers)
+}
+
+func peerIDsToPBPeers(peerIDs []peer.ID) *pbmsg.Peers {
+	return &pbmsg.Peers{Peers: peerIDsToPeersString(peerIDs)}
 }

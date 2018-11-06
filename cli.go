@@ -255,8 +255,8 @@ func callRPCListPeer(rpcAddr string) {
 	}
 	logger.Debugf("rpcclient:ListPeer: result=%v", res)
 	peers := make([]string, 0)
-	if res.Peers.Peers != nil {
-		peers = res.Peers.Peers
+	if res.Peers != nil {
+		peers = res.Peers
 	}
 	peersString := marshalToJSONString(peers)
 	fmt.Println(peersString)
