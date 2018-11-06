@@ -155,6 +155,10 @@ func runServer(
 	}
 
 	// Set up Opentracing and Jaeger tracer
+	var localAgentHostPort string
+	if (os.Getenv("JAEGER_AGENT_HOST") != "") && (os.Getenv("JAEGER_AGENT_PORT") != "") {
+		localAgentHostPort = fmt.Sprintf("%v:%v", os.Getenv("JAEGER_AGENT_HOST"), os.Getenv("JAEGER_AGENT_PORT"))
+	}
 	cfg := &jaegerconfig.Configuration{
 		Sampler: &jaegerconfig.SamplerConfig{
 			Type:  "const",
@@ -162,7 +166,7 @@ func runServer(
 		},
 		Reporter: &jaegerconfig.ReporterConfig{
 			LogSpans:           true,
-			LocalAgentHostPort: fmt.Sprintf("%v:%v", os.Getenv("JAEGER_AGENT_HOST"), os.Getenv("JAEGER_AGENT_PORT")),
+			LocalAgentHostPort: localAgentHostPort,
 		},
 	}
 	var tracerName string
