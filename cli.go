@@ -357,14 +357,13 @@ type TopicPeerResponse struct {
 
 var emptyResponse interface{}
 
-func marshalToJSONString(data interface{}) string {
+func marshalToJSONString(data interface{}) (string, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to marshal object: %v", err)
-		emitCLIFailure(errMsg)
+		return "", fmt.Errorf("failed to marshal object: %v, err: %v", data, err)
 	}
 	dataStr := string(dataBytes)
-	return dataStr
+	return dataStr, nil
 }
 
 func emitCLIFailure(msg string) {
@@ -372,7 +371,10 @@ func emitCLIFailure(msg string) {
 		Status:  false,
 		Message: msg,
 	}
-	respStr := marshalToJSONString(resp)
+	respStr, err := marshalToJSONString(resp)
+	if err != nil {
+		logger.Error(err)
+	}
 	fmt.Println(respStr)
 	os.Exit(1)
 }
@@ -382,6 +384,9 @@ func emitCLIResponse(data interface{}) {
 		Status: true,
 		Data:   data,
 	}
-	respStr := marshalToJSONString(resp)
+	respStr, err := marshalToJSONString(resp)
+	if err != nil {
+		logger.Error(err)
+	}
 	fmt.Println(respStr)
 }
