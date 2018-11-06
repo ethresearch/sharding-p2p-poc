@@ -2,12 +2,116 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
+
 	peer "github.com/libp2p/go-libp2p-peer"
 
 	pbrpc "github.com/ethresearch/sharding-p2p-poc/pb/rpc"
 	"google.golang.org/grpc"
 )
+
+func doAddPeer(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 3 {
+		logger.Fatal("Client: usage: addpeer ip port seed")
+	}
+	targetIP := rpcArgs[0]
+	targetPort, err := strconv.Atoi(rpcArgs[1])
+	if err != nil {
+		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[1], err)
+	}
+	targetSeed, err := strconv.Atoi(rpcArgs[2])
+	if err != nil {
+		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[2], err)
+	}
+	callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
+}
+
+func doSubShard(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 {
+		logger.Fatalf("Client: usage: subshard shard0 shard1 ...")
+	}
+	shardIDs := []ShardIDType{}
+	for _, shardIDString := range rpcArgs {
+		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+		if err != nil {
+			logger.Fatalf(
+				"Failed to convert string '%v' to integer, err: %v",
+				shardIDString,
+				err,
+			)
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+	callRPCSubscribeShard(rpcAddr, shardIDs)
+}
+
+func doUnsubShard(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 {
+		logger.Fatalf("Client: usage: unsubshard shard0 shard1 ...")
+	}
+	shardIDs := []ShardIDType{}
+	for _, shardIDString := range rpcArgs {
+		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
+		if err != nil {
+			logger.Fatalf(
+				"Failed to convert string '%v' to integer, err: %v",
+				shardIDString,
+				err,
+			)
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+	callRPCUnsubscribeShard(rpcAddr, shardIDs)
+}
+
+func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 4 {
+		logger.Fatal(
+			"Client: usage: broadcastcollation shardID numCollations collationSize timeInMs",
+		)
+	}
+	shardID, err := strconv.ParseInt(rpcArgs[0], 10, 64)
+	if err != nil {
+		logger.Fatalf("Invalid shard: %v", rpcArgs[0])
+	}
+	numCollations, err := strconv.Atoi(rpcArgs[1])
+	if err != nil {
+		logger.Fatalf("Invalid numCollations: %v", rpcArgs[1])
+	}
+	collationSize, err := strconv.Atoi(rpcArgs[2])
+	if err != nil {
+		logger.Fatalf("Invalid collationSize: %v", rpcArgs[2])
+	}
+	timeInMs, err := strconv.Atoi(rpcArgs[3])
+	if err != nil {
+		logger.Fatalf("Invalid timeInMs: %v", rpcArgs[3])
+	}
+	callRPCBroadcastCollation(
+		rpcAddr,
+		shardID,
+		numCollations,
+		collationSize,
+		timeInMs,
+	)
+}
+
+func doListTopicPeer(rpcArgs []string, rpcAddr string) {
+	callRPCListTopicPeer(rpcAddr, rpcArgs)
+}
+
+func doRemovePeer(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) != 1 {
+		logger.Fatal("Client: usage: removepeer shardID")
+	}
+	peerIDString := rpcArgs[0]
+	peerID, err := stringToPeerID(peerIDString)
+	if err != nil {
+		logger.Fatalf("Invalid peerID=%v, err: %v", peerIDString, err)
+	}
+	callRPCRemovePeer(rpcAddr, peerID)
+}
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
@@ -22,11 +126,11 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 		Seed: PBInt(seed),
 	}
 	logger.Debugf("rpcclient:AddPeer: sending=%v", addPeerReq)
-	if res, err := client.AddPeer(context.Background(), addPeerReq); err != nil {
+	res, err := client.AddPeer(context.Background(), addPeerReq)
+	if err != nil {
 		logger.Fatalf("Failed to add peer at %v:%v, err: %v", ipAddr, port, err)
-	} else {
-		logger.Debugf("rpcclient:AddPeer: result=%v", res)
 	}
+	logger.Debugf("rpcclient:AddPeer: result=%v", res)
 }
 
 func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
@@ -40,11 +144,11 @@ func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		ShardIDs: shardIDs,
 	}
 	logger.Debugf("rpcclient:SubscribeShard: sending=%v", subscribeShardReq)
-	if res, err := client.SubscribeShard(context.Background(), subscribeShardReq); err != nil {
+	res, err := client.SubscribeShard(context.Background(), subscribeShardReq)
+	if err != nil {
 		logger.Fatalf("Failed to subscribe to shards %v, err: %v", shardIDs, err)
-	} else {
-		logger.Debugf("rpcclient:SubscribeShard: result=%v", res)
 	}
+	logger.Debugf("rpcclient:SubscribeShard: result=%v", res)
 }
 
 func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
@@ -58,11 +162,11 @@ func callRPCUnsubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 		ShardIDs: shardIDs,
 	}
 	logger.Debugf("rpcclient:UnsubscribeShard: sending=%v", unsubscribeShardReq)
-	if res, err := client.UnsubscribeShard(context.Background(), unsubscribeShardReq); err != nil {
+	res, err := client.UnsubscribeShard(context.Background(), unsubscribeShardReq)
+	if err != nil {
 		logger.Fatalf("Failed to unsubscribe shards %v, err: %v", shardIDs, err)
-	} else {
-		logger.Debugf("rpcclient:UnsubscribeShard: result=%v", res)
 	}
+	logger.Debugf("rpcclient:UnsubscribeShard: result=%v", res)
 }
 
 func callRPCGetSubscribedShard(rpcAddr string) {
@@ -74,11 +178,17 @@ func callRPCGetSubscribedShard(rpcAddr string) {
 	client := pbrpc.NewPocClient(conn)
 	getSubscribedShardReq := &pbrpc.RPCGetSubscribedShardRequest{}
 	logger.Debugf("rpcclient:GetSubscribedShard: sending=%v", getSubscribedShardReq)
-	if res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq); err != nil {
+	res, err := client.GetSubscribedShard(context.Background(), getSubscribedShardReq)
+	if err != nil {
 		logger.Fatalf("Failed to get subscribed shards, err: %v", err)
-	} else {
-		logger.Debugf("rpcclient:GetSubscribedShard: result=%v", res.ShardIDs)
 	}
+	logger.Debugf("rpcclient:GetSubscribedShard: result=%v", res.ShardIDs)
+	shardIDs := make([]ShardIDType, 0)
+	if res.ShardIDs != nil {
+		shardIDs = res.ShardIDs
+	}
+	shardIDString := marshalToJSONString(shardIDs)
+	fmt.Println(shardIDString)
 }
 
 func callRPCBroadcastCollation(
@@ -100,11 +210,18 @@ func callRPCBroadcastCollation(
 		Period:  PBInt(period),
 	}
 	logger.Debugf("rpcclient:BroadcastCollation: sending=%v", broadcastCollationReq)
-	if res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq); err != nil {
-		logger.Fatalf("Failed to broadcast %v collations of size %v in period %v in shard %v, err: %v", numCollations, collationSize, period, shardID, err)
-	} else {
-		logger.Debugf("rpcclient:BroadcastCollation: result=%v", res)
+	res, err := client.BroadcastCollation(context.Background(), broadcastCollationReq)
+	if err != nil {
+		logger.Fatalf(
+			"Failed to broadcast %v collations of size %v in period %v in shard %v, err: %v",
+			numCollations,
+			collationSize,
+			period,
+			shardID,
+			err,
+		)
 	}
+	logger.Debugf("rpcclient:BroadcastCollation: result=%v", res)
 }
 
 func callRPCStopServer(rpcAddr string) {
@@ -116,11 +233,11 @@ func callRPCStopServer(rpcAddr string) {
 	client := pbrpc.NewPocClient(conn)
 	stopServerReq := &pbrpc.RPCStopServerRequest{}
 	logger.Debugf("rpcclient:StopServer: sending=%v", stopServerReq)
-	if res, err := client.StopServer(context.Background(), stopServerReq); err != nil {
+	res, err := client.StopServer(context.Background(), stopServerReq)
+	if err != nil {
 		logger.Fatalf("Failed to stop RPC server at %v, err: %v", rpcAddr, err)
-	} else {
-		logger.Debugf("rpcclient:StopServer: result=%v", res)
 	}
+	logger.Debugf("rpcclient:StopServer: result=%v", res)
 }
 
 func callRPCListPeer(rpcAddr string) {
@@ -136,7 +253,13 @@ func callRPCListPeer(rpcAddr string) {
 	if err != nil {
 		logger.Fatalf("Failed to call RPC ListPeer at %v, err: %v", rpcAddr, err)
 	}
-	fmt.Println(res)
+	logger.Debugf("rpcclient:ListPeer: result=%v", res)
+	peers := make([]string, 0)
+	if res.Peers != nil {
+		peers = res.Peers
+	}
+	peersString := marshalToJSONString(peers)
+	fmt.Println(peersString)
 }
 
 func callRPCListTopicPeer(rpcAddr string, topics []string) {
@@ -154,7 +277,17 @@ func callRPCListTopicPeer(rpcAddr string, topics []string) {
 	if err != nil {
 		logger.Fatalf("Failed to call RPC ListTopicPeer at %v, err: %v", rpcAddr, err)
 	}
-	fmt.Println(res)
+	logger.Debugf("rpcclient:ListTopicPeer: result=%v", res)
+	topicPeers := make(map[string][]string)
+	for topic, peers := range res.TopicPeers {
+		peerSlice := make([]string, 0)
+		if peers.Peers != nil {
+			peerSlice = peers.Peers
+		}
+		topicPeers[topic] = peerSlice
+	}
+	topicPeersString := marshalToJSONString(topicPeers)
+	fmt.Println(topicPeersString)
 }
 
 func callRPCRemovePeer(rpcAddr string, peerID peer.ID) {
@@ -168,9 +301,17 @@ func callRPCRemovePeer(rpcAddr string, peerID peer.ID) {
 		PeerID: peerIDToString(peerID),
 	}
 	logger.Debugf("rpcclient:removePeerReq: sending=%v", removePeerReq)
-	res, err := client.RemovePeer(context.Background(), removePeerReq)
+	_, err = client.RemovePeer(context.Background(), removePeerReq)
 	if err != nil {
 		logger.Fatalf("Failed to call RPC listpeer at %v, err: %v", rpcAddr, err)
 	}
-	fmt.Println(res)
+}
+
+func marshalToJSONString(data interface{}) string {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		logger.Fatalf("failed to marshal object: %v, err: %v", data, err)
+	}
+	dataStr := string(dataBytes)
+	return dataStr
 }
