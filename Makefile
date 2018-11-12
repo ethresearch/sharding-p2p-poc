@@ -11,7 +11,7 @@ build-prod:
 	docker build -f docker/prod.Dockerfile -t ethereum/sharding-p2p:latest .
 
 build-dev:
-	docker build -f docker/dev.Dockerfile -t ethresearch/sharding-p2p:dev .
+	docker build -f docker/dev.Dockerfile -t ethereum/sharding-p2p:dev .
 
 run-dev:
 	docker run -it --rm -v $(PWD):/go/src/github.com/ethresearch/sharding-p2p-poc ethereum/sharding-p2p:dev sh -c "go build -v -o main ."
