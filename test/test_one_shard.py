@@ -78,16 +78,19 @@ class Node:
         """`bootnodes` should be a list of string. Each string should be a multiaddr.
         """
         self.close()
-        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethereum/sharding-p2p:dev sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={}\"".format(
+        bootnodes_cmd = ""
+        if bootnodes is not None:
+            bootnodes_cmd = "-bootstrap -bootnodes={}".format(
+            ",".join(bootnodes),
+        )
+        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethereum/sharding-p2p:dev sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={} {}\"".format(
             self.name,
             self.port,
             self.rpc_port,
             self.seed,
+            bootnodes_cmd,
         )
-        if bootnodes is not None:
-            cmd += " -bootstrap -bootnodes={}".format(
-                ",".join(bootnodes),
-            )
+        print(cmd)
         subprocess.run(cmd, shell=True, check=True)
 
     def cli(self, cmd, **kwargs):
