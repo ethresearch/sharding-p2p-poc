@@ -106,6 +106,8 @@ func runClient(rpcAddr string, cliArgs []string) {
 		callRPCListPeer(rpcAddr)
 	case "listtopicpeer":
 		doListTopicPeer(rpcArgs, rpcAddr)
+	case "listshardpeer":
+		doListShardPeer(rpcArgs, rpcAddr)
 	case "removepeer":
 		doRemovePeer(rpcArgs, rpcAddr)
 	default:

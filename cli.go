@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	peer "github.com/libp2p/go-libp2p-peer"
 
@@ -99,6 +100,10 @@ func doBroadcastCollation(rpcArgs []string, rpcAddr string) {
 
 func doListTopicPeer(rpcArgs []string, rpcAddr string) {
 	callRPCListTopicPeer(rpcAddr, rpcArgs)
+}
+
+func doListShardPeer(rpcArgs []string, rpcAddr string) {
+	callRPCListShardPeer(rpcAddr, rpcArgs)
 }
 
 func doRemovePeer(rpcArgs []string, rpcAddr string) {
@@ -288,6 +293,41 @@ func callRPCListTopicPeer(rpcAddr string, topics []string) {
 	}
 	topicPeersString := marshalToJSONString(topicPeers)
 	fmt.Println(topicPeersString)
+}
+
+func callRPCListShardPeer(rpcAddr string, shards []string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+
+	topics := make([]string, len(shards))
+	for i := 0; i < len(shards); i++ {
+		topics[i] = "shardCollations_" + shards[i]
+	}
+
+	listTopicPeerReq := &pbrpc.RPCListTopicPeerRequest{
+		Topics: topics,
+	}
+	logger.Debugf("rpcclient:ListTopicPeer: sending=%v", listTopicPeerReq)
+	res, err := client.ListTopicPeer(context.Background(), listTopicPeerReq)
+	if err != nil {
+		logger.Fatalf("Failed to call RPC ListTopicPeer at %v, err: %v", rpcAddr, err)
+	}
+	logger.Debugf("rpcclient:ListTopicPeer: result=%v", res)
+	shardPeers := make(map[string][]string)
+	for topic, peers := range res.TopicPeers {
+		var shard = strings.Replace(topic, "shardCollations_", "", -1)
+		peerSlice := make([]string, 0)
+		if peers.Peers != nil {
+			peerSlice = peers.Peers
+		}
+		shardPeers[shard] = peerSlice
+	}
+	shardPeersString := marshalToJSONString(shardPeers)
+	fmt.Println(shardPeersString)
 }
 
 func callRPCRemovePeer(rpcAddr string, peerID peer.ID) {
