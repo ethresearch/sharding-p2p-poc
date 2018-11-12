@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
+import json
+import logging
 import re
 import subprocess
 import sys
+import threading
 import os
 import time
 
@@ -23,6 +26,9 @@ import time
 RPC_PORT_BASE = 13000
 PORT_BASE = 10000
 N = 100
+
+
+logger = logging.getLogger("test_one_shard")
 
 
 def get_docker_host_ip():
@@ -79,7 +85,7 @@ class Node:
             self.seed,
         )
         if bootnodes is not None:
-            cmd += " -bootnodes={}".format(
+            cmd += " -bootstrap -bootnodes={}".format(
                 ",".join(bootnodes),
             )
         subprocess.run(cmd, shell=True, check=True)
@@ -107,11 +113,11 @@ class Node:
         res = self.cli(cmd, check=True)
         return res.stdout.rstrip()
 
-    def add_peer(self, ip, port, seed):
-        return self.cli_safe("addpeer {} {} {}".format(ip, port, seed))
+    def add_peer(self, node):
+        self.cli_safe("addpeer {} {} {}".format(node.ip, node.port, node.seed))
 
     def remove_peer(self, peer_id):
-        return self.cli_safe("removepeer {}".format(peer_id))
+        self.cli_safe("removepeer {}".format(peer_id))
 
     def list_peer(self):
         return self.cli_safe("listpeer")
@@ -133,7 +139,7 @@ class Node:
             shard_id,
             num_collations,
             collation_size,
-            collation_time
+            collation_time,
         ))
 
     def stop(self):
@@ -158,40 +164,85 @@ class Node:
         self.peer_id = match[1]
 
 
-def make_node(seed):
+def make_node(seed, bootnodes=None):
     n = Node(
         get_docker_host_ip(),
         seed + PORT_BASE,
         seed + RPC_PORT_BASE,
         seed,
     )
-    n.run_docker()
+    n.run_docker(bootnodes)
     return n
 
 
-def make_local_nodes(num):
+def make_local_nodes(low, top, bootnodes=None):
     nodes = []
-    for i in range(num):
-        nodes.append(make_node(i))
-    time.sleep(2)
+    threads = []
+
+    def run_node(seed, bootnodes=None):
+        node = make_node(seed, bootnodes)
+        nodes.append(node)
+
+    for i in range(low, top):
+        t = threading.Thread(target=run_node, args=(i, bootnodes))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+    sorted(nodes, key=lambda node: node.seed)
+    # nodes = []
+    # for i in range(low, top):
+    #     nodes.append(make_node(i, bootnodes))
+    time.sleep(4)
+    threads = []
     for node in nodes:
-        node.set_peer_id()
+        t = threading.Thread(target=node.set_peer_id, args=())
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
     return nodes
 
 
 def connect_barbell(nodes):
+    threads = []
     for i in range(len(nodes) - 1):
-        nodes[i].add_peer(
-            nodes[i + 1].ip,
-            nodes[i + 1].port,
-            nodes[i + 1].seed,
-        )
+        t = threading.Thread(target=nodes[i].add_peer, args=(nodes[i + 1],))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+
+
+def connect_fully(nodes):
+    threads = []
+    for i in range(len(nodes) - 1):
+        for j in range(i + 1, len(nodes)):
+            t = threading.Thread(target=nodes[i].add_peer, args=(nodes[j],))
+            t.start()
+            threads.append(t)
+    for t in threads:
+        t.join()
 
 
 if __name__ == "__main__":
-    nodes = make_local_nodes(3)
-    connect_barbell(nodes)
-    print(nodes[2].list_peer())
+    bootnodes = make_local_nodes(0, 3)
+    connect_fully(bootnodes)
+    print(bootnodes[-1].list_peer())
+
+    bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
+
+    nodes = make_local_nodes(3, 5, bootnodes_multiaddr)
+
+    time.sleep(3)
+    # nodes = make_local_nodes(0, 25)
+    # connect_barbell(nodes)
+    # time.sleep(2)
+
+    print(nodes[-2].list_peer())
+
+
+
 
     import sys
     sys.exit(1)
