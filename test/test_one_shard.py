@@ -82,7 +82,7 @@ class Node:
             bootnodes_cmd = "-bootstrap -bootnodes={}".format(
             ",".join(bootnodes),
         )
-        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethereum/sharding-p2p:dev sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={} {}\"".format(
+        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethereum/sharding-p2p:latest sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={} {}\"".format(
             self.name,
             self.port,
             self.rpc_port,
@@ -237,6 +237,13 @@ if __name__ == "__main__":
     for node in bootnodes:
         node.subscribe_shard([0])
     bootnodes[0].broadcast_collation(0, 10, 100, 100)
+    print("Waiting for messages broadcasted...", end='')
+    time.sleep(2)
+    print("done")
+    log = bootnodes[-1].grep_log('Validating the received message')
+    print(log)
+    sys.exit(1)
+
 
     bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
     print("Spinning up {} nodes...".format(num_normal_nodes), end='')
@@ -248,3 +255,4 @@ if __name__ == "__main__":
     print("done")
 
     print(nodes[-1].list_peer())
+    # print(nodes)
