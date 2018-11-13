@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from datetime import (
+    datetime,
+)
 import json
 import logging
 import re
@@ -82,7 +85,7 @@ class Node:
             bootnodes_cmd = "-bootstrap -bootnodes={}".format(
             ",".join(bootnodes),
         )
-        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethereum/sharding-p2p:latest sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={} {}\"".format(
+        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethresearch/sharding-p2p:dev sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={} {}\"".format(
             self.name,
             self.port,
             self.rpc_port,
@@ -103,7 +106,7 @@ class Node:
                 self.name,
                 "sh",
                 "-c",
-                "./sharding-p2p-poc '-loglevel=DEBUG' '-client' {}".format(cmd_quoted_param_str),
+                "./sharding-p2p-poc '-client' {}".format(cmd_quoted_param_str),
             ],
             stdout=subprocess.PIPE,
             encoding='utf-8',
@@ -111,8 +114,11 @@ class Node:
         )
 
     def cli_safe(self, cmd):
-        res = self.cli(cmd, check=True)
-        return res.stdout.rstrip()
+        res = self.cli(cmd, check=True).stdout.rstrip()
+        # assume CLIs only reply data in JSON
+        if res != '':
+            res = json.loads(res)
+        return res
 
     def add_peer(self, node):
         self.cli_safe("addpeer {} {} {}".format(node.ip, node.port, node.seed))
@@ -149,7 +155,10 @@ class Node:
     def grep_log(self, pattern):
         res = subprocess.run(
             [
-                "docker logs {} 2>&1 | grep '{}'".format(self.name, pattern),
+                "docker logs {} 2>&1 | grep '{}'".format(
+                    self.name,
+                    pattern,
+                ),
             ],
             shell=True,
             stdout=subprocess.PIPE,
@@ -159,10 +168,22 @@ class Node:
 
     def set_peer_id(self):
         grep_res = self.grep_log('Node is listening')
-        match = re.search('peerID=([a-zA-Z0-9]+) ', grep_res)
+        match = re.search(r'peerID=([a-zA-Z0-9]+) ', grep_res)
         if match is None:
             raise ValueError("failed to grep the peer_id from docker logs")
         self.peer_id = match[1]
+
+    def get_log_time(self, pattern, kth=0):
+        logs = self.grep_log(pattern)
+        if len(logs) == 0:
+            raise ValueError("node {} failed to receive the message".format(self.name))
+        log = logs.split('\n')[kth]
+        time_str = log.split(' ')[0]
+        match = re.search(r'\x1b\[[0-9;]+[A-Za-z]([:\.0-9]+)', time_str)
+        if match is not None:
+            time_str = match[1]
+        timestamp = datetime.strptime(time_str, '%H:%M:%S.%f')
+        return timestamp
 
 
 def make_node(seed, bootnodes=None):
@@ -224,25 +245,60 @@ def connect_fully(nodes):
         t.join()
 
 
+def ensure_barbell_connections(nodes):
+    threads = []
+
+    def check_connection(nodes, i):
+        if len(nodes) <= 1:
+            return
+        peers = nodes[i].list_peer()
+        if i == 0:
+            assert len(peers) == 1 and peers[0] == nodes[i + 1].peer_id
+        elif i == len(nodes) - 1:
+            assert len(peers) == 1 and peers[0] == nodes[i - 1].peer_id
+        else:
+            assert len(peers) == 2 and \
+                (nodes[i - 1].peer_id in peers) and (nodes[i + 1].peer_id in peers)
+
+    for idx, _ in enumerate(nodes):
+        t = threading.Thread(target=check_connection, args=(nodes, idx))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+
+
 if __name__ == "__main__":
     num_bootnodes = 5
-    num_normal_nodes = 4
+    num_normal_nodes = 0
     print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
     bootnodes = make_local_nodes(0, num_bootnodes)
     print("done")
     print("Connecting bootnodes...", end='')
     connect_barbell(bootnodes)
     print("done")
+    print("Checking the connections...", end='')
+    ensure_barbell_connections(bootnodes)
+    print("done")
 
     for node in bootnodes:
         node.subscribe_shard([0])
-    bootnodes[0].broadcast_collation(0, 10, 100, 100)
+    print("Broadcasting collations...", end='')
+    num_collations = 10
+    bootnodes[0].broadcast_collation(0, num_collations, 1000000, 50)  # 1MB
+    print("done")
     print("Waiting for messages broadcasted...", end='')
+    # TODO: maybe using something like `wait_until`, instead of a fixed sleeping time
+    #       This way, we don't need to measure the sleeping time in advance
     time.sleep(2)
     print("done")
-    log = bootnodes[-1].grep_log('Validating the received message')
-    print(log)
-    sys.exit(1)
+
+    time_broadcast = bootnodes[0].get_log_time('rpcserver:BroadcastCollation: finished', 0)
+    time_received = bootnodes[-1].get_log_time(
+        'Validating the received message',
+        num_collations - 1,
+    )
+    print("time to broadcast to the last node:", time_received - time_broadcast)
 
 
     bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
@@ -254,5 +310,12 @@ if __name__ == "__main__":
     time.sleep(3)
     print("done")
 
-    print(nodes[-1].list_peer())
-    # print(nodes)
+    # kill all nodes
+    print("Cleaning up the nodes", end='')
+    bootnode_names = [n.name for n in bootnodes]
+    node_names = [n.name for n in nodes]
+    subprocess.run(
+        ["docker", "kill"] + bootnode_names + node_names,
+        stdout=subprocess.PIPE,
+    )
+    print("done")
