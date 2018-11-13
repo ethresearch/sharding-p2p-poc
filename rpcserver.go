@@ -98,6 +98,7 @@ func (s *server) AddPeer(
 
 	// Tag the span with peer info
 	logger.SetTag(spanctx, "Added peer", fmt.Sprintf("%v:%v", req.Ip, req.Port))
+	logger.Debug("rpcserver:AddPeer: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 
@@ -125,6 +126,7 @@ func (s *server) SubscribeShard(
 	}
 	// Tag the span with shardIDs which are successfully subscribed to
 	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("%v", subscribedShardID))
+	logger.Debug("rpcserver:SubscribeShard: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 
@@ -152,6 +154,7 @@ func (s *server) UnsubscribeShard(
 	}
 	// Tag the span with shardIDs which are successfully unsubscribed from
 	logger.SetTag(spanctx, "ShardIDs", fmt.Sprintf("shard %v", unsubscribedShardID))
+	logger.Debug("rpcserver:UnsubscribeShard: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 
@@ -190,14 +193,20 @@ func (s *server) BroadcastCollation(
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:BroadcastCollationRequest: receive=%v", req)
 	shardID := req.ShardID
 	numCollations := int(req.Number)
-	timeInMs := req.Period
 	sizeInBytes := req.Size
 	if sizeInBytes > 100 {
 		sizeInBytes -= 100
 	}
+	timeInMs := req.Period
+	logger.Debugf(
+		"rpcserver:BroadcastCollation: broadcasting: shardID=%v, numCollations=%v, sizeInBytes=%v, timeInMs=%v",
+		shardID,
+		numCollations,
+		sizeInBytes,
+		timeInMs,
+	)
 	for i := 0; i < numCollations; i++ {
 		// control the speed of sending collations
 		time.Sleep(time.Millisecond * time.Duration(timeInMs))
@@ -220,6 +229,7 @@ func (s *server) BroadcastCollation(
 	logger.SetTag(spanctx, "shardID", req.ShardID)
 	logger.SetTag(spanctx, "numCollations", numCollations)
 	logger.SetTag(spanctx, "sizeInBytes", sizeInBytes)
+	logger.Debug("rpcserver:BroadcastCollation: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 
@@ -249,6 +259,7 @@ func (s *server) SendCollation(
 	logger.SetTag(spanctx, "Shard", collation.ShardID)
 	logger.SetTag(spanctx, "Period of collation", collation.Period)
 	logger.SetTag(spanctx, "Blobs of collation", collation.Blobs)
+	logger.Debug("rpcserver:SendCollation: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 
@@ -269,6 +280,7 @@ func (s *server) StopServer(
 		logger.Info("Closing RPC server by rpc call...")
 		s.rpcServer.Stop()
 	}()
+	logger.Debug("rpcserver:StopServer: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 
@@ -323,6 +335,7 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to peer %v", peerID)
 	}
+	logger.Debug("rpcserver:Send: finished")
 	return &pbrpc.SendResponse{
 		Data: dataBytes,
 	}, nil
@@ -387,6 +400,7 @@ func (s *server) RemovePeer(
 	}
 
 	// TODO: consider the record in Peerstore
+	logger.Debug("rpcserver:RemovePeer: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 

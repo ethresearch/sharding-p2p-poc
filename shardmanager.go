@@ -147,11 +147,11 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) err
 		return err
 	}
 
-	// TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
-	if err := n.connectShardNodes(spanctx, shardID); err != nil {
-		logger.SetErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
-		logger.Errorf("Failed to connect to nodes in shard %v", shardID)
-	}
+	// // TODO: should set a critiria: if we have enough peers in the shard, don't connect shard nodes
+	// if err := n.connectShardNodes(spanctx, shardID); err != nil {
+	// 	logger.SetErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
+	// 	logger.Errorf("Failed to connect to nodes in shard %v", shardID)
+	// }
 
 	// shardCollations protocol
 	if err := n.SubscribeCollation(spanctx, shardID); err != nil {
