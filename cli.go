@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	peer "github.com/libp2p/go-libp2p-peer"
 
@@ -305,7 +304,11 @@ func callRPCListShardPeer(rpcAddr string, shards []string) {
 
 	topics := make([]string, len(shards))
 	for i := 0; i < len(shards); i++ {
-		topics[i] = "shardCollations_" + shards[i]
+		shardID, err := strconv.ParseInt(shards[i], 10, 64)
+		if err != nil {
+			logger.Fatalf("Failed to convert shardID %v to int64, err: %v", shards[i], err)
+		}
+		topics[i] = getCollationsTopic(shardID)
 	}
 
 	listTopicPeerReq := &pbrpc.RPCListTopicPeerRequest{
@@ -319,7 +322,7 @@ func callRPCListShardPeer(rpcAddr string, shards []string) {
 	logger.Debugf("rpcclient:ListTopicPeer: result=%v", res)
 	shardPeers := make(map[string][]string)
 	for topic, peers := range res.TopicPeers {
-		var shard = strings.Replace(topic, "shardCollations_", "", -1)
+		shard := shardTopicToShardID(topic)
 		peerSlice := make([]string, 0)
 		if peers.Peers != nil {
 			peerSlice = peers.Peers
