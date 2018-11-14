@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
 type Discovery interface {
