@@ -1,5 +1,5 @@
-from datetime import (
-    datetime,
+from collections import (
+    defaultdict,
 )
 import json
 import re
@@ -199,6 +199,7 @@ class Node:
         # match = re.search(r'\x1b\[[0-9;]+[A-Za-z]([:\.0-9]+)', time_str)
         return parser.parse(time_str_iso8601)
 
+
 def make_node(seed, bootnodes=None):
     n = Node(
         get_docker_host_ip(),
@@ -239,49 +240,66 @@ def make_local_nodes(low, top, bootnodes=None):
     return nodes
 
 
-def connect_barbell(nodes):
-    threads = []
+def connect_nodes(nodes, topology):
+    for i, targets in topology.items():
+        for j in targets:
+            nodes[i].add_peer(nodes[j])
+
+
+def make_barbell_topology(nodes):
+    topo = defaultdict(set)
     for i in range(len(nodes) - 1):
-        nodes[i].add_peer(nodes[i + 1])
-    #     t = threading.Thread(target=nodes[i].add_peer, args=(nodes[i + 1],))
-    #     t.start()
-    #     threads.append(t)
-    # for t in threads:
-    #     t.join()
+        topo[i].add(i + 1)
+    return topo
 
 
-def connect_fully(nodes):
-    threads = []
+def make_complete_topology(nodes):
+    topo = defaultdict(set)
     for i in range(len(nodes) - 1):
         for j in range(i + 1, len(nodes)):
-            t = threading.Thread(target=nodes[i].add_peer, args=(nodes[j],))
+            topo[i].add(j)
+    return topo
+
+
+def ensure_topology(nodes, expected_topology):
+    if len(nodes) <= 1:
+        return
+
+    threads = []
+
+    def check_connection(nodes, i, j):
+        peers_i = nodes[i].list_peer()
+        peers_j = nodes[j].list_peer()
+        # assume symmetric connections
+        assert nodes[j].peer_id in peers_i
+        assert nodes[i].peer_id in peers_j
+
+    for i, targets in expected_topology.items():
+        for j in targets:
+            t = threading.Thread(target=check_connection, args=(nodes, i, j))
             t.start()
             threads.append(t)
     for t in threads:
         t.join()
 
 
-def ensure_barbell_connections(nodes):
-    threads = []
+def make_peer_id_map(nodes):
+    return {
+        node.peer_id: node.seed
+        for node in nodes
+    }
 
-    def check_connection(nodes, i):
-        if len(nodes) <= 1:
-            return
-        peers = nodes[i].list_peer()
-        if i == 0:
-            assert len(peers) == 1 and peers[0] == nodes[i + 1].peer_id
-        elif i == len(nodes) - 1:
-            assert len(peers) == 1 and peers[0] == nodes[i - 1].peer_id
-        else:
-            assert len(peers) == 2 and \
-                (nodes[i - 1].peer_id in peers) and (nodes[i + 1].peer_id in peers)
 
-    for idx, _ in enumerate(nodes):
-        t = threading.Thread(target=check_connection, args=(nodes, idx))
-        t.start()
-        threads.append(t)
-    for t in threads:
-        t.join()
+def get_actual_topology(nodes):
+    map_peer_id_to_seed = make_peer_id_map(nodes)
+    print(map_peer_id_to_seed)
+    topo = defaultdict(set)
+    for node in nodes:
+        peers = node.list_peer()
+        for peer_id in peers:
+            peer_seed = map_peer_id_to_seed[peer_id]
+            topo[node.seed].add(peer_seed)
+    return topo
 
 
 def kill_nodes(nodes):
