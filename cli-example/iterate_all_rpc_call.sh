@@ -95,6 +95,9 @@ remove_peer() {
 
 go build
 
+# check version
+$EXE_NAME version
+
 for i in `seq 0 1`;
 do
     spinup_node $i
