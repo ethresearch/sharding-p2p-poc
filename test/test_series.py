@@ -35,8 +35,8 @@ from utils import (
 
 
 def test_time_broadcasting_data_single_shard():
-    num_nodes = 3
-    num_collations = 20
+    num_nodes = 30
+    num_collations = 1
     collation_size = 1000000  # 1MB
     collation_time = 50  # broadcast 1 collation every 50 milliseconds
 
@@ -52,30 +52,37 @@ def test_time_broadcasting_data_single_shard():
 
     for node in nodes:
         node.subscribe_shard([0])
-    print("Broadcasting collations...", end='')
-    nodes[0].broadcast_collation(0, num_collations, collation_size, collation_time)  # 1MB
+    broadcasting_node = 0
+    print(
+        "Broadcasting {} collations(size={} bytes) from node{} in the barbell topology...".format(
+            num_collations,
+            collation_size,
+            broadcasting_node,
+        ),
+        end='',
+    )
+    nodes[broadcasting_node].broadcast_collation(0, num_collations, collation_size, collation_time)  # 1MB
     print("done")
 
     print("Gathering time...", end='')
-    time_broadcast = nodes[0].wait_for_log('rpcserver:BroadcastCollation: finished', 0)
-    time_received = nodes[-1].wait_for_log(
+    time_broadcast = nodes[0].get_log_time('rpcserver:BroadcastCollation: finished', 0)
+    time_received = nodes[-1].get_log_time(
         'Validating the received message',
         num_collations - 1,
     )
     print("done")
     print(
-        "time to broadcast all data to the last node: \x1b[0;37m1{}".format(
+        "time to broadcast all data to the last node: \x1b[0;37m{}\x1b[0m".format(
             time_received - time_broadcast,
         )
     )
-
-    print("Cleaning up the nodes", end='')
+    print("Cleaning up the nodes...", end='')
     kill_nodes(nodes)
     print("done")
 
 
 def test_boot_nodes():
-    num_bootnodes = 2
+    num_bootnodes = 1
     num_normal_nodes = 10
     print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
     bootnodes = make_local_nodes(0, num_bootnodes)
@@ -87,17 +94,6 @@ def test_boot_nodes():
     ensure_barbell_connections(bootnodes)
     print("done")
 
-    for node in bootnodes:
-        node.subscribe_shard([0])
-    print("Broadcasting collations...", end='')
-    num_collations = 20
-    bootnodes[0].broadcast_collation(0, num_collations, 1000000, 50)  # 1MB
-    print("done")
-    print("Waiting for messages broadcasted...", end='')
-    # TODO: maybe using something like `wait_until`, instead of a fixed sleeping time
-    #       This way, we don't need to measure the sleeping time in advance
-    print("done")
-
     bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
     print("Spinning up {} nodes...".format(num_normal_nodes), end='')
     nodes = make_local_nodes(num_bootnodes, num_bootnodes + num_normal_nodes, bootnodes_multiaddr)
@@ -107,7 +103,7 @@ def test_boot_nodes():
     time.sleep(3)
     print("done")
 
-    print("Cleaning up the nodes", end='')
+    print("Cleaning up the nodes...", end='')
     kill_nodes(bootnodes + nodes)
     print("done")
 

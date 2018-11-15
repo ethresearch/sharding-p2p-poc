@@ -166,13 +166,6 @@ class Node:
         )
         return res.stdout.rstrip()
 
-    def set_peer_id(self):
-        grep_res = self.grep_log('Node is listening')
-        match = re.search(r'peerID=([a-zA-Z0-9]+) ', grep_res)
-        if match is None:
-            raise ValueError("failed to grep the peer_id from docker logs")
-        self.peer_id = match[1]
-
     def wait_for_log(self, pattern, k_th):
         """Wait for the `k_th` log in the format of `pattern`
         """
@@ -190,6 +183,17 @@ class Node:
         )
         logs = res.stdout.rstrip()
         log = logs.split('\n')[k_th]
+        return log
+
+    def set_peer_id(self):
+        grep_res = self.wait_for_log('Node is listening', 0)
+        match = re.search(r'peerID=([a-zA-Z0-9]+) ', grep_res)
+        if match is None:
+            raise ValueError("failed to grep the peer_id from docker logs")
+        self.peer_id = match[1]
+
+    def get_log_time(self, pattern, k_th):
+        log = self.wait_for_log(pattern, k_th)
         time_str_iso8601 = log.split(' ')[0]
         # # get rid of the control elements
         # match = re.search(r'\x1b\[[0-9;]+[A-Za-z]([:\.0-9]+)', time_str)
@@ -222,7 +226,7 @@ def make_local_nodes(low, top, bootnodes=None):
         t.join()
     nodes = sorted(nodes, key=lambda node: node.seed)
 
-    sleep_time = 5 + (top - low)
+    sleep_time = 5
     time.sleep(sleep_time)
 
     threads = []
@@ -238,11 +242,12 @@ def make_local_nodes(low, top, bootnodes=None):
 def connect_barbell(nodes):
     threads = []
     for i in range(len(nodes) - 1):
-        t = threading.Thread(target=nodes[i].add_peer, args=(nodes[i + 1],))
-        t.start()
-        threads.append(t)
-    for t in threads:
-        t.join()
+        nodes[i].add_peer(nodes[i + 1])
+    #     t = threading.Thread(target=nodes[i].add_peer, args=(nodes[i + 1],))
+    #     t.start()
+    #     threads.append(t)
+    # for t in threads:
+    #     t.join()
 
 
 def connect_fully(nodes):
