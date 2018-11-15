@@ -34,9 +34,9 @@ type (
 )
 
 const (
-	VersionMajor = 0
-	VersionMinor = 0
-	VersionPatch = 0
+	VersionMajor                  = 0
+	VersionMinor                  = 0
+	VersionPatch                  = 0
 	numShards         ShardIDType = 100
 	defaultListenPort             = 10000
 	defaultRPCPort                = 13000
@@ -80,7 +80,7 @@ func main() {
 
 	cliArgs := flag.Args()
 
-	if len(cliArgs) > 0 && cliArgs[0] =="version"{
+	if len(cliArgs) > 0 && cliArgs[0] == "version" {
 		version := fmt.Sprintf("%d.%d.%d", VersionMajor, VersionMinor, VersionPatch)
 		fmt.Println(version)
 		return
