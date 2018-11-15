@@ -101,6 +101,10 @@ func doListTopicPeer(rpcArgs []string, rpcAddr string) {
 	callRPCListTopicPeer(rpcAddr, rpcArgs)
 }
 
+func doListShardPeer(rpcArgs []string, rpcAddr string) {
+	callRPCListShardPeer(rpcAddr, rpcArgs)
+}
+
 func doRemovePeer(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 1 {
 		logger.Fatal("Client: usage: removepeer shardID")
@@ -288,6 +292,45 @@ func callRPCListTopicPeer(rpcAddr string, topics []string) {
 	}
 	topicPeersString := marshalToJSONString(topicPeers)
 	fmt.Println(topicPeersString)
+}
+
+func callRPCListShardPeer(rpcAddr string, shards []string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+
+	topics := make([]string, len(shards))
+	for i := 0; i < len(shards); i++ {
+		shardID, err := strconv.ParseInt(shards[i], 10, 64)
+		if err != nil {
+			logger.Fatalf("Failed to convert shardID %v to int64, err: %v", shards[i], err)
+		}
+		topics[i] = getCollationsTopic(shardID)
+	}
+
+	listTopicPeerReq := &pbrpc.RPCListTopicPeerRequest{
+		Topics: topics,
+	}
+	logger.Debugf("rpcclient:ListTopicPeer: sending=%v", listTopicPeerReq)
+	res, err := client.ListTopicPeer(context.Background(), listTopicPeerReq)
+	if err != nil {
+		logger.Fatalf("Failed to call RPC ListTopicPeer at %v, err: %v", rpcAddr, err)
+	}
+	logger.Debugf("rpcclient:ListTopicPeer: result=%v", res)
+	shardPeers := make(map[string][]string)
+	for topic, peers := range res.TopicPeers {
+		shard := shardTopicToShardID(topic)
+		peerSlice := make([]string, 0)
+		if peers.Peers != nil {
+			peerSlice = peers.Peers
+		}
+		shardPeers[shard] = peerSlice
+	}
+	shardPeersString := marshalToJSONString(shardPeers)
+	fmt.Println(shardPeersString)
 }
 
 func callRPCRemovePeer(rpcAddr string, peerID peer.ID) {

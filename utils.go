@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	peer "github.com/libp2p/go-libp2p-peer"
 	"golang.org/x/crypto/sha3"
 
@@ -59,4 +61,9 @@ func pbPeersToPeerIDs(msg *pbmsg.Peers) ([]peer.ID, error) {
 
 func peerIDsToPBPeers(peerIDs []peer.ID) *pbmsg.Peers {
 	return &pbmsg.Peers{Peers: peerIDsToPeersString(peerIDs)}
+}
+
+func shardTopicToShardID(topic string) string {
+	end := len(collationTopicFmt) - 2
+	return strings.Replace(topic, collationTopicFmt[0:end], "", -1)
 }
