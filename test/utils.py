@@ -72,8 +72,8 @@ class Node:
         bootnodes_cmd = ""
         if bootnodes is not None:
             bootnodes_cmd = "-bootstrap -bootnodes={}".format(
-            ",".join(bootnodes),
-        )
+                ",".join(bootnodes),
+            )
         cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethresearch/sharding-p2p:dev sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={} {}\"".format(
             self.name,
             self.port,
@@ -106,7 +106,6 @@ class Node:
     def cli_safe(self, cmd):
         res = self.cli(cmd)
         if res.returncode != 0:
-            print(res)
             raise CLIFailure(
                 "exit_code={}, stdout={!r}, stderr={!r}".format(
                     res.returncode,
@@ -133,16 +132,16 @@ class Node:
         return self.cli_safe("listtopic {}".format(' '.join(topics)))
 
     def subscribe_shard(self, shard_ids):
-        return self.cli_safe("subshard {}".format(' '.join(map(str, shard_ids))))
+        self.cli_safe("subshard {}".format(' '.join(map(str, shard_ids))))
 
     def unsubscribe_shard(self, shard_ids):
-        return self.cli_safe("unsubshard {}".format(' '.join(map(str, shard_ids))))
+        self.cli_safe("unsubshard {}".format(' '.join(map(str, shard_ids))))
 
     def get_subscribed_shard(self):
         return self.cli_safe("getsubshard")
 
     def broadcast_collation(self, shard_id, num_collations, collation_size, collation_time):
-        return self.cli_safe("broadcastcollation {} {} {} {}".format(
+        self.cli_safe("broadcastcollation {} {} {} {}".format(
             shard_id,
             num_collations,
             collation_size,
@@ -150,7 +149,7 @@ class Node:
         ))
 
     def stop(self):
-        return self.cli_safe("stop")
+        self.cli_safe("stop")
 
     def grep_log(self, pattern):
         res = subprocess.run(
@@ -195,8 +194,6 @@ class Node:
     def get_log_time(self, pattern, k_th):
         log = self.wait_for_log(pattern, k_th)
         time_str_iso8601 = log.split(' ')[0]
-        # # get rid of the control elements
-        # match = re.search(r'\x1b\[[0-9;]+[A-Za-z]([:\.0-9]+)', time_str)
         return parser.parse(time_str_iso8601)
 
 
@@ -227,8 +224,7 @@ def make_local_nodes(low, top, bootnodes=None):
         t.join()
     nodes = sorted(nodes, key=lambda node: node.seed)
 
-    sleep_time = 5
-    time.sleep(sleep_time)
+    time.sleep(5)
 
     threads = []
     for node in nodes:
@@ -292,7 +288,6 @@ def make_peer_id_map(nodes):
 
 def get_actual_topology(nodes):
     map_peer_id_to_seed = make_peer_id_map(nodes)
-    print(map_peer_id_to_seed)
     topo = defaultdict(set)
     for node in nodes:
         peers = node.list_peer()
