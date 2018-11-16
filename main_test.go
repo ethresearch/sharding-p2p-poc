@@ -433,11 +433,11 @@ func TestListenShardConnectingPeers(t *testing.T) {
 
 	// 0 <-> 1 <-> 2
 	if err := nodes[0].ListenShard(ctx, 0); err != nil {
-		t.Errorf("Failed to listen to shard 0")
+		t.Errorf("Failed to listen to shard 0, err=%v", err)
 	}
 
 	if err := nodes[2].ListenShard(ctx, 42); err != nil {
-		t.Errorf("Failed to listen to shard 42")
+		t.Errorf("Failed to listen to shard 42, err=%v", err)
 	}
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
@@ -447,12 +447,15 @@ func TestListenShardConnectingPeers(t *testing.T) {
 		t.Error("Node 0 shouldn't have connection with node 2")
 	}
 
+	// test `connectShardNodes`
 	if err := nodes[0].ListenShard(ctx, 42); err != nil {
-		t.Errorf("Failed to listen to shard 42")
+		t.Errorf("Failed to listen to shard 42, err=%v", err)
 	}
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
-
+	if err := nodes[0].connectShardNodes(ctx, 42); err != nil {
+		t.Errorf("Failed to connect to shard Nodes, err=%v", err)
+	}
 	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
 	if len(connWithNode2) == 0 {
 		t.Error("Node 0 should have connected to node 2 after listening to shard 42")
