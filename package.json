@@ -9,20 +9,20 @@
   "gxDependencies": [
     {
       "author": "whyrusleeping",
-      "hash": "QmNmj2AeM46ZQqHARnWidb5qqHoZJFeYWzmG65jviJDRQY",
+      "hash": "QmVvV8JQmmqPCwXAaesWJPheUiEFQJ9HWRhWhuFuxVQxpR",
       "name": "go-libp2p",
-      "version": "6.0.15"
+      "version": "6.0.27"
     },
     {
-      "hash": "QmXKSnQHAihkcGgk8ZXz7FgZgHboXeRduuEz9FkAddJK6P",
+      "hash": "QmQsw6Nq2A345PqChdtbWVoYbSno7uqRDHwYmYpbPHmZNc",
       "name": "go-libp2p-kad-dht",
-      "version": "4.4.4"
+      "version": "4.4.16"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmUK4h113Hh7bR2gPpsMcbUEbbzc7hspocmPi91Bmi69nH",
+      "hash": "Qmc3BYVGtLs8y3p4uVpARWyo3Xk2oCBFF1AhYUVMPWgwUK",
       "name": "go-libp2p-floodsub",
-      "version": "0.9.31"
+      "version": "0.11.7"
     }
   ],
   "gxVersion": "0.12.1",

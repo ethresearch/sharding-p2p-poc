@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	pubsub "github.com/libp2p/go-floodsub"
 	host "github.com/libp2p/go-libp2p-host"
 	peer "github.com/libp2p/go-libp2p-peer"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
