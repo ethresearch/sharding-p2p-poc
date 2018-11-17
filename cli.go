@@ -12,6 +12,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+func doShowPID(rpcAddr string) {
+	callShowPID(rpcAddr)
+}
+
 func doAddPeer(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) != 3 {
 		logger.Fatal("Client: usage: addpeer ip port seed")
@@ -115,6 +119,22 @@ func doRemovePeer(rpcArgs []string, rpcAddr string) {
 		logger.Fatalf("Invalid peerID=%v, err: %v", peerIDString, err)
 	}
 	callRPCRemovePeer(rpcAddr, peerID)
+}
+
+func callShowPID(rpcAddr string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+	showPIDReq := &pbrpc.RPCShowPIDRequest{}
+	logger.Debugf("rpcclient:ShowPID: sending=%v", showPIDReq)
+	res, err := client.ShowPID(context.Background(), showPIDReq)
+	if err != nil {
+		logger.Fatalf("Failed to request PID from RPC server, err: %v", rpcAddr, err)
+	}
+	logger.Debugf("rpcclient:ShowPID: result=%v", res)
 }
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
