@@ -134,7 +134,8 @@ func callShowPID(rpcAddr string) {
 	if err != nil {
 		logger.Fatalf("Failed to request PID from RPC server, err: %v", rpcAddr, err)
 	}
-	logger.Debugf("rpcclient:ShowPID: result=%v", res)
+	peerIDStr := marshalToJSONString(res.PeerID)
+	fmt.Println(peerIDStr)
 }
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
