@@ -23,7 +23,7 @@ service Poc {
 message RPCShowPIDRequest {
 }
 message RPCShowPIDResponse {
-  string PID = 1;
+  string peerID = 1;
 }
 
 message RPCAddPeerRequest {

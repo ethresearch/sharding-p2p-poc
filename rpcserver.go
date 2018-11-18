@@ -67,7 +67,7 @@ func (s *server) ShowPID(
 
 	logger.Debugf("rpcserver:ShowPIDRequest: receive=%v", req)
 	res := &pbrpc.RPCShowPIDResponse{
-		PID: s.node.ID().Pretty(),
+		PeerID: s.node.ID().Pretty(),
 	}
 	logger.Debug("rpcserver:ShowPID: finished")
 	return res, nil
