@@ -54,6 +54,25 @@ func parseAddr(addrString string) (peer.ID, ma.Multiaddr, error) {
 	return peerid, targetAddr, nil
 }
 
+func (s *server) ShowPID(
+	ctx context.Context,
+	req *pbrpc.RPCShowPIDRequest) (*pbrpc.RPCShowPIDResponse, error) {
+	// Add span for ShowPID
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.ShowPID", s.serializedSpanCtx)
+	if err != nil {
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.ShowPID")
+	}
+	defer logger.Finish(spanctx)
+
+	logger.Debugf("rpcserver:ShowPIDRequest: receive=%v", req)
+	res := &pbrpc.RPCShowPIDResponse{
+		PeerID: s.node.ID().Pretty(),
+	}
+	logger.Debug("rpcserver:ShowPID: finished")
+	return res, nil
+}
+
 func (s *server) AddPeer(
 	ctx context.Context,
 	req *pbrpc.RPCAddPeerRequest) (*pbrpc.RPCPlainResponse, error) {

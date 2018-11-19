@@ -101,6 +101,8 @@ func runClient(rpcAddr string, cliArgs []string) {
 	rpcCmd := cliArgs[0]
 	rpcArgs := cliArgs[1:]
 	switch rpcCmd {
+	case "pid":
+		doShowPID(rpcAddr)
 	case "addpeer":
 		doAddPeer(rpcArgs, rpcAddr)
 	case "subshard":
@@ -207,15 +209,11 @@ func runServer(
 }
 
 func makeKey(seed int) (ic.PrivKey, peer.ID, error) {
-	// If the seed is zero, use real cryptographic randomness. Otherwise, use a
-	// deterministic randomness source to make generated keys stay the same
-	// across multiple runs
 	r := mrand.New(mrand.NewSource(int64(seed)))
-	// r := rand.Reader
 
 	// Generate a key pair for this host. We will use it at least
 	// to obtain a valid host ID.
-	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
+	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.ECDSA, 0, r)
 	if err != nil {
 		return nil, "", err
 	}

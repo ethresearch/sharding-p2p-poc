@@ -23,6 +23,12 @@ cli_prompt() {
     echo "$EXE_NAME -rpcport=$((RPCPORT+seed)) -client $params"
 }
 
+# show_pid {seed}
+show_pid() {
+    seed=$1
+    `cli_prompt $seed` pid
+}
+
 # add_peer {seed0} {seed1}
 add_peer() {
     seed0=$1
@@ -104,6 +110,11 @@ do
 done
 
 sleep 2
+
+for i in `seq 0 1`;
+do
+    show_pid $i
+done
 
 # peer 0 add peer 1
 add_peer 0 1

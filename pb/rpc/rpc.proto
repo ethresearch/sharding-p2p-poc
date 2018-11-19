@@ -5,6 +5,7 @@ package proto.rpc;
 import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 
 service Poc {
+  rpc ShowPID(RPCShowPIDRequest) returns (RPCShowPIDResponse) {}
   rpc AddPeer (RPCAddPeerRequest) returns (RPCPlainResponse) {}
   rpc SubscribeShard(RPCSubscribeShardRequest) returns (RPCPlainResponse) {}
   rpc UnsubscribeShard(RPCUnsubscribeShardRequest) returns (RPCPlainResponse) {}
@@ -19,35 +20,47 @@ service Poc {
 }
 
 // Request
+message RPCShowPIDRequest {
+}
+message RPCShowPIDResponse {
+  string peerID = 1;
+}
+
 message RPCAddPeerRequest {
   string ip = 1;
   int64 port = 2;
   int64 seed = 3;
 }
+
 message RPCSubscribeShardRequest {
   repeated int64 shardIDs = 1;
 }
+
 message RPCUnsubscribeShardRequest {
   repeated int64 shardIDs = 1;
 }
+
 message RPCGetSubscribedShardRequest {
 }
+message RPCGetSubscribedShardResponse {
+  repeated int64 shardIDs = 2;
+}
+
 message RPCBroadcastCollationRequest {
   int64 shardID = 1;
   int64 number = 2;
   int64 size = 3;
   int64 period = 4;
 }
+
 message RPCSendCollationRequest {
   proto.message.Collation collation = 1;
 }
+
 message RPCStopServerRequest {
 }
 
 message RPCPlainResponse {
-}
-message RPCGetSubscribedShardResponse {
-  repeated int64 shardIDs = 2;
 }
 
 message SendRequest {
