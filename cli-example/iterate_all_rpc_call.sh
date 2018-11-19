@@ -97,6 +97,13 @@ remove_peer() {
     `cli_prompt $seed` removepeer $params
 }
 
+# bootstrap {seed} {start/stop} {bootnodesStr}
+bootstrap() {
+    p=$@
+    seed=$1
+    params=${@:2}
+    `cli_prompt $seed` bootstrap $params
+}
 
 
 go build
@@ -149,6 +156,9 @@ list_peer 0
 list_topic_peer 0
 
 remove_peer 0 QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX
+
+bootstrap 0 start /ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX
+bootstrap 0 stop
 
 for i in `seq 0 1`;
 do

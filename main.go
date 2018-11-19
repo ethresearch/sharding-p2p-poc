@@ -123,6 +123,8 @@ func runClient(rpcAddr string, cliArgs []string) {
 		doListShardPeer(rpcArgs, rpcAddr)
 	case "removepeer":
 		doRemovePeer(rpcArgs, rpcAddr)
+	case "bootstrap":
+		doBootstrap(rpcArgs, rpcAddr)
 	default:
 		logger.Fatalf("Client: Invalid cmd '%v'", rpcCmd)
 	}
