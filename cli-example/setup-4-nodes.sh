@@ -4,7 +4,6 @@
 COMMAND_SCRIPT="$(dirname $0)/common.sh"
 . $COMMAND_SCRIPT
 
-# make partial-gx-rw
 go build
 
 killall $EXE_NAME
@@ -20,6 +19,3 @@ add_peer 0 1
 add_peer 1 2
 
 spinup_node 3 -bootstrap -bootnodes=$(show_multiaddr 0),$(show_multiaddr 1)
-
-# make gx-uw
-
