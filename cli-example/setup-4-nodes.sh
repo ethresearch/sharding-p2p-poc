@@ -1,33 +1,8 @@
 #!/bin/bash
 # This script is expected to be executed in the root dir of the repo
 
-EXE_NAME="./sharding-p2p-poc"
-IP=127.0.0.1
-PORT=10000
-RPCPORT=13000
-
-# spinup_node {seed} {other_params}
-spinup_node() {
-    port=$((PORT+$1))
-    rpcport=$((RPCPORT+$1))
-    p=$@
-    params=${@:2}
-    $EXE_NAME -seed=$1 -port=$port -rpcport=$rpcport $params &
-}
-
-cli_prompt() {
-    p=$@
-    seed=$1
-    params=${@:2}
-    echo "$EXE_NAME -rpcport=$((RPCPORT+seed)) -client $params"
-}
-
-# add_peer {seed0} {seed1}
-add_peer() {
-    seed0=$1
-    seed1=$2
-    `cli_prompt $seed0` addpeer $IP $((PORT+seed1)) $seed1
-}
+COMMAND_SCRIPT="$(dirname $0)/common.sh"
+. $COMMAND_SCRIPT
 
 # make partial-gx-rw
 go build
@@ -44,10 +19,7 @@ sleep 2
 add_peer 0 1
 add_peer 1 2
 
-multiaddr0=/ip4/127.0.0.1/tcp/10000/ipfs/QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7
-multiaddr1=/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX
-
-spinup_node 3 -bootstrap -bootnodes=$multiaddr0,$multiaddr1
+spinup_node 3 -bootstrap -bootnodes=$(show_multiaddr 0),$(show_multiaddr 1)
 
 # make gx-uw
 
