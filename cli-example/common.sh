@@ -31,7 +31,7 @@ cli_prompt() {
     p=$@
     seed=$1
     params=${@:2}
-    echo "$EXE_NAME -rpcport=$((RPCPORT+seed)) -client $params"
+    echo "$EXE_NAME -rpcport=$(show_rpcport $seed) -client $params"
 }
 
 # show_pid {seed}
@@ -54,7 +54,7 @@ show_multiaddr() {
 add_peer() {
     seed0=$1
     seed1=$2
-    `cli_prompt $seed0` addpeer $IP $((PORT+seed1)) $seed1
+    `cli_prompt $seed0` addpeer $IP $(show_port $seed1) $seed1
 }
 
 # subscribe_shard {seed} {shard_id} {shard_id} ...
