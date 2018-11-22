@@ -70,7 +70,7 @@ func main() {
 	)
 	doBootstrapping := flag.Bool("bootstrap", false, "whether to do bootstrapping or not")
 	bootnodesStr := flag.String("bootnodes", "", "multiaddresses of the bootnodes")
-	verbose := flag.Bool("verbose", false, "verbose output; if true, log level is set to DEBUG, ERROR otherwise")
+	verbose := flag.Bool("verbose", false, "verbose output, i.e., log level is set to DEBUG, otherwise it's set to ERROR")
 	isClient := flag.Bool("client", false, "is RPC client or server")
 	flag.Parse()
 
