@@ -13,7 +13,7 @@
       - "{{ item }}:10000" # listen port
       - "{{ 100 + item|int }}:13000" # RPC port
     command: [
-      "sh -c \"./sharding-p2p-poc -loglevel=DEBUG -ip=0.0.0.0 -seed={{ item }}\""
+      "sh -c \"./sharding-p2p-poc -verbose -ip=0.0.0.0 -seed={{ item }}\""
     ]
     env:
       JAEGER_AGENT_HOST: "{{hostvars[inventory_hostname]['groups']['log_collector'][0].split('@')[1]}}"
