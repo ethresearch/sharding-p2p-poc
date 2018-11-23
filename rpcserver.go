@@ -475,7 +475,6 @@ func (s *server) Bootstrap(
 }
 
 func runRPCServer(n *Node, addr string) {
-	// logging.SetLogLevel("sharding-p2p", "DEBUG")
 	// Start a new trace
 	ctx := context.Background()
 	ctx = logger.Start(ctx, "RPCServer")
