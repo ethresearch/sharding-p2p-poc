@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -84,7 +85,7 @@ func (s *server) AddPeer(
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:AddPeer: receive=%v", req)
+	logger.Debugf("rpcserver:AddPeer: ip=%v, port=%v, seed=%v", req.Ip, req.Port, req.Seed)
 	_, targetPID, err := makeKey(int(req.Seed))
 	mAddr := fmt.Sprintf(
 		"/ip4/%s/tcp/%d/ipfs/%s",
@@ -133,7 +134,7 @@ func (s *server) SubscribeShard(
 	defer logger.Finish(spanctx)
 
 	subscribedShardID := make([]int64, 0)
-	logger.Debugf("rpcserver:SubscribeShardRequest: receive=%v", req)
+	logger.Debugf("rpcserver:SubscribeShard: shardIDs=%v", req.ShardIDs)
 	for _, shardID := range req.ShardIDs {
 		if err := s.node.ListenShard(spanctx, shardID); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to listen to shard %v", shardID))
@@ -161,7 +162,7 @@ func (s *server) UnsubscribeShard(
 	defer logger.Finish(spanctx)
 
 	unsubscribedShardID := make([]int64, 0)
-	logger.Debugf("rpcserver:UnsubscribeShardRequest: receive=%v", req)
+	logger.Debugf("rpcserver:UnsubscribeShard: shardIDs=%v", req.ShardIDs)
 	for _, shardID := range req.ShardIDs {
 		if err := s.node.UnlistenShard(spanctx, shardID); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to unlisten shard %v", shardID))
@@ -188,7 +189,7 @@ func (s *server) GetSubscribedShard(
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:GetSubscribedShard: receive=%v", req)
+	logger.Debug("rpcserver:GetSubscribedShard")
 	shardIDs := s.node.GetListeningShards()
 	res := &pbrpc.RPCGetSubscribedShardResponse{
 		ShardIDs: shardIDs,
@@ -265,8 +266,12 @@ func (s *server) SendCollation(
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:SendCollationRequest: receive=%v", req)
 	collation := req.Collation
+	logger.Debugf(
+		"rpcserver:SendCollationRequest: shardID=%v, period=%v",
+		collation.ShardID,
+		collation.Period,
+	)
 	err = s.node.broadcastCollationMessage(collation)
 	if err != nil {
 		errMsg := fmt.Errorf("Failed to broadcast collation message, err: %v", err)
@@ -293,7 +298,7 @@ func (s *server) StopServer(
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:StopServer: receive=%v", req)
+	logger.Debug("rpcserver:StopServer")
 	go func() {
 		time.Sleep(time.Second * 1)
 		logger.Info("Closing RPC server by rpc call...")
@@ -314,7 +319,7 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:Send: receive=%v", req)
+	logger.Debugf("rpcserver:Send: msgType=%v, data=%v", req.MsgType, req.Data)
 	if req.PeerID == "" {
 		typedMessage := &pbmsg.MessageWithType{
 			MsgType: req.MsgType,
@@ -363,7 +368,7 @@ func (s *server) Send(ctx context.Context, req *pbrpc.SendRequest) (*pbrpc.SendR
 func (s *server) ListPeer(
 	ctx context.Context,
 	req *pbrpc.RPCListPeerRequest) (*pbrpc.RPCListPeerResponse, error) {
-	logger.Debugf("rpcserver:ListPeer: receive=%v", req)
+	logger.Debug("rpcserver:ListPeer")
 	peerIDs := s.node.Network().Peers()
 	return &pbrpc.RPCListPeerResponse{
 		Peers: peerIDsToPeersString(peerIDs),
@@ -373,7 +378,7 @@ func (s *server) ListPeer(
 func (s *server) ListTopicPeer(
 	ctx context.Context,
 	req *pbrpc.RPCListTopicPeerRequest) (*pbrpc.RPCListTopicPeerResponse, error) {
-	logger.Debugf("rpcserver:ListTopicPeer: receive=%v", req)
+	logger.Debugf("rpcserver:ListTopicPeer: topics=%v", req.Topics)
 	var topics []string
 	if len(req.Topics) == 0 {
 		topics = s.node.pubsubService.GetTopics()
@@ -401,7 +406,7 @@ func (s *server) RemovePeer(
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:RemovePeer: receive=%v", req)
+	logger.Debugf("rpcserver:RemovePeer: peerID=%v", req.PeerID)
 
 	peerID, err := stringToPeerID(req.PeerID)
 	if err != nil {
@@ -420,6 +425,52 @@ func (s *server) RemovePeer(
 
 	// TODO: consider the record in Peerstore
 	logger.Debug("rpcserver:RemovePeer: finished")
+	return &pbrpc.RPCPlainResponse{}, nil
+}
+
+func (s *server) Bootstrap(
+	ctx context.Context,
+	req *pbrpc.RPCBootstrapRequest) (*pbrpc.RPCPlainResponse, error) {
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.Bootstrap", s.serializedSpanCtx)
+	if err != nil {
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.Bootstrap")
+	}
+	defer logger.Finish(spanctx)
+
+	logger.Debugf("rpcserver:Bootstrap: flag=%v, bootnodes=%v", req.Flag, req.BootnodesStr)
+	if req.Flag {
+		var bootnodes = []pstore.PeerInfo{}
+		bootnodes, err = convertPeers(strings.Split(req.BootnodesStr, ","))
+		if err != nil {
+			errMsg := fmt.Errorf(
+				"failed to convert bootnode address: %v, to peer info format, err: %v",
+				req.BootnodesStr,
+				err,
+			)
+			logger.FinishWithErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
+		}
+		err = s.node.StartBootstrapping(s.node.ctx, bootnodes)
+		if err != nil {
+			errMsg := fmt.Errorf("failed to start bootstrapping: %v", err)
+			logger.FinishWithErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
+		}
+		logger.Debug("rpcserver:Bootstrap: started bootstrapping")
+	} else {
+		err = s.node.StopBootstrapping()
+		if err != nil {
+			errMsg := fmt.Errorf("failed to stop bootstrapping: %v", err)
+			logger.FinishWithErr(spanctx, errMsg)
+			logger.Error(errMsg.Error())
+			return nil, errMsg
+		}
+		logger.Debug("rpcserver:Bootstrap: stopped bootstrapping")
+	}
+	logger.Debug("rpcserver:Bootstrap: finished")
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 

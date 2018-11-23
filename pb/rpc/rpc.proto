@@ -17,6 +17,7 @@ service Poc {
   rpc ListPeer(RPCListPeerRequest) returns (RPCListPeerResponse) {}
   rpc ListTopicPeer(RPCListTopicPeerRequest) returns (RPCListTopicPeerResponse) {}
   rpc RemovePeer(RPCRemovePeerRequest) returns (RPCPlainResponse) {}
+  rpc Bootstrap(RPCBootstrapRequest) returns (RPCPlainResponse) {}
 }
 
 // Request
@@ -89,4 +90,9 @@ message RPCListTopicPeerResponse {
 
 message RPCRemovePeerRequest {
   string peerID = 1;
+}
+
+message RPCBootstrapRequest {
+  bool flag = 1;
+  string bootnodesStr = 2;
 }

@@ -121,6 +121,26 @@ func doRemovePeer(rpcArgs []string, rpcAddr string) {
 	callRPCRemovePeer(rpcAddr, peerID)
 }
 
+func doBootstrap(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 || len(rpcArgs) > 2 {
+		logger.Fatal("Client: usage: bootstrap start bootnodesStr")
+	}
+	flagStr := rpcArgs[0]
+	var flag bool
+	var bootnodesStr string
+	if flagStr == "start" {
+		flag = true
+		if len(rpcArgs) == 2 {
+			bootnodesStr = rpcArgs[1]
+		}
+	} else if flagStr == "stop" {
+		flag = false
+	} else {
+		logger.Fatalf("Invalid flag: %v", flagStr)
+	}
+	callRPCBootstrap(rpcAddr, flag, bootnodesStr)
+}
+
 func callShowPID(rpcAddr string) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
@@ -364,10 +384,28 @@ func callRPCRemovePeer(rpcAddr string, peerID peer.ID) {
 	removePeerReq := &pbrpc.RPCRemovePeerRequest{
 		PeerID: peerIDToString(peerID),
 	}
-	logger.Debugf("rpcclient:removePeerReq: sending=%v", removePeerReq)
+	logger.Debugf("rpcclient:RemovePeer: sending=%v", removePeerReq)
 	_, err = client.RemovePeer(context.Background(), removePeerReq)
 	if err != nil {
-		logger.Fatalf("Failed to call RPC listpeer at %v, err: %v", rpcAddr, err)
+		logger.Fatalf("Failed to call RPC removepeer at %v, err: %v", rpcAddr, err)
+	}
+}
+
+func callRPCBootstrap(rpcAddr string, flag bool, bootnodesStr string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+	req := &pbrpc.RPCBootstrapRequest{
+		Flag:         flag,
+		BootnodesStr: bootnodesStr,
+	}
+	logger.Debugf("rpcclient:Bootstrap: sending=%v", req)
+	_, err = client.Bootstrap(context.Background(), req)
+	if err != nil {
+		logger.Fatalf("Failed to call RPC bootstrap at %v, err: %v", rpcAddr, err)
 	}
 }
 
