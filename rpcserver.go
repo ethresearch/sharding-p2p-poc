@@ -431,7 +431,6 @@ func (s *server) RemovePeer(
 func (s *server) Bootstrap(
 	ctx context.Context,
 	req *pbrpc.RPCBootstrapRequest) (*pbrpc.RPCPlainResponse, error) {
-	// Add span for RemovePeer
 	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.Bootstrap", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
