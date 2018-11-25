@@ -52,6 +52,8 @@ Usage of ./sharding-p2p-poc:
     	rpc port listened by the rpc server (default 13000)
   -seed int
     	set random seed for id generation
+  -verbose
+        set the log level to DEBUG, i.e., print all messages
 ```
 **Note**: `-bootstrap` controls whether to spin up a bootstrap routine, which periodically queries its peers for new peers. There will be no effect if you feed `-bootnodes` without specifying the flag `-bootstrap`.
 ### Example

@@ -83,7 +83,7 @@ def to_addpeer_commands(topology):
             "host": item["peer"].host,
             "command": (
                 f"docker exec -t {item['peer'].container_name} sh -c "
-                f"'./sharding-p2p-poc -loglevel=DEBUG "
+                f"'./sharding-p2p-poc -verbose "
                 f"-client addpeer {other.public_ip} {other.listen_port} {other.seed}'"
             )
         }
@@ -100,7 +100,7 @@ def to_subshard_commands(topology):
             "host": item["peer"].host,
             "command": (
                 f"docker exec -t {item['peer'].container_name} sh -c "
-                f"'./sharding-p2p-poc -loglevel=DEBUG "
+                f"'./sharding-p2p-poc -verbose "
                 f"-client subshard {item['shard_id']}'")
         }
         for item in topology
@@ -114,7 +114,7 @@ def to_broadcastcollation_commands(topology):
             "host": item["peer"].host,
             "command": (
                 f"docker exec -t {item['peer'].container_name} sh -c "
-                f"'./sharding-p2p-poc -loglevel=DEBUG "
+                f"'./sharding-p2p-poc -verbose "
                 f"-client broadcastcollation {item['shard_id']} {NUM_COLLATIONS} {COLLATION_SIZE} {FREQUENCY}'"
             )
         }
