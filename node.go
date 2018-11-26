@@ -49,7 +49,10 @@ func NewNode(ctx context.Context, h host.Host, dht *kaddht.IpfsDHT, eventNotifie
 func (n *Node) GetIP4TCPAddr() string {
 	hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", n.ID().Pretty()))
 	if err != nil {
-		logger.Errorf("Failed to convert to multiaddr format, err: %v", err)
+		logger.Errorf(
+			"Failed to convert %s to multiaddr format, err: %v",
+			fmt.Sprintf("/ipfs/%s", n.ID().Pretty()),
+			err)
 	}
 	for _, addr := range n.Addrs() {
 		if match, _ := regexp.MatchString("^/ip4/.+/tcp/.+$", addr.String()); match {

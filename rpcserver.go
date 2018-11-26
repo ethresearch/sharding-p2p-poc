@@ -87,12 +87,6 @@ func (s *server) AddPeer(
 
 	logger.Debugf("rpcserver:AddPeer: ip=%v, port=%v, seed=%v", req.Ip, req.Port, req.Seed)
 	_, targetPID, err := makeKey(int(req.Seed))
-	mAddr := fmt.Sprintf(
-		"/ip4/%s/tcp/%d/ipfs/%s",
-		req.Ip,
-		req.Port,
-		targetPID.Pretty(),
-	)
 	if err != nil {
 		errMsg := fmt.Errorf("Failed to generate peer key/ID with seed: %v, err: %v", req.Seed, err)
 		logger.FinishWithErr(spanctx, errMsg)
@@ -100,9 +94,13 @@ func (s *server) AddPeer(
 		return nil, errMsg
 	}
 
-	peerid, targetAddr, err := parseAddr(mAddr)
+	peerid := targetPID
+	targetAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", req.Ip, req.Port))
 	if err != nil {
-		errMsg := fmt.Errorf("Failed to parse peer address: %s, err: %v", mAddr, err)
+		errMsg := fmt.Errorf(
+			"Failed to convert %s to multiaddr format, err: %v",
+			fmt.Sprintf("/ip4/%s/tcp/%d", req.Ip, req.Port),
+			err)
 		logger.FinishWithErr(spanctx, errMsg)
 		logger.Error(errMsg.Error())
 		return nil, errMsg
