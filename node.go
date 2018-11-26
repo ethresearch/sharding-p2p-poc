@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	host "github.com/libp2p/go-libp2p-host"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
@@ -45,14 +46,18 @@ func NewNode(ctx context.Context, h host.Host, dht *kaddht.IpfsDHT, eventNotifie
 	return node
 }
 
-func (n *Node) GetFullAddr() string {
-	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", n.ID().Pretty()))
-
-	// Now we can build a full multiaddress to reach this host
-	// by encapsulating both addresses:
-	addr := n.Addrs()[0]
-	fullAddr := addr.Encapsulate(hostAddr)
-	return fullAddr.String()
+func (n *Node) GetIP4TCPAddr() string {
+	hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", n.ID().Pretty()))
+	if err != nil {
+		logger.Errorf("Failed to convert to multiaddr format, err: %v", err)
+	}
+	for _, addr := range n.Addrs() {
+		if match, _ := regexp.MatchString("^/ip4/.+/tcp/.+$", addr.String()); match {
+			fullAddr := addr.Encapsulate(hostAddr)
+			return fullAddr.String()
+		}
+	}
+	return ""
 }
 
 // TODO: should be changed to `Knows` and `HasConnections`

@@ -60,9 +60,9 @@ func makeUnbootstrappedNode(t *testing.T, ctx context.Context, number int) *Node
 }
 
 func connect(t *testing.T, ctx context.Context, a, b *Node) {
-	peerid, targetAddr, err := parseAddr(b.GetFullAddr())
+	peerid, targetAddr, err := parseAddr(b.GetIP4TCPAddr())
 	if err != nil {
-		t.Errorf("Failed to parse peer address: %s, err: %v", b.GetFullAddr(), err)
+		t.Errorf("Failed to parse peer address: %s, err: %v", b.GetIP4TCPAddr(), err)
 	}
 	a.Peerstore().AddAddr(peerid, targetAddr, pstore.PermanentAddrTTL)
 
