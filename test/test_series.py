@@ -116,6 +116,33 @@ def test_joining_through_bootnodes():
     print("done")
 
 
+def test_issues():
+    num_bootnodes = 1
+    num_normal_nodes = 5
+    print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
+    bootnodes = make_local_nodes(0, num_bootnodes)
+    print("done")
+    bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
+    print("Spinning up {} nodes...".format(num_normal_nodes), end='')
+    nodes = make_local_nodes(num_bootnodes, num_bootnodes + num_normal_nodes, bootnodes_multiaddr)
+    print("done")
+
+    print("Sleeping for seconds...", end='')
+    time.sleep(3)
+    print("done")
+
+    for node in nodes:
+        node.subscribe_shard([1])
+    for node in nodes:
+        peers = node.list_peer()
+        print(f"{node}: peers={peers}")
+        topic_peers = node.list_topic_peer([])
+        print(f"{node}: topic_peers={topic_peers}")
+
+    kill_nodes(bootnodes + nodes)
+
+
 if __name__ == "__main__":
-    test_time_broadcasting_data_single_shard()
-    test_joining_through_bootnodes()
+    # test_time_broadcasting_data_single_shard()
+    # test_joining_through_bootnodes()
+    test_issues()

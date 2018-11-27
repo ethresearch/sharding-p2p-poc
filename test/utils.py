@@ -83,8 +83,7 @@ class Node:
         )
         subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, check=True)
 
-    def cli(self, cmd, **kwargs):
-        cmd_list = cmd.split(' ')
+    def cli(self, cmd_list, **kwargs):
         cmd_quoted_param_list = ["'{}'".format(i) for i in cmd_list]
         cmd_quoted_param_str = " ".join(cmd_quoted_param_list)
         return subprocess.run(
@@ -123,36 +122,51 @@ class Node:
         return self.cli_safe("identify")
 
     def add_peer(self, node):
-        self.cli_safe("addpeer {} {} {}".format(node.ip, node.port, node.seed))
+        self.cli_safe([
+            "addpeer",
+            node.ip,
+            node.port,
+            node.seed,
+        ])
 
     def remove_peer(self, peer_id):
-        self.cli_safe("removepeer {}".format(peer_id))
+        self.cli_safe([
+            "removepeer",
+            peer_id,
+        ])
 
     def list_peer(self):
-        return self.cli_safe("listpeer")
+        return self.cli_safe(["listpeer"])
 
-    def list_topic_peer(self, topics):
-        return self.cli_safe("listtopic {}".format(' '.join(topics)))
+    def list_topic_peer(self, topics=[]):
+        return self.cli_safe(["listtopicpeer"] + topics)
 
     def subscribe_shard(self, shard_ids):
-        self.cli_safe("subshard {}".format(' '.join(map(str, shard_ids))))
+        self.cli_safe(["subshard"] + shard_ids)
 
     def unsubscribe_shard(self, shard_ids):
-        self.cli_safe("unsubshard {}".format(' '.join(map(str, shard_ids))))
+        self.cli_safe(["unsubshard"] + shard_ids)
 
     def get_subscribed_shard(self):
-        return self.cli_safe("getsubshard")
+        return self.cli_safe(["getsubshard"])
 
     def broadcast_collation(self, shard_id, num_collations, collation_size, collation_time):
-        self.cli_safe("broadcastcollation {} {} {} {}".format(
+        self.cli_safe([
+            "broadcastcollation",
             shard_id,
             num_collations,
             collation_size,
             collation_time,
-        ))
+        ])
+
+    def bootstrap(self, switch):
+        self.cli_safe([
+            "bootstrap",
+            "start" if switch else "stop",
+        ])
 
     def stop(self):
-        self.cli_safe("stop")
+        self.cli_safe(["stop"])
 
     def grep_log(self, pattern):
         res = subprocess.run(
