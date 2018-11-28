@@ -1,6 +1,6 @@
 # sharding-p2p-poc
 
-[![Build Status](https://travis-ci.org/ethresearch/sharding-p2p-poc.svg?branch=master)](https://travis-ci.org/ethresearch/sharding-p2p-poc) [![](https://img.shields.io/badge/gitter-sharding--p2p--poc-ed1965.svg)](https://gitter.im/ethresearch/sharding-p2p-poc)
+[![Build Status](https://travis-ci.org/ethresearch/sharding-p2p-poc.svg?branch=master)](https://travis-ci.org/ethresearch/sharding-p2p-poc) [![](https://img.shields.io/badge/gitter-sharding--p2p--poc-ed1965.svg)](https://gitter.im/sharding-p2p-testing/Lobby)
 
 > This is the poc of ethereum sharding p2p layer with pubsub in libp2p, based on the idea from the [slide](
 https://docs.google.com/presentation/d/11a0jibNz0fyUnsWt9fa2MmghHANdHAAABa0TV7EieHs/edit?usp=sharing).
