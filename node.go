@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"regexp"
 
 	host "github.com/libp2p/go-libp2p-host"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	ma "github.com/multiformats/go-multiaddr"
 )
 
 type Node struct {
@@ -44,23 +41,6 @@ func NewNode(ctx context.Context, h host.Host, dht *kaddht.IpfsDHT, eventNotifie
 	node.ShardManager = NewShardManager(ctx, node, pubsubService, eventNotifier, node.discovery, shardPrefTable)
 
 	return node
-}
-
-func (n *Node) GetIP4TCPAddr() string {
-	hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", n.ID().Pretty()))
-	if err != nil {
-		logger.Errorf(
-			"Failed to convert %s to multiaddr format, err: %v",
-			fmt.Sprintf("/ipfs/%s", n.ID().Pretty()),
-			err)
-	}
-	for _, addr := range n.Addrs() {
-		if match, _ := regexp.MatchString("^/ip4/.+/tcp/.+$", addr.String()); match {
-			fullAddr := addr.Encapsulate(hostAddr)
-			return fullAddr.String()
-		}
-	}
-	return ""
 }
 
 // TODO: should be changed to `Knows` and `HasConnections`
