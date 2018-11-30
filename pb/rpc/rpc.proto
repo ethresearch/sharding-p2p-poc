@@ -25,6 +25,7 @@ message RPCIdentifyRequest {
 }
 message RPCIdentifyResponse {
   string peerID = 1;
+  repeated string multiAddrs = 2;
 }
 
 message RPCAddPeerRequest {
