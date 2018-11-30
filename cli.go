@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func doShowPID(rpcAddr string) {
-	callShowPID(rpcAddr)
+func doIdentify(rpcAddr string) {
+	callIdentify(rpcAddr)
 }
 
 func doAddPeer(rpcArgs []string, rpcAddr string) {
@@ -141,16 +141,16 @@ func doBootstrap(rpcArgs []string, rpcAddr string) {
 	callRPCBootstrap(rpcAddr, flag, bootnodesStr)
 }
 
-func callShowPID(rpcAddr string) {
+func callIdentify(rpcAddr string) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
 		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	showPIDReq := &pbrpc.RPCShowPIDRequest{}
-	logger.Debugf("rpcclient:ShowPID: sending=%v", showPIDReq)
-	res, err := client.ShowPID(context.Background(), showPIDReq)
+	IdentifyReq := &pbrpc.RPCIdentifyRequest{}
+	logger.Debugf("rpcclient:Identify: sending=%v", IdentifyReq)
+	res, err := client.Identify(context.Background(), IdentifyReq)
 	if err != nil {
 		logger.Fatalf("Failed to request PID from RPC server, err: %v", rpcAddr, err)
 	}

@@ -5,7 +5,7 @@ package proto.rpc;
 import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 
 service Poc {
-  rpc ShowPID(RPCShowPIDRequest) returns (RPCShowPIDResponse) {}
+  rpc Identify(RPCIdentifyRequest) returns (RPCIdentifyResponse) {}
   rpc AddPeer (RPCAddPeerRequest) returns (RPCPlainResponse) {}
   rpc SubscribeShard(RPCSubscribeShardRequest) returns (RPCPlainResponse) {}
   rpc UnsubscribeShard(RPCUnsubscribeShardRequest) returns (RPCPlainResponse) {}
@@ -21,9 +21,9 @@ service Poc {
 }
 
 // Request
-message RPCShowPIDRequest {
+message RPCIdentifyRequest {
 }
-message RPCShowPIDResponse {
+message RPCIdentifyResponse {
   string peerID = 1;
 }
 

@@ -109,7 +109,7 @@ func runClient(rpcAddr string, cliArgs []string) {
 	rpcArgs := cliArgs[1:]
 	switch rpcCmd {
 	case "pid":
-		doShowPID(rpcAddr)
+		doIdentify(rpcAddr)
 	case "addpeer":
 		doAddPeer(rpcArgs, rpcAddr)
 	case "subshard":
