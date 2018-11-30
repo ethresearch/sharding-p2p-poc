@@ -67,8 +67,14 @@ func (s *server) Identify(
 	defer logger.Finish(spanctx)
 
 	logger.Debugf("rpcserver:IdentifyRequest: receive=%v", req)
+	addrs := s.node.Addrs()
+	saddrs := make([]string, len(addrs))
+	for i, addr := range addrs {
+		saddrs[i] = addr.String()
+	}
 	res := &pbrpc.RPCIdentifyResponse{
-		PeerID: s.node.ID().Pretty(),
+		PeerID:     s.node.ID().Pretty(),
+		MultiAddrs: saddrs,
 	}
 	logger.Debug("rpcserver:Identify: finished")
 	return res, nil

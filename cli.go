@@ -148,14 +148,13 @@ func callIdentify(rpcAddr string) {
 	}
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
-	IdentifyReq := &pbrpc.RPCIdentifyRequest{}
-	logger.Debugf("rpcclient:Identify: sending=%v", IdentifyReq)
-	res, err := client.Identify(context.Background(), IdentifyReq)
+	identifyReq := &pbrpc.RPCIdentifyRequest{}
+	logger.Debugf("rpcclient:Identify: sending=%v", identifyReq)
+	res, err := client.Identify(context.Background(), identifyReq)
 	if err != nil {
-		logger.Fatalf("Failed to request PID from RPC server, err: %v", rpcAddr, err)
+		logger.Fatalf("Failed to request identification from RPC server at %v, err: %v", rpcAddr, err)
 	}
-	peerIDStr := marshalToJSONString(res.PeerID)
-	fmt.Println(peerIDStr)
+	fmt.Println(res.PeerID, res.GetMultiAddrs())
 }
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
