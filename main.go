@@ -251,7 +251,6 @@ func makeNode(
 		ctx,
 		libp2p.Identity(priv),
 		libp2p.ListenAddrStrings(listenAddrString),
-		libp2p.DisableRelay(),
 	)
 	if err != nil {
 		return nil, err
