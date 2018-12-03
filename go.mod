@@ -1,17 +1,13 @@
 module github.com/ethresearch/sharding-p2p-poc
 
 require (
-	cloud.google.com/go v0.33.1 // indirect
-	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/btcsuite/btcd v0.0.0-20181130015935-7d2daa5bfef2 // indirect
-	github.com/btcsuite/goleveldb v1.0.0 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-semver v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fd/go-nat v1.0.0 // indirect
 	github.com/go-check/check v0.0.0-20180628173108-788fd7840127 // indirect
 	github.com/gogo/protobuf v1.1.1 // indirect
-	github.com/golang/lint v0.0.0-20181026193005-c67002cb31c3 // indirect
 	github.com/golang/protobuf v1.2.0
 	github.com/google/uuid v1.1.0 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
@@ -32,10 +28,7 @@ require (
 	github.com/jbenet/go-randbuf v0.0.0-20160322125720-674640a50e6a // indirect
 	github.com/jbenet/go-temp-err-catcher v0.0.0-20150120210811-aac704a3f4f2 // indirect
 	github.com/jbenet/goprocess v0.0.0-20160826012719-b497e2f366b8 // indirect
-	github.com/jessevdk/go-flags v1.4.0 // indirect
-	github.com/kkdai/bstream v0.0.0-20181106074824-b3251f7901ec // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/kr/pty v1.1.3 // indirect
 	github.com/libp2p/go-addr-util v2.0.7+incompatible // indirect
 	github.com/libp2p/go-buffer-pool v0.1.1 // indirect
 	github.com/libp2p/go-conn-security v0.1.15 // indirect
@@ -110,16 +103,11 @@ require (
 	github.com/whyrusleeping/yamux v1.1.2 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
-	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3 // indirect
 	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc
-	golang.org/x/oauth2 v0.0.0-20181128211412-28207608b838 // indirect
 	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f // indirect
 	golang.org/x/sys v0.0.0-20181128092732-4ed8d59d0b35 // indirect
-	golang.org/x/tools v0.0.0-20181201035826-d0ca3933b724 // indirect
-	google.golang.org/appengine v1.3.0 // indirect
 	google.golang.org/genproto v0.0.0-20181202183823-bd91e49a0898 // indirect
 	google.golang.org/grpc v1.16.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
-	honnef.co/go/tools v0.0.0-20180920025451-e3ad64cb4ed3 // indirect
 )
