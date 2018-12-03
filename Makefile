@@ -10,30 +10,8 @@ deps: gx
 update-go-mod:
 	export GO111MODULE=on && go mod download && go mod tidy
 
-build-prod:
-	docker build -f docker/prod.Dockerfile -t ethresearch/sharding-p2p:latest .
-
-build-dev:
-	docker build -f docker/dev.Dockerfile -t ethresearch/sharding-p2p:dev .
-
-run-dev:
-	docker run -it --rm -v $(PWD):/go/src/github.com/ethresearch/sharding-p2p-poc ethresearch/sharding-p2p:dev sh -c "go build -v -o main ."
-
-test-dev: partial-gx-rw
-	docker run -it --rm -v $(PWD):/go/src/github.com/ethresearch/sharding-p2p-poc ethresearch/sharding-p2p:dev sh -c "go test"
-	gx-go uw
-
-run-many-dev:
-	docker-compose -f docker/dev.docker-compose.yml up --scale node=5
-
-down-dev:
-	docker-compose -f docker/dev.docker-compose.yml down
-
-run-many-prod:
-	docker-compose -f docker/prod.docker-compose.yml up --scale node=5
-
-down-prod:
-	docker-compose -f docker/prod.docker-compose.yml down
+build:
+	docker build -t ethresearch/sharding-p2p:dev .
 
 partial-gx-rw:
 	gx-go rw

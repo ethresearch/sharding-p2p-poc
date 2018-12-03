@@ -7,4 +7,3 @@ deployment/
 sharding-p2p-poc
 .vscode/
 cli-example/
-docker/
