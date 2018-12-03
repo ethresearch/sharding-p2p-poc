@@ -7,6 +7,9 @@ deps: gx
 	gx-go rewrite
 	python3 ./script/partial-gx-uw.py .
 
+update-go-mod:
+	GO111MODULE=on go mod download && go mod tidy
+
 build-prod:
 	docker build -f docker/prod.Dockerfile -t ethresearch/sharding-p2p:latest .
 
