@@ -1,8 +1,7 @@
 FROM golang:1.11-alpine
 
 RUN apk add git
-RUN go get -u -v github.com/whyrusleeping/gx &&\
-    go get -u -v github.com/whyrusleeping/gx-go
+RUN go get -v github.com/whyrusleeping/gx
 
 WORKDIR /sharding-p2p-poc
 
