@@ -131,9 +131,10 @@ def test_issues():
     time.sleep(3)
     print("done")
 
-    for node in nodes:
+    all_nodes = bootnodes + nodes
+    for node in all_nodes:
         node.subscribe_shard([1])
-    for node in nodes:
+    for node in all_nodes:
         peers = node.list_peer()
         print(f"{node}: peers={peers}")
         topic_peers = node.list_topic_peer([])
