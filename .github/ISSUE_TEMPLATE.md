@@ -1,6 +1,6 @@
 * OS: osx/linux/win
 * go version: 
-* Environment:
+* Output of `./sharding-p2p-poc version` if possible:
 
 ### What is wrong?
 
