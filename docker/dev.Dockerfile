@@ -1,14 +1,12 @@
 FROM golang:1.11-alpine
 
 RUN apk add git
-RUN go get -v github.com/whyrusleeping/gx
 
 WORKDIR /bin
 
-COPY go.mod go.sum package.json /bin/
+COPY go.mod go.sum /bin/
 
 RUN go mod download
-RUN gx install
 
 COPY . /bin/
 
