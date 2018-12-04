@@ -12,4 +12,6 @@ COPY . /bin/
 
 RUN CGO_ENABLED=0 go build
 
-CMD ["/bin/sharding-p2p-poc"]
+EXPOSE 8369 8370 13000 6831 6831/udp
+
+CMD ["sharding-p2p-poc"]
