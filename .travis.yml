@@ -1,23 +1,25 @@
 language: go
 
 go:
-  - "1.10.x"
+  - "1.11.x"
 
 sudo: required
+
+env:
+  - GO111MODULE=on
 
 services:
   - docker
 
 install:
-  - docker build -f docker/prod.Dockerfile -t ethereum/sharding-p2p:latest .
+  - docker build -f docker/dev.Dockerfile -t ethereum/sharding-p2p:latest .
   - docker run -d --name p2p ethereum/sharding-p2p:latest
-  - make deps
 
 before_install:
   - sudo add-apt-repository -y ppa:deadsnakes/ppa
   - sudo apt-get update
   - sudo apt-get install -y python3.6
-  - go get ./...
+  - go mod download
 
 script:
   - go test -v ./...
