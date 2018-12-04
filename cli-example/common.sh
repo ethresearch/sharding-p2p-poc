@@ -38,11 +38,21 @@ cli_prompt() {
     echo "$EXE_NAME -rpcport=$(show_rpcport $seed) -client $params"
 }
 
+# identify {seed}
+identify() {
+    seed=$1
+    identify=$(`cli_prompt $seed` identify)
+    echo $identify
+}
+
 # show_pid {seed}
 show_pid() {
     seed=$1
-    pid_str=$(`cli_prompt $seed` pid)
-    pid=${pid_str:1:${#pid_str}-2}
+    identify=$(identify $seed)
+    re="^([A-Za-z0-9]+) "
+    if [[ $identify =~ $re ]]; then
+        pid=${BASH_REMATCH[1]};
+    fi
     echo $pid
 }
 

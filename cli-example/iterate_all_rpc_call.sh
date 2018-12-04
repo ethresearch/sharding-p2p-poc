@@ -18,7 +18,7 @@ sleep 2
 
 for i in `seq 0 1`;
 do
-    show_pid $i
+    identify $i
 done
 
 # peer 0 add peer 1
