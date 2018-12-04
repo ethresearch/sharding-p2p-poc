@@ -1,0 +1,9 @@
+.*
+*.md
+test/
+*.proto
+deployment/
+.github/
+sharding-p2p-poc
+.vscode/
+cli-example/
