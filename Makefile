@@ -1,3 +1,5 @@
+build:
+	GIT_COMMIT=$(git rev-list -1 HEAD) && go build -ldflags "-X main.GitCommit=${GIT_COMMIT}"
 gx:
 	go get -u github.com/whyrusleeping/gx
 	go get -u github.com/whyrusleeping/gx-go
