@@ -4,7 +4,7 @@
 COMMAND_SCRIPT="$(dirname $0)/common.sh"
 . $COMMAND_SCRIPT
 
-go build
+go_build
 
 # check version
 $EXE_NAME version

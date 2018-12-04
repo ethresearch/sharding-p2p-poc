@@ -6,6 +6,11 @@ IP=127.0.0.1
 PORT=10000
 RPCPORT=13000
 
+go_build() {
+    GIT_COMMIT=$(git rev-list -1 HEAD)
+    go build -ldflags "-X main.GitCommit=$GIT_COMMIT"
+}
+
 # show_port {seed}
 show_port() {
     echo $((PORT+$1))

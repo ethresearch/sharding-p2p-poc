@@ -26,7 +26,10 @@ import (
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
 
-var logger = logging.Logger("sharding-p2p")
+var (
+	logger = logging.Logger("sharding-p2p")
+	GitCommit string
+)
 
 type (
 	ShardIDType = int64
@@ -85,7 +88,7 @@ func main() {
 	cliArgs := flag.Args()
 
 	if len(cliArgs) > 0 && cliArgs[0] == "version" {
-		version := fmt.Sprintf("%d.%d.%d", VersionMajor, VersionMinor, VersionPatch)
+		version := fmt.Sprintf("%d.%d.%d - %s", VersionMajor, VersionMinor, VersionPatch, GitCommit)
 		fmt.Println(version)
 		return
 	}
