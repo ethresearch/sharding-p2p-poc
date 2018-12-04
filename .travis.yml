@@ -19,6 +19,7 @@ before_install:
   - go mod download
 
 script:
+  - ./sharding-p2p-poc version
   - go test -v ./...
   - ./cli-example/iterate_all_rpc_call.sh
   - docker ps | grep -q p2p
