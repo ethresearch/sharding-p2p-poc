@@ -21,7 +21,7 @@ For more information, please check out the [document](https://github.com/ethrese
 
 ```bash
 $ git clone https://github.com/ethresearch/sharding-p2p-poc.git
-$ make update-go-mod
+$ cd sharding-p2p-poc
 $ make build
 ```
 
