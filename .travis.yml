@@ -12,13 +12,10 @@ services:
   - docker
 
 install:
-  - docker build -f docker/dev.Dockerfile -t ethereum/sharding-p2p:latest .
-  - docker run -d --name p2p ethereum/sharding-p2p:latest
+  - docker build -t ethresearch/sharding-p2p:latest .
+  - docker run -d --name p2p ethresearch/sharding-p2p:latest
 
 before_install:
-  - sudo add-apt-repository -y ppa:deadsnakes/ppa
-  - sudo apt-get update
-  - sudo apt-get install -y python3.6
   - go mod download
 
 script:
