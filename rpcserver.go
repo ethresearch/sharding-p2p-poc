@@ -55,22 +55,28 @@ func parseAddr(addrString string) (peer.ID, ma.Multiaddr, error) {
 	return peerid, targetAddr, nil
 }
 
-func (s *server) ShowPID(
+func (s *server) Identify(
 	ctx context.Context,
-	req *pbrpc.RPCShowPIDRequest) (*pbrpc.RPCShowPIDResponse, error) {
-	// Add span for ShowPID
-	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.ShowPID", s.serializedSpanCtx)
+	req *pbrpc.RPCIdentifyRequest) (*pbrpc.RPCIdentifyResponse, error) {
+	// Add span for Identify
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.Identify", s.serializedSpanCtx)
 	if err != nil {
 		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
-		spanctx = logger.Start(ctx, "RPCServer.ShowPID")
+		spanctx = logger.Start(ctx, "RPCServer.Identify")
 	}
 	defer logger.Finish(spanctx)
 
-	logger.Debugf("rpcserver:ShowPIDRequest: receive=%v", req)
-	res := &pbrpc.RPCShowPIDResponse{
-		PeerID: s.node.ID().Pretty(),
+	logger.Debugf("rpcserver:IdentifyRequest: receive=%v", req)
+	addrs := s.node.Addrs()
+	saddrs := make([]string, len(addrs))
+	for i, addr := range addrs {
+		saddrs[i] = addr.String()
 	}
-	logger.Debug("rpcserver:ShowPID: finished")
+	res := &pbrpc.RPCIdentifyResponse{
+		PeerID:     s.node.ID().Pretty(),
+		MultiAddrs: saddrs,
+	}
+	logger.Debug("rpcserver:Identify: finished")
 	return res, nil
 }
 
