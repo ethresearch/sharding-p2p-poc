@@ -137,10 +137,11 @@ func (s *server) SubscribeShard(
 	}
 	defer logger.Finish(spanctx)
 
+	numShardPeerToConnect := int(req.NumShardPeerToConnect)
 	subscribedShardID := make([]int64, 0)
 	logger.Debugf("rpcserver:SubscribeShard: shardIDs=%v", req.ShardIDs)
 	for _, shardID := range req.ShardIDs {
-		if err := s.node.ListenShard(spanctx, shardID); err != nil {
+		if err := s.node.ListenShard(spanctx, numShardPeerToConnect, shardID); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to listen to shard %v", shardID))
 			logger.Errorf("Failed to listen to shard %v", shardID)
 		} else {

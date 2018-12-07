@@ -33,11 +33,15 @@ func doAddPeer(rpcArgs []string, rpcAddr string) {
 }
 
 func doSubShard(rpcArgs []string, rpcAddr string) {
-	if len(rpcArgs) == 0 {
-		logger.Fatalf("Client: usage: subshard shard0 shard1 ...")
+	if len(rpcArgs) <= 1 {
+		logger.Fatalf("Client: usage: numShardPeerToConnect subshard shard0 shard1 ...")
+	}
+	numShardPeerToConnect, err := strconv.Atoi(rpcArgs[0])
+	if err != nil {
+		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[0], err)
 	}
 	shardIDs := []ShardIDType{}
-	for _, shardIDString := range rpcArgs {
+	for _, shardIDString := range rpcArgs[1:] {
 		shardID, err := strconv.ParseInt(shardIDString, 10, 64)
 		if err != nil {
 			logger.Fatalf(
@@ -48,7 +52,7 @@ func doSubShard(rpcArgs []string, rpcAddr string) {
 		}
 		shardIDs = append(shardIDs, shardID)
 	}
-	callRPCSubscribeShard(rpcAddr, shardIDs)
+	callRPCSubscribeShard(rpcAddr, numShardPeerToConnect, shardIDs)
 }
 
 func doUnsubShard(rpcArgs []string, rpcAddr string) {
@@ -177,7 +181,7 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	logger.Debugf("rpcclient:AddPeer: result=%v", res)
 }
 
-func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
+func callRPCSubscribeShard(rpcAddr string, numShardPeerToConnect int, shardIDs []ShardIDType) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
 		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
@@ -185,7 +189,8 @@ func callRPCSubscribeShard(rpcAddr string, shardIDs []ShardIDType) {
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
 	subscribeShardReq := &pbrpc.RPCSubscribeShardRequest{
-		ShardIDs: shardIDs,
+		NumShardPeerToConnect: PBInt(numShardPeerToConnect),
+		ShardIDs:              shardIDs,
 	}
 	logger.Debugf("rpcclient:SubscribeShard: sending=%v", subscribeShardReq)
 	res, err := client.SubscribeShard(context.Background(), subscribeShardReq)

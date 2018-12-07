@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"sync"
 
@@ -84,17 +85,46 @@ func NewShardManager(
 
 // General
 
-func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDType) error {
+func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConnect int, shardID ShardIDType) error {
 	// Add span for connectShardNodes of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.connectShardNodes")
 	defer logger.Finish(spanctx)
 	logger.SetTag(spanctx, "shard", shardID)
 
-	pinfos, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
+	foundPeers, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
 	if err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to find peers in shard %v", shardID))
 		logger.Errorf("Failed to find peers in shard %v", shardID)
 		return err
+	}
+	existPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
+	if len(existPIDs) >= numShardPeerToConnect {
+		return nil
+	}
+
+	pinfos := make([]pstore.PeerInfo, 0)
+	// First filter out peers that we already connected to
+	for _, p := range foundPeers {
+		found := false
+		for _, pid := range existPIDs {
+			if p.ID == pid {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
+		} else {
+			pinfos = append(pinfos, p)
+		}
+	}
+
+	// Next randomly drop peer from peer list until peer list
+	// has exactly the number of peers we expected
+	difCount := len(pinfos) - (numShardPeerToConnect - len(existPIDs))
+	for i := 0; i < difCount; i++ {
+		index := rand.Intn(len(pinfos))
+		pinfos = append(pinfos[:index], pinfos[index+1:]...)
 	}
 
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
@@ -132,7 +162,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	return nil
 }
 
-func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) error {
+func (n *ShardManager) ListenShard(ctx context.Context, numShardPeerToConnect int, shardID ShardIDType) error {
 	// Add span for ListenShard of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.ListenShard")
 	defer logger.Finish(spanctx)
@@ -145,6 +175,11 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) err
 		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
 		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
 		return err
+	}
+
+	if err := n.connectShardNodes(spanctx, numShardPeerToConnect, shardID); err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
+		logger.Errorf("Failed to connect to nodes in shard %v", shardID)
 	}
 
 	// shardCollations protocol

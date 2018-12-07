@@ -35,7 +35,8 @@ message RPCAddPeerRequest {
 }
 
 message RPCSubscribeShardRequest {
-  repeated int64 shardIDs = 1;
+  int64 numShardPeerToConnect = 1;
+  repeated int64 shardIDs = 2;
 }
 
 message RPCUnsubscribeShardRequest {
