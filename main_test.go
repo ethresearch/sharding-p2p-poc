@@ -229,10 +229,11 @@ func TestRequestShardPeer(t *testing.T) {
 		t.Errorf("Wrong shard peer response %v, should be empty peerIDs", peerIDs)
 	}
 
-	if err := nodes[1].ListenShard(ctx, 1); err != nil {
+	numShardPeerToConnect := 1
+	if err := nodes[1].ListenShard(ctx, numShardPeerToConnect, 1); err != nil {
 		t.Errorf("Failed to listen to shard 1")
 	}
-	if err := nodes[1].ListenShard(ctx, 2); err != nil {
+	if err := nodes[1].ListenShard(ctx, numShardPeerToConnect, 2); err != nil {
 		t.Errorf("Failed to listen to shard 2")
 	}
 	// wait for peer to receive shard subscription update
@@ -315,7 +316,8 @@ func TestListenShardAndUnlistenShard(t *testing.T) {
 		t.Errorf("Shard %v shoudn't have been listened", testingShardID)
 	}
 	// test `ListenShard`
-	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
+	numShardPeerToConnect := 1
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
 	// wait for peer to receive shard subscription update
@@ -334,7 +336,7 @@ func TestListenShardAndUnlistenShard(t *testing.T) {
 	}
 
 	// test `ListenShard` to same shard twice
-	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
 	// wait for peer to receive shard subscription update
@@ -351,7 +353,7 @@ func TestListenShardAndUnlistenShard(t *testing.T) {
 
 	// test `ListenShard` to another shard
 	anotherShardID := testingShardID + 1
-	if err := nodes[0].ListenShard(ctx, anotherShardID); err != nil {
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, anotherShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", anotherShardID)
 	}
 	// wait for peer to receive shard subscription update
@@ -424,39 +426,54 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	nodes := makeNodes(t, ctx, 3)
+	nodes := makeNodes(t, ctx, 5)
 	connectBarbell(t, ctx, nodes)
+	waitForPubSubMeshBuilt()
 	waitForPubSubMeshBuilt()
 
 	// 0 <-> 1 <-> 2
-	if err := nodes[0].ListenShard(ctx, 0); err != nil {
+	numShardPeerToConnect := 2
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, 0); err != nil {
 		t.Errorf("Failed to listen to shard 0, err=%v", err)
 	}
 
-	if err := nodes[2].ListenShard(ctx, 42); err != nil {
+	if err := nodes[4].ListenShard(ctx, numShardPeerToConnect, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42, err=%v", err)
 	}
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 
-	connWithNode2 := nodes[0].Network().ConnsToPeer(nodes[2].ID())
-	if len(connWithNode2) != 0 {
-		t.Error("Node 0 shouldn't have connection with node 2")
+	connWithNode4 := nodes[0].Network().ConnsToPeer(nodes[4].ID())
+	if len(connWithNode4) != 0 {
+		t.Error("Node 0 shouldn't have connection with node 4")
 	}
 
 	// test `connectShardNodes`
-	if err := nodes[0].ListenShard(ctx, 42); err != nil {
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42, err=%v", err)
 	}
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
-	if err := nodes[0].connectShardNodes(ctx, 42); err != nil {
-		t.Errorf("Failed to connect to shard Nodes, err=%v", err)
+
+	connWithNode4 = nodes[0].Network().ConnsToPeer(nodes[4].ID())
+	if len(connWithNode4) == 0 {
+		t.Error("Node 0 should have connected to node 4 after listening to shard 42")
 	}
-	connWithNode2 = nodes[0].Network().ConnsToPeer(nodes[2].ID())
-	if len(connWithNode2) == 0 {
-		t.Error("Node 0 should have connected to node 2 after listening to shard 42")
+
+	for i := 1; i < 4; i++ {
+		if err := nodes[i].ListenShard(ctx, numShardPeerToConnect, 42); err != nil {
+			t.Errorf("Failed to listen to shard 42, err=%v", err)
+			// wait for peer to receive shard subscription update
+		}
+		time.Sleep(time.Millisecond * 100)
 	}
+
+	for i := 0; i < 5; i++ {
+		if len(nodes[i].pubsubService.ListPeers(fmt.Sprintf("shardCollations_%v", 42))) < numShardPeerToConnect {
+			t.Errorf("Node %v should have at least %v peers", i, numShardPeerToConnect)
+		}
+	}
+
 }
 
 func TestPubSubNotifyListeningShards(t *testing.T) {
@@ -467,7 +484,8 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 	connectBarbell(t, ctx, nodes)
 	waitForPubSubMeshBuilt()
 
-	if err := nodes[0].ListenShard(ctx, 42); err != nil {
+	numShardPeerToConnect := 2
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
 	// wait for peer to receive shard subscription update
@@ -480,7 +498,7 @@ func TestPubSubNotifyListeningShards(t *testing.T) {
 		t.Error("Node 0 should subscribe to exactly one shard")
 	}
 
-	if err := nodes[1].ListenShard(ctx, 42); err != nil {
+	if err := nodes[1].ListenShard(ctx, numShardPeerToConnect, 42); err != nil {
 		t.Errorf("Failed to listen to shard 42")
 	}
 	// wait for peer to receive shard subscription update
@@ -516,14 +534,15 @@ func TestBroadcastCollation(t *testing.T) {
 	connectBarbell(t, ctx, nodes)
 
 	var testingShardID ShardIDType = 42
-	if err := nodes[0].ListenShard(ctx, testingShardID); err != nil {
+	numShardPeerToConnect := 1
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
 	// wait for peer to receive shard subscription update
 	time.Sleep(time.Millisecond * 100)
 	// TODO: fail: if the receiver didn't subscribe the shard, it should ignore the message
 
-	if err := nodes[1].ListenShard(ctx, testingShardID); err != nil {
+	if err := nodes[1].ListenShard(ctx, numShardPeerToConnect, testingShardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", testingShardID)
 	}
 	// wait for peer to receive shard subscription update
@@ -694,13 +713,14 @@ func TestBroadcastCollationWithRPCEventNotifier(t *testing.T) {
 	connectBarbell(t, ctx, nodes)
 
 	shardID := ShardIDType(1)
-	if err := nodes[0].ListenShard(ctx, shardID); err != nil {
+	numShardPeerToConnect := 2
+	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, shardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", shardID)
 	}
-	if err := nodes[1].ListenShard(ctx, shardID); err != nil {
+	if err := nodes[1].ListenShard(ctx, numShardPeerToConnect, shardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", shardID)
 	}
-	if err := nodes[2].ListenShard(ctx, shardID); err != nil {
+	if err := nodes[2].ListenShard(ctx, numShardPeerToConnect, shardID); err != nil {
 		t.Errorf("Failed to listen to shard %v", shardID)
 	}
 	waitForPubSubMeshBuilt()
