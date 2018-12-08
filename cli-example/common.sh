@@ -71,7 +71,7 @@ add_peer() {
     `cli_prompt $seed0` addpeer $IP $(show_port $seed1) $seed1
 }
 
-# subscribe_shard {seed} {shard_id} {shard_id} ...
+# subscribe_shard {seed} {num_peers} {shard_id} {shard_id} ...
 subscribe_shard() {
     p=$@
     seed=$1

@@ -24,11 +24,13 @@ done
 # peer 0 add peer 1
 add_peer 0 1
 
+num_peers_to_connect=3
+
 # peer 0 subscribe shard
-subscribe_shard 0 1 2 3 4 5
+subscribe_shard 0 $num_peers_to_connect 1 2 3 4 5
 
 # peer 1 subscribe shard
-subscribe_shard 1 2 3 4
+subscribe_shard 1 $num_peers_to_connect 2 3 4
 
 # get peer 0's subscribed shard
 get_subscribe_shard 0
