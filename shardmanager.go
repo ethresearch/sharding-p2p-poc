@@ -95,18 +95,18 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConn
 	defer logger.Finish(spanctx)
 	logger.SetTag(spanctx, "shard", shardID)
 
+	//Get shard peers that we already connected to
+	connectedPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
+	// Quit if we already have enough shard peers
+	if len(connectedPIDs) >= numShardPeerToConnect {
+		return nil
+	}
 	// Find peers that also subscribed to the shard
 	foundPeers, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
 	if err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to find peers in shard %v", shardID))
 		logger.Errorf("Failed to find peers in shard %v", shardID)
 		return err
-	}
-	//Get shard peers that we already connected to
-	connectedPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
-	// Quit if we already have enough shard peers
-	if len(connectedPIDs) >= numShardPeerToConnect {
-		return nil
 	}
 
 	pinfos := make([]pstore.PeerInfo, 0)
