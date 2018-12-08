@@ -85,20 +85,27 @@ func NewShardManager(
 
 // General
 
+// connectShardNodes connects to new shard peers until
+// we have at least `numShardPeerToConnect` number of shard peers.
+// Note that if we don't have the shard peer's listening address,
+// a DHT query will be made which will change the network topology.
 func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConnect int, shardID ShardIDType) error {
 	// Add span for connectShardNodes of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.connectShardNodes")
 	defer logger.Finish(spanctx)
 	logger.SetTag(spanctx, "shard", shardID)
 
+	// Find peers that also subscribed to the shard
 	foundPeers, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
 	if err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to find peers in shard %v", shardID))
 		logger.Errorf("Failed to find peers in shard %v", shardID)
 		return err
 	}
-	existPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
-	if len(existPIDs) >= numShardPeerToConnect {
+	//Get shard peers that we already connected to
+	connectedPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
+	// Quit if we already have enough shard peers
+	if len(connectedPIDs) >= numShardPeerToConnect {
 		return nil
 	}
 
@@ -106,7 +113,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConn
 	// First filter out peers that we already connected to
 	for _, p := range foundPeers {
 		found := false
-		for _, pid := range existPIDs {
+		for _, pid := range connectedPIDs {
 			if p.ID == pid {
 				found = true
 				break
@@ -121,12 +128,13 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConn
 
 	// Next randomly drop peer from peer list until peer list
 	// has exactly the number of peers we expected
-	difCount := len(pinfos) - (numShardPeerToConnect - len(existPIDs))
+	difCount := len(pinfos) - (numShardPeerToConnect - len(connectedPIDs))
 	for i := 0; i < difCount; i++ {
 		index := rand.Intn(len(pinfos))
 		pinfos = append(pinfos[:index], pinfos[index+1:]...)
 	}
 
+	// Finally connect to the peers in the peer list
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
 	var wg sync.WaitGroup
 	for _, p := range pinfos {
