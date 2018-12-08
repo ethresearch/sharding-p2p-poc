@@ -36,9 +36,9 @@ func doSubShard(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) <= 1 {
 		logger.Fatalf("Client: usage: numShardPeerToConnect subshard shard0 shard1 ...")
 	}
-	numShardPeerToConnect, err := strconv.Atoi(rpcArgs[0])
+	numShardPeerToConnect, err := strconv.ParseUint(rpcArgs[0], 10, 64)
 	if err != nil {
-		logger.Fatalf("Failed to convert string '%v' to integer, err: %v", rpcArgs[0], err)
+		logger.Fatalf("Failed to convert string '%v' to unsigned integer, err: %v", rpcArgs[0], err)
 	}
 	shardIDs := []ShardIDType{}
 	for _, shardIDString := range rpcArgs[1:] {
@@ -181,7 +181,7 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	logger.Debugf("rpcclient:AddPeer: result=%v", res)
 }
 
-func callRPCSubscribeShard(rpcAddr string, numShardPeerToConnect int, shardIDs []ShardIDType) {
+func callRPCSubscribeShard(rpcAddr string, numShardPeerToConnect uint64, shardIDs []ShardIDType) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
 		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
