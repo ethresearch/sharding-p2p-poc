@@ -79,6 +79,16 @@ subscribe_shard() {
     `cli_prompt $seed` subshard $params
 }
 
+# subscribe_shard_no_discover {seed} {shard_id} {shard_id} ...
+# subscribe_shard_no_discover is basically subscribe_shard
+# but with num_peers set to zero
+subscribe_shard_no_disdover() {
+    p=$@
+    seed=$1
+    params=${@:2}
+    `cli_prompt $seed` subshard 0 $params
+}
+
 # unsubscribe_shard {seed} {shard_id} {shard_id} ...
 unsubscribe_shard() {
     p=$@
