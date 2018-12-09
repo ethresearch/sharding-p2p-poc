@@ -32,9 +32,16 @@ func doAddPeer(rpcArgs []string, rpcAddr string) {
 	callRPCAddPeer(rpcAddr, targetIP, targetPort, targetSeed)
 }
 
+func doDiscover(rpcArgs []string, rpcAddr string) {
+	if len(rpcArgs) == 0 {
+		logger.Fatalf("Client: usage: discover shard0 shard1 ...")
+	}
+	callRPCDiscover(rpcAddr, rpcArgs)
+}
+
 func doSubShard(rpcArgs []string, rpcAddr string) {
 	if len(rpcArgs) <= 1 {
-		logger.Fatalf("Client: usage: numShardPeerToConnect subshard shard0 shard1 ...")
+		logger.Fatalf("Client: usage: subshard numShardPeerToConnect shard0 shard1 ...")
 	}
 	numShardPeerToConnect, err := strconv.ParseUint(rpcArgs[0], 10, 64)
 	if err != nil {
@@ -179,6 +186,44 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 		logger.Fatalf("Failed to add peer at %v:%v, err: %v", ipAddr, port, err)
 	}
 	logger.Debugf("rpcclient:AddPeer: result=%v", res)
+}
+
+func callRPCDiscover(rpcAddr string, shards []string) {
+	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
+	if err != nil {
+		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
+	}
+	defer conn.Close()
+	client := pbrpc.NewPocClient(conn)
+	topics := make([]string, len(shards))
+	for i := 0; i < len(shards); i++ {
+		shardID, err := strconv.ParseInt(shards[i], 10, 64)
+		if err != nil {
+			logger.Fatalf("Failed to convert shardID %v to int64, err: %v", shards[i], err)
+		}
+		topics[i] = getCollationsTopic(shardID)
+	}
+
+	discoverShardReq := &pbrpc.RPCListTopicPeerRequest{
+		Topics: topics,
+	}
+	logger.Debugf("rpcclient:DiscoverShard: sending=%v", discoverShardReq)
+	res, err := client.DiscoverShard(context.Background(), discoverShardReq)
+	if err != nil {
+		logger.Fatalf("Failed to discover peers on shards %v, err: %v", shards, err)
+	}
+	logger.Debugf("rpcclient:DiscoverShard: result=%v", res)
+	shardPeers := make(map[string][]string)
+	for topic, peers := range res.TopicPeers {
+		shard := shardTopicToShardID(topic)
+		peerSlice := make([]string, 0)
+		if peers.Peers != nil {
+			peerSlice = peers.Peers
+		}
+		shardPeers[shard] = peerSlice
+	}
+	shardPeersString := marshalToJSONString(shardPeers)
+	fmt.Println(shardPeersString)
 }
 
 func callRPCSubscribeShard(rpcAddr string, numShardPeerToConnect uint64, shardIDs []ShardIDType) {

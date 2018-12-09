@@ -7,6 +7,7 @@ import "github.com/ethresearch/sharding-p2p-poc/pb/message/message.proto";
 service Poc {
   rpc Identify(RPCIdentifyRequest) returns (RPCIdentifyResponse) {}
   rpc AddPeer (RPCAddPeerRequest) returns (RPCPlainResponse) {}
+  rpc DiscoverShard(RPCListTopicPeerRequest) returns (RPCListTopicPeerResponse) {}
   rpc SubscribeShard(RPCSubscribeShardRequest) returns (RPCPlainResponse) {}
   rpc UnsubscribeShard(RPCUnsubscribeShardRequest) returns (RPCPlainResponse) {}
   rpc GetSubscribedShard(RPCGetSubscribedShardRequest) returns (RPCGetSubscribedShardResponse) {}
