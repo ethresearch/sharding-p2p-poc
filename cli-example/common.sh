@@ -90,7 +90,7 @@ subscribe_shard() {
 # subscribe_shard_no_discover {seed} {shard_id} {shard_id} ...
 # subscribe_shard_no_discover is basically subscribe_shard
 # but with num_peers set to zero
-subscribe_shard_no_disdover() {
+subscribe_shard_no_discover() {
     p=$@
     seed=$1
     params=${@:2}
