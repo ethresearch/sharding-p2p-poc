@@ -140,7 +140,7 @@ func (s *server) DiscoverShard(
 	topicPeers := make(map[string]*pbmsg.Peers)
 	logger.Debugf("rpcserver:DiscoverShard: Topics=%v", req.Topics)
 	for _, topic := range req.Topics {
-		if pInfos, err := s.node.discovery.FindPeers(spanctx, shardTopicToShardID(topic)); err != nil {
+		if pInfos, err := s.node.discovery.FindPeers(spanctx, topic); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to discover peers on shard %v", shardTopicToShardID(topic)))
 			logger.Errorf("Failed to discover peers on shard %v", shardTopicToShardID(topic))
 		} else {

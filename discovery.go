@@ -57,7 +57,7 @@ func (gt *GlobalTable) Advertise(ctx context.Context, topic string) error {
 }
 
 func (gt *GlobalTable) FindPeers(ctx context.Context, topic string) ([]pstore.PeerInfo, error) {
-	shardID, err := strconv.ParseInt(topic, 10, 64)
+	shardID, err := strconv.ParseInt(shardTopicToShardID(topic), 10, 64)
 	if err != nil {
 		return nil, err
 	}
