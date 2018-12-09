@@ -36,10 +36,13 @@ subscribe_shard_no_discover 1 2 3
 subscribe_shard 1 $num_peers_to_connect 4
 
 # peer 0 discover shard peers from shard 3
-discover_shard 0 3
+discover_shard 0
 
 # get peer 0's subscribed shard
 get_subscribe_shard 0
+
+# get peer 1's subscribed shard
+get_subscribe_shard 1
 
 # peer 0 broadcast collations
 broadcast_collation 0 2 2 100 0

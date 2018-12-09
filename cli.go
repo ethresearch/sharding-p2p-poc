@@ -33,9 +33,6 @@ func doAddPeer(rpcArgs []string, rpcAddr string) {
 }
 
 func doDiscover(rpcArgs []string, rpcAddr string) {
-	if len(rpcArgs) == 0 {
-		logger.Fatalf("Client: usage: discover shard0 shard1 ...")
-	}
 	callRPCDiscover(rpcAddr, rpcArgs)
 }
 

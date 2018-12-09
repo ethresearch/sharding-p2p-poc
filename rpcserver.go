@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -137,9 +138,18 @@ func (s *server) DiscoverShard(
 	}
 	defer logger.Finish(spanctx)
 
+	var topics []string
+	if len(req.Topics) == 0 {
+		for _, shardID := range s.node.GetListeningShards() {
+			topics = append(topics, strconv.FormatInt(shardID, 10))
+		}
+	} else {
+		topics = req.Topics
+	}
+
 	topicPeers := make(map[string]*pbmsg.Peers)
-	logger.Debugf("rpcserver:DiscoverShard: Topics=%v", req.Topics)
-	for _, topic := range req.Topics {
+	logger.Debugf("rpcserver:DiscoverShard: Shards=%v", topics)
+	for _, topic := range topics {
 		if pInfos, err := s.node.discovery.FindPeers(spanctx, topic); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to discover peers on shard %v", shardTopicToShardID(topic)))
 			logger.Errorf("Failed to discover peers on shard %v", shardTopicToShardID(topic))
