@@ -35,6 +35,9 @@ subscribe_shard_no_discover 1 2 3
 # peer 1 subscribe shard 4
 subscribe_shard 1 $num_peers_to_connect 4
 
+# peer 0 discover shard peers from shard 3
+discover_shard 0 3
+
 # get peer 0's subscribed shard
 get_subscribe_shard 0
 
