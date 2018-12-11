@@ -429,9 +429,8 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	nodes := makeNodes(t, ctx, 5)
 	connectBarbell(t, ctx, nodes)
 	waitForPubSubMeshBuilt()
-	waitForPubSubMeshBuilt()
 
-	// 0 <-> 1 <-> 2
+	// 0 <-> 1 <-> 2 <-> 3 <-> 4
 	numShardPeerToConnect := 2
 	if err := nodes[0].ListenShard(ctx, numShardPeerToConnect, 0); err != nil {
 		t.Errorf("Failed to listen to shard 0, err=%v", err)
@@ -469,7 +468,7 @@ func TestListenShardConnectingPeers(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		if len(nodes[i].pubsubService.ListPeers(fmt.Sprintf("shardCollations_%v", 42))) < numShardPeerToConnect {
+		if len(nodes[i].pubsubService.ListPeers(getCollationsTopic(42))) < numShardPeerToConnect {
 			t.Errorf("Node %v should have at least %v peers", i, numShardPeerToConnect)
 		}
 	}
