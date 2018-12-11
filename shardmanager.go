@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	host "github.com/libp2p/go-libp2p-host"
+	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 
@@ -97,8 +98,12 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConn
 
 	//Get shard peers that we already connected to
 	connectedPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
+	mapConnectedPIDs := make(map[peer.ID]bool)
+	for _, p := range connectedPIDs {
+		mapConnectedPIDs[p] = true
+	}
 	// Quit if we already have enough shard peers
-	if len(connectedPIDs) >= numShardPeerToConnect {
+	if len(mapConnectedPIDs) >= numShardPeerToConnect {
 		return nil
 	}
 	// Find peers that also subscribed to the shard
@@ -112,16 +117,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConn
 	pinfos := make([]pstore.PeerInfo, 0)
 	// First filter out peers that we already connected to
 	for _, p := range foundPeers {
-		found := false
-		for _, pid := range connectedPIDs {
-			if p.ID == pid {
-				found = true
-				break
-			}
-		}
-		if found {
-			continue
-		} else {
+		if found := mapConnectedPIDs[p.ID]; !found {
 			pinfos = append(pinfos, p)
 		}
 	}
