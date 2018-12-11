@@ -33,7 +33,15 @@ func doAddPeer(rpcArgs []string, rpcAddr string) {
 }
 
 func doDiscover(rpcArgs []string, rpcAddr string) {
-	callRPCDiscover(rpcAddr, rpcArgs)
+	shardIDs := make([]ShardIDType, len(rpcArgs))
+	for i := 0; i < len(rpcArgs); i++ {
+		shardID, err := strconv.ParseInt(rpcArgs[i], 10, 64)
+		if err != nil {
+			logger.Fatalf("Failed to convert shardID %v to int64, err: %v", rpcArgs[i], err)
+		}
+		shardIDs[i] = shardID
+	}
+	callRPCDiscover(rpcAddr, shardIDs)
 }
 
 func doSubShard(rpcArgs []string, rpcAddr string) {
@@ -114,7 +122,15 @@ func doListTopicPeer(rpcArgs []string, rpcAddr string) {
 }
 
 func doListShardPeer(rpcArgs []string, rpcAddr string) {
-	callRPCListShardPeer(rpcAddr, rpcArgs)
+	shardIDs := make([]ShardIDType, len(rpcArgs))
+	for i := 0; i < len(rpcArgs); i++ {
+		shardID, err := strconv.ParseInt(rpcArgs[i], 10, 64)
+		if err != nil {
+			logger.Fatalf("Failed to convert shardID %v to int64, err: %v", rpcArgs[i], err)
+		}
+		shardIDs[i] = shardID
+	}
+	callRPCListShardPeer(rpcAddr, shardIDs)
 }
 
 func doRemovePeer(rpcArgs []string, rpcAddr string) {
@@ -185,7 +201,7 @@ func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
 	logger.Debugf("rpcclient:AddPeer: result=%v", res)
 }
 
-func callRPCDiscover(rpcAddr string, shards []string) {
+func callRPCDiscover(rpcAddr string, shards []ShardIDType) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
 		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
@@ -194,11 +210,7 @@ func callRPCDiscover(rpcAddr string, shards []string) {
 	client := pbrpc.NewPocClient(conn)
 	topics := make([]string, len(shards))
 	for i := 0; i < len(shards); i++ {
-		shardID, err := strconv.ParseInt(shards[i], 10, 64)
-		if err != nil {
-			logger.Fatalf("Failed to convert shardID %v to int64, err: %v", shards[i], err)
-		}
-		topics[i] = getCollationsTopic(shardID)
+		topics[i] = getCollationsTopic(shards[i])
 	}
 
 	discoverShardReq := &pbrpc.RPCListTopicPeerRequest{
@@ -381,7 +393,7 @@ func callRPCListTopicPeer(rpcAddr string, topics []string) {
 	fmt.Println(topicPeersString)
 }
 
-func callRPCListShardPeer(rpcAddr string, shards []string) {
+func callRPCListShardPeer(rpcAddr string, shards []ShardIDType) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
 		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
@@ -391,11 +403,7 @@ func callRPCListShardPeer(rpcAddr string, shards []string) {
 
 	topics := make([]string, len(shards))
 	for i := 0; i < len(shards); i++ {
-		shardID, err := strconv.ParseInt(shards[i], 10, 64)
-		if err != nil {
-			logger.Fatalf("Failed to convert shardID %v to int64, err: %v", shards[i], err)
-		}
-		topics[i] = getCollationsTopic(shardID)
+		topics[i] = getCollationsTopic(shards[i])
 	}
 
 	listTopicPeerReq := &pbrpc.RPCListTopicPeerRequest{
