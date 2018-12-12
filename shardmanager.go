@@ -98,9 +98,9 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConn
 
 	//Get shard peers that we already connected to
 	connectedPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
-	mapConnectedPIDs := make(map[peer.ID]bool)
+	mapConnectedPIDs := make(map[peer.ID]struct{})
 	for _, p := range connectedPIDs {
-		mapConnectedPIDs[p] = true
+		mapConnectedPIDs[p] = struct{}{}
 	}
 	// Quit if we already have enough shard peers
 	if len(mapConnectedPIDs) >= numShardPeerToConnect {
@@ -117,7 +117,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConn
 	pinfos := make([]pstore.PeerInfo, 0)
 	// First filter out peers that we already connected to
 	for _, p := range foundPeers {
-		if found := mapConnectedPIDs[p.ID]; !found {
+		if _, found := mapConnectedPIDs[p.ID]; !found {
 			pinfos = append(pinfos, p)
 		}
 	}
