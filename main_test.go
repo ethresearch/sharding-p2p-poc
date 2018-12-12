@@ -76,6 +76,14 @@ func connect(t *testing.T, ctx context.Context, a, b *Node) {
 	time.Sleep(time.Millisecond * 100)
 }
 
+func connectHub(t *testing.T, ctx context.Context, nodes []*Node, hubIndex int) {
+	for i := 0; i < len(nodes); i++ {
+		if i != hubIndex {
+			connect(t, ctx, nodes[hubIndex], nodes[i])
+		}
+	}
+}
+
 func connectBarbell(t *testing.T, ctx context.Context, nodes []*Node) {
 	for i := 0; i < len(nodes)-1; i++ {
 		connect(t, ctx, nodes[i], nodes[i+1])
@@ -300,6 +308,44 @@ func TestPubSub(t *testing.T) {
 	}
 	if msg0.GetFrom() != nodes[1].ID() {
 		t.Error("Wrong ID")
+	}
+}
+
+func TestConnectShardNodes(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	nodes := makeNodes(t, ctx, 6)
+	// Have node 1-5 connect to hub node 0
+	connectHub(t, ctx, nodes, 0)
+	waitForPubSubMeshBuilt()
+
+	var shardID ShardIDType = 1
+	numShardPeerToConnect := 0
+
+	for i := 1; i < 5; i++ {
+		if err := nodes[i].ListenShard(ctx, numShardPeerToConnect, shardID); err != nil {
+			t.Errorf("Failed to listen to shard %v", shardID)
+		}
+		// wait for peer to receive shard subscription update
+		time.Sleep(time.Millisecond * 100)
+	}
+	node0ShardPeerCount := len(nodes[5].pubsubService.ListPeers(getCollationsTopic(shardID)))
+	if node0ShardPeerCount != 0 {
+		t.Errorf("Node 5 should have no shard peers but it has %v", node0ShardPeerCount)
+	}
+
+	nodes[5].connectShardNodes(ctx, 5, shardID)
+
+	node0ShardPeerCount = len(nodes[5].pubsubService.ListPeers(getCollationsTopic(shardID)))
+	if node0ShardPeerCount != 4 {
+		t.Errorf("Node 5 should have 4 shard peers but it has %v", node0ShardPeerCount)
+	}
+	for i := 1; i < 5; i++ {
+		connsToNode5 := len(nodes[i].Network().ConnsToPeer(nodes[5].ID()))
+		if connsToNode5 == 0 {
+			t.Errorf("Node %v should have become node 5's peer", i)
+		}
 	}
 }
 
