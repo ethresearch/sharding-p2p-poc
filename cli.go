@@ -64,7 +64,7 @@ func doSubShard(rpcArgs []string, rpcAddr string) {
 		}
 		shardIDs = append(shardIDs, shardID)
 	}
-	callRPCSubscribeShard(rpcAddr, numShardPeerToConnect, shardIDs)
+	callRPCSubscribeShard(rpcAddr, PBInt(numShardPeerToConnect), shardIDs)
 }
 
 func doUnsubShard(rpcArgs []string, rpcAddr string) {
@@ -235,7 +235,7 @@ func callRPCDiscover(rpcAddr string, shards []ShardIDType) {
 	fmt.Println(shardPeersString)
 }
 
-func callRPCSubscribeShard(rpcAddr string, numShardPeerToConnect uint64, shardIDs []ShardIDType) {
+func callRPCSubscribeShard(rpcAddr string, numShardPeerToConnect int64, shardIDs []ShardIDType) {
 	conn, err := grpc.Dial(rpcAddr, grpc.WithInsecure())
 	if err != nil {
 		logger.Fatalf("Failed to connect to RPC server at %v, err: %v", rpcAddr, err)
@@ -243,7 +243,7 @@ func callRPCSubscribeShard(rpcAddr string, numShardPeerToConnect uint64, shardID
 	defer conn.Close()
 	client := pbrpc.NewPocClient(conn)
 	subscribeShardReq := &pbrpc.RPCSubscribeShardRequest{
-		NumShardPeerToConnect: PBInt(numShardPeerToConnect),
+		NumShardPeerToConnect: numShardPeerToConnect,
 		ShardIDs:              shardIDs,
 	}
 	logger.Debugf("rpcclient:SubscribeShard: sending=%v", subscribeShardReq)
