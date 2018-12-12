@@ -336,6 +336,7 @@ func TestConnectShardNodes(t *testing.T) {
 	}
 
 	nodes[5].connectShardNodes(ctx, 5, shardID)
+	time.Sleep(time.Millisecond * 100)
 
 	node0ShardPeerCount = len(nodes[5].pubsubService.ListPeers(getCollationsTopic(shardID)))
 	if node0ShardPeerCount != 4 {
