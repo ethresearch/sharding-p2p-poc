@@ -119,7 +119,7 @@ class Node:
         return out
 
     def identify(self):
-        return self.cli_safe("identify")
+        return self.cli_safe(["identify"])
 
     def add_peer(self, node):
         self.cli_safe([
