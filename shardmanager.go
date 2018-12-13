@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"sync"
 
 	host "github.com/libp2p/go-libp2p-host"
+	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 
@@ -84,19 +86,51 @@ func NewShardManager(
 
 // General
 
-func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDType) error {
+// connectShardNodes connects to new shard peers until
+// we have at least `numShardPeerToConnect` number of shard peers.
+// Note that if we don't have the shard peer's listening address,
+// a DHT query will be made which will change the network topology.
+func (n *ShardManager) connectShardNodes(ctx context.Context, numShardPeerToConnect int, shardID ShardIDType) error {
 	// Add span for connectShardNodes of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.connectShardNodes")
 	defer logger.Finish(spanctx)
 	logger.SetTag(spanctx, "shard", shardID)
 
-	pinfos, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
+	//Get shard peers that we already connected to
+	connectedPIDs := n.pubsubService.ListPeers(getCollationsTopic(shardID))
+	mapConnectedPIDs := make(map[peer.ID]struct{})
+	for _, p := range connectedPIDs {
+		mapConnectedPIDs[p] = struct{}{}
+	}
+	// Quit if we already have enough shard peers
+	if len(mapConnectedPIDs) >= numShardPeerToConnect {
+		return nil
+	}
+	// Find peers that also subscribed to the shard
+	foundPeers, err := n.discovery.FindPeers(spanctx, strconv.FormatInt(shardID, 10))
 	if err != nil {
 		logger.SetErr(spanctx, fmt.Errorf("Failed to find peers in shard %v", shardID))
 		logger.Errorf("Failed to find peers in shard %v", shardID)
 		return err
 	}
 
+	pinfos := make([]pstore.PeerInfo, 0)
+	// First filter out peers that we already connected to
+	for _, p := range foundPeers {
+		if _, found := mapConnectedPIDs[p.ID]; !found {
+			pinfos = append(pinfos, p)
+		}
+	}
+
+	// Next randomly drop peer from peer list until peer list
+	// has exactly the number of peers we expected
+	difCount := len(pinfos) - (numShardPeerToConnect - len(connectedPIDs))
+	for i := 0; i < difCount; i++ {
+		index := rand.Intn(len(pinfos))
+		pinfos = append(pinfos[:index], pinfos[index+1:]...)
+	}
+
+	// Finally connect to the peers in the peer list
 	// borrowed from `bootstrapConnect`, should be modified/refactored and tested
 	var wg sync.WaitGroup
 	for _, p := range pinfos {
@@ -132,7 +166,7 @@ func (n *ShardManager) connectShardNodes(ctx context.Context, shardID ShardIDTyp
 	return nil
 }
 
-func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) error {
+func (n *ShardManager) ListenShard(ctx context.Context, numShardPeerToConnect int, shardID ShardIDType) error {
 	// Add span for ListenShard of ShardManager
 	spanctx := logger.Start(ctx, "ShardManager.ListenShard")
 	defer logger.Finish(spanctx)
@@ -145,6 +179,11 @@ func (n *ShardManager) ListenShard(ctx context.Context, shardID ShardIDType) err
 		logger.SetErr(spanctx, fmt.Errorf("Failed to advertise subscription to shard %v", shardID))
 		logger.Errorf("Failed to advertise subscription to shard %v", shardID)
 		return err
+	}
+
+	if err := n.connectShardNodes(spanctx, numShardPeerToConnect, shardID); err != nil {
+		logger.SetErr(spanctx, fmt.Errorf("Failed to connect to nodes in shard %v", shardID))
+		logger.Errorf("Failed to connect to nodes in shard %v", shardID)
 	}
 
 	// shardCollations protocol

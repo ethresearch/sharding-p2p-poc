@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	logger = logging.Logger("sharding-p2p")
+	logger    = logging.Logger("sharding-p2p")
 	GitCommit string
 )
 
@@ -112,6 +112,8 @@ func runClient(rpcAddr string, cliArgs []string) {
 		doIdentify(rpcAddr)
 	case "addpeer":
 		doAddPeer(rpcArgs, rpcAddr)
+	case "discovershard":
+		doDiscover(rpcArgs, rpcAddr)
 	case "subshard":
 		doSubShard(rpcArgs, rpcAddr)
 	case "unsubshard":

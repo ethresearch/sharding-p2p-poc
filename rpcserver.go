@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -126,6 +127,46 @@ func (s *server) AddPeer(
 	return &pbrpc.RPCPlainResponse{}, nil
 }
 
+func (s *server) DiscoverShard(
+	ctx context.Context,
+	req *pbrpc.RPCListTopicPeerRequest) (*pbrpc.RPCListTopicPeerResponse, error) {
+	// Add span for DiscoverShard
+	spanctx, err := logger.StartFromParentState(ctx, "RPCServer.DiscoverShard", s.serializedSpanCtx)
+	if err != nil {
+		logger.Debugf("Failed to deserialze the trace context. Tracer won't be able to put rpc call traces together. err: %v", err)
+		spanctx = logger.Start(ctx, "RPCServer.DiscoverShard")
+	}
+	defer logger.Finish(spanctx)
+
+	var topics []string
+	if len(req.Topics) == 0 {
+		for _, shardID := range s.node.GetListeningShards() {
+			topics = append(topics, strconv.FormatInt(shardID, 10))
+		}
+	} else {
+		topics = req.Topics
+	}
+
+	topicPeers := make(map[string]*pbmsg.Peers)
+	logger.Debugf("rpcserver:DiscoverShard: Shards=%v", topics)
+	for _, topic := range topics {
+		if pInfos, err := s.node.discovery.FindPeers(spanctx, topic); err != nil {
+			logger.SetErr(spanctx, fmt.Errorf("Failed to discover peers on shard %v", shardTopicToShardID(topic)))
+			logger.Errorf("Failed to discover peers on shard %v", shardTopicToShardID(topic))
+		} else {
+			pIDs := make([]peer.ID, len(pInfos))
+			for i, pInfo := range pInfos {
+				pIDs[i] = pInfo.ID
+			}
+			topicPeers[topic] = peerIDsToPBPeers(pIDs)
+		}
+	}
+	logger.Debug("rpcserver:DiscoverShard: finished")
+	return &pbrpc.RPCListTopicPeerResponse{
+		TopicPeers: topicPeers,
+	}, nil
+}
+
 func (s *server) SubscribeShard(
 	ctx context.Context,
 	req *pbrpc.RPCSubscribeShardRequest) (*pbrpc.RPCPlainResponse, error) {
@@ -137,10 +178,11 @@ func (s *server) SubscribeShard(
 	}
 	defer logger.Finish(spanctx)
 
+	numShardPeerToConnect := int(req.NumShardPeerToConnect)
 	subscribedShardID := make([]int64, 0)
 	logger.Debugf("rpcserver:SubscribeShard: shardIDs=%v", req.ShardIDs)
 	for _, shardID := range req.ShardIDs {
-		if err := s.node.ListenShard(spanctx, shardID); err != nil {
+		if err := s.node.ListenShard(spanctx, numShardPeerToConnect, shardID); err != nil {
 			logger.SetErr(spanctx, fmt.Errorf("Failed to listen to shard %v", shardID))
 			logger.Errorf("Failed to listen to shard %v", shardID)
 		} else {

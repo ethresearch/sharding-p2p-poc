@@ -71,12 +71,30 @@ add_peer() {
     `cli_prompt $seed0` addpeer $IP $(show_port $seed1) $seed1
 }
 
-# subscribe_shard {seed} {shard_id} {shard_id} ...
+# discover_shard {seed} {shard_id} {shard_id} ...
+discover_shard() {
+    p=$@
+    seed=$1
+    params=${@:2}
+    `cli_prompt $seed` discovershard $params
+}
+
+# subscribe_shard {seed} {num_peers} {shard_id} {shard_id} ...
 subscribe_shard() {
     p=$@
     seed=$1
     params=${@:2}
     `cli_prompt $seed` subshard $params
+}
+
+# subscribe_shard_no_discover {seed} {shard_id} {shard_id} ...
+# subscribe_shard_no_discover is basically subscribe_shard
+# but with num_peers set to zero
+subscribe_shard_no_discover() {
+    p=$@
+    seed=$1
+    params=${@:2}
+    `cli_prompt $seed` subshard 0 $params
 }
 
 # unsubscribe_shard {seed} {shard_id} {shard_id} ...
