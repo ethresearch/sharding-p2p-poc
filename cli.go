@@ -154,7 +154,7 @@ func callIdentify(rpcAddr string) {
 	if err != nil {
 		logger.Fatalf("Failed to request identification from RPC server at %v, err: %v", rpcAddr, err)
 	}
-	fmt.Println(res.PeerID, res.GetMultiAddrs())
+	fmt.Println(marshalToJSONString(res))
 }
 
 func callRPCAddPeer(rpcAddr string, ipAddr string, port int, seed int) {
