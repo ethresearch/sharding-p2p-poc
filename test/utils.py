@@ -119,6 +119,9 @@ class Node:
             return json.loads(out)
         return out
 
+    def identify(self):
+        return self.cli_safe("identify")
+
     def add_peer(self, node):
         self.cli_safe("addpeer {} {} {}".format(node.ip, node.port, node.seed))
 
@@ -185,11 +188,8 @@ class Node:
         return log
 
     def set_peer_id(self):
-        grep_res = self.wait_for_log('Node is listening', 0)
-        match = re.search(r'peerID=([a-zA-Z0-9]+) ', grep_res)
-        if match is None:
-            raise ValueError("failed to grep the peer_id from docker logs")
-        self.peer_id = match[1]
+        pinfo = self.identify()
+        self.peer_id = pinfo["peerID"]
 
     def get_log_time(self, pattern, k_th):
         log = self.wait_for_log(pattern, k_th)
