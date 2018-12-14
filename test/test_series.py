@@ -144,6 +144,6 @@ def test_reproduce_bootstrapping_issue():
 
 
 if __name__ == "__main__":
-    # test_time_broadcasting_data_single_shard()
-    # test_joining_through_bootnodes()
+    test_time_broadcasting_data_single_shard()
+    test_joining_through_bootnodes()
     test_reproduce_bootstrapping_issue()
