@@ -116,7 +116,7 @@ def test_joining_through_bootnodes():
     print("done")
 
 
-def test_issues():
+def test_reproduce_bootstrapping_issue():
     num_bootnodes = 1
     num_normal_nodes = 5
     print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
@@ -146,4 +146,4 @@ def test_issues():
 if __name__ == "__main__":
     # test_time_broadcasting_data_single_shard()
     # test_joining_through_bootnodes()
-    test_issues()
+    test_reproduce_bootstrapping_issue()
