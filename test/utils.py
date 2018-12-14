@@ -140,8 +140,8 @@ class Node:
     def list_topic_peer(self, topics=[]):
         return self.cli_safe(["listtopicpeer"] + topics)
 
-    def subscribe_shard(self, shard_ids):
-        self.cli_safe(["subshard"] + shard_ids)
+    def subscribe_shard(self, shard_ids, num_shard_peer_to_connect=0):
+        self.cli_safe(["subshard", num_shard_peer_to_connect] + shard_ids)
 
     def unsubscribe_shard(self, shard_ids):
         self.cli_safe(["unsubshard"] + shard_ids)
