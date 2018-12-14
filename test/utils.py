@@ -158,10 +158,10 @@ class Node:
             collation_time,
         ])
 
-    def bootstrap(self, mode):
+    def bootstrap(self, if_start):
         self.cli_safe([
             "bootstrap",
-            "start" if mode else "stop",
+            "start" if if_start else "stop",
         ])
 
     def stop(self):
