@@ -83,7 +83,7 @@ class Node:
         )
         subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, check=True)
 
-    def cli(self, cmd_list, **kwargs):
+    def cli(self, cmd_list):
         cmd_quoted_param_list = ["'{}'".format(i) for i in cmd_list]
         cmd_quoted_param_str = " ".join(cmd_quoted_param_list)
         return subprocess.run(
@@ -99,7 +99,6 @@ class Node:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
-            **kwargs,
         )
 
     def cli_safe(self, cmd):
@@ -159,10 +158,10 @@ class Node:
             collation_time,
         ])
 
-    def bootstrap(self, switch):
+    def bootstrap(self, mode):
         self.cli_safe([
             "bootstrap",
-            "start" if switch else "stop",
+            "start" if mode else "stop",
         ])
 
     def stop(self):
