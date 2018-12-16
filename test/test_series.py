@@ -134,10 +134,20 @@ def test_reproduce_bootstrapping_issue():
     all_nodes = bootnodes + nodes
     for node in all_nodes:
         node.subscribe_shard([1])
+
+    print("Sleeping for seconds...", end='')
+    time.sleep(3)
+    print("done")
+
     for node in all_nodes:
         peers = node.list_peer()
-        print(f"{node}: peers={peers}")
         topic_peers = node.list_topic_peer([])
+        print("{}: summary: len(peers)={}, len_per_topic={}".format(
+            node,
+            len(peers),
+            {key: len(value) for key, value in topic_peers.items()},
+        ))
+        print(f"{node}: peers={peers}")
         print(f"{node}: topic_peers={topic_peers}")
 
     kill_nodes(bootnodes + nodes)
