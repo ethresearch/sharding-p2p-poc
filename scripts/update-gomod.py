@@ -79,12 +79,14 @@ def download_git_repo(git_repo):
             pass
     if not os.path.exists(make_git_path(repo_path)):
         git_url = "https://{}".format(git_repo)
-        res = subprocess.run("git clone {} {}".format(git_url, repo_path), shell=True, encoding='utf-8')
+        res = subprocess.run(
+            "git clone {} {}".format(git_url, repo_path),
+            shell=True,
+        )
     else:
         res = subprocess.run(
             make_git_cmd(repo_path, "pull origin master"),
             shell=True,
-            encoding='utf-8',
         )
     if res.returncode != 0:
         raise DownloadFailure("failed to download/update the git repo: repo={}, res={}".format(
@@ -269,5 +271,16 @@ def do_download():
     download_repos(git_repo_list)
 
 
+supported_modes = {"update": do_update, "download": do_download}
+
+
 if __name__ == "__main__":
-    do_update()
+    if len(sys.argv) <= 1:
+        raise ValueError("Need the argument `mode`")
+    mode = sys.argv[1]
+    if mode not in supported_modes:
+        raise ValueError("Wrong mode={}. Supported: {}".format(
+            mode,
+            ", ".join([i for i in supported_modes.keys()])
+        ))
+    supported_modes[mode]()
