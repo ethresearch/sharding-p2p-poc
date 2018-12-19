@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
+from collections import (
+    namedtuple,
+)
 import json
 import logging
 import os
 import re
 import subprocess
+import sys
 
 
 least_go_version_str = '1.11'
@@ -24,6 +28,7 @@ if version_str < least_go_version_str:
 GOPATH = os.getenv('GOPATH')
 TMP_GIT_REPO_PATH = "/tmp/gx-git-repos"
 
+RepoVersion = namedtuple("RepoVersion", ["gx_path", "git_repo", "version"])
 
 logger = logging.getLogger("update-gomod")
 
@@ -40,24 +45,15 @@ class GetVersionFailure(Exception):
     pass
 
 
-class GxPath:
-    gx_hash = None
-    repo_name = None
+def make_gx_path(gx_hash, repo_name):
+    return "{}/src/gx/ipfs/{}/{}".format(GOPATH, gx_hash, repo_name)
 
-    def __init__(self, gx_hash, repo_name):
-        self.gx_hash = gx_hash
-        self.repo_name = repo_name
 
-    @property
-    def gx_path(self):
-        return "{}/src/gx/ipfs/{}/{}".format(GOPATH, self.gx_hash, self.repo_name)
-
-    @classmethod
-    def from_gx_path(cls, gx_path):
-        path_list = gx_path.split('/')
-        if len(path_list) < 6:
-            raise ValueError("malform gx_path={}".format(gx_path))
-        return cls(path_list[4], path_list[5])
+def extract_gx_hash(gx_path):
+    path_list = gx_path.split('/')
+    if len(path_list) < 6:
+        raise ValueError("malform gx_path={}".format(gx_path))
+    return path_list[4]
 
 
 def make_git_repo_path(git_repo):
@@ -108,8 +104,8 @@ def is_version_in_repo(git_repo, sem_ver):
         "{}".format(
             make_git_cmd(git_repo_path, "tag")
         ),
-        shell=True,
         encoding='utf-8',
+        shell=True,
         stdout=subprocess.PIPE,
     )
     if res.returncode != 0:
@@ -125,9 +121,9 @@ def get_commit_from_repo(git_repo, gx_hash):
             make_git_cmd(git_repo_path, "rev-list --all"),
             make_git_cmd(git_repo_path, "grep {}".format(gx_hash)),
         ),
+        encoding="utf-8",
         shell=True,
         stdout=subprocess.PIPE,
-        encoding="utf-8",
     )
     if res.returncode != 0:
         raise GetCommitFailure("failed to fetch the commit: gx_hash={}, repo={}".format(
@@ -170,8 +166,9 @@ def _dvcsimport_to_git_repo(dvcsimport_path):
 def get_repo_deps(root_repo_path):
     """Go through the dependencies
     """
-    visited_repos = {}  # repo_gx_path -> git_repo
+    visited_repos = set()
     queue = list()
+    deps = []
 
     queue.append(root_repo_path)
     while len(queue) != 0:
@@ -183,11 +180,10 @@ def get_repo_deps(root_repo_path):
             package_info = json.load(f_read)
         # add the deps
         if 'gxDependencies' in package_info:
-            deps = package_info['gxDependencies']
-            for dep_info in deps:
+            for dep_info in package_info['gxDependencies']:
                 dep_name = dep_info['name']
                 dep_gx_hash = dep_info['hash']
-                dep_gx_path = GxPath(dep_gx_hash, dep_name).gx_path
+                dep_gx_path = make_gx_path(dep_gx_hash, dep_name)
                 queue.append(dep_gx_path)
         try:
             git_repo = _dvcsimport_to_git_repo(_remove_url_prefix(package_info["bugs"]["url"]))
@@ -196,10 +192,17 @@ def get_repo_deps(root_repo_path):
         version = None
         if "version" in package_info:
             version = package_info["version"]
-        visited_repos[repo_path] = (git_repo, version)
-    # exclude the root repo itself
-    del visited_repos[root_repo_path]
-    return visited_repos
+        visited_repos.add(repo_path)
+        if repo_path != root_repo_path:
+            rv = RepoVersion(gx_path=repo_path, git_repo=git_repo, version=version)
+            deps.append(rv)
+    # filter out non-github deps
+    github_deps = [
+        repo_version
+        for repo_version in deps
+        if "github.com" in repo_version.git_repo
+    ]
+    return github_deps
 
 
 def parse_version_from_repo_gx_hash(git_repo, raw_version, repo_gx_hash):
@@ -208,18 +211,23 @@ def parse_version_from_repo_gx_hash(git_repo, raw_version, repo_gx_hash):
     # TODO: add checks to ensure gx repos are downloaded(with `gx install`?)
     # try to find the version in the downloaded git repo
     commit = version = None
-    sem_ver = "v{}".format(raw_version)
-    if is_version_in_repo(git_repo, sem_ver):
-        version = sem_ver
+
+    if raw_version is None:
+        version = None
     else:
-        # try to find the commit in the downloaded git repo
-        # XXX: will fail if the git repo does not contain information of gx_hash
-        #      the usual case is, the repo is not maintained by IPFS teams
-        commit = get_commit_from_repo(git_repo, repo_gx_hash)
+        sem_ver = "v{}".format(raw_version)
+        if is_version_in_repo(git_repo, sem_ver):
+            version = sem_ver
+    # try to find the commit in the downloaded git repo
+    # XXX: will fail if the git repo does not contain information of gx_hash
+    #      the usual case is, the repo is not maintained by IPFS teams
+    commit = get_commit_from_repo(git_repo, repo_gx_hash)
     return version, commit
 
 
 def update_repo_to_go_mod(git_repo, version=None, commit=None):
+    """Update the repo with either version or commit(priority: version > commit)
+    """
     if version is not None:
         print("updating git_repo={} with version={} ...".format(git_repo, version), end="")
         version_indicator = version
@@ -236,11 +244,10 @@ def update_repo_to_go_mod(git_repo, version=None, commit=None):
     print("finished")
 
 
-def update_repos(map_repos):
-    for repo_gx_path, repo_version in map_repos.items():
-        git_repo, raw_version = repo_version
-        gx_obj = GxPath.from_gx_path(repo_gx_path)
-        gx_hash = gx_obj.gx_hash
+def update_repos(repos):
+    for repo_version in repos:
+        gx_path, git_repo, raw_version = repo_version
+        gx_hash = extract_gx_hash(gx_path)
         version, commit = parse_version_from_repo_gx_hash(git_repo, raw_version, gx_hash)
         try:
             update_repo_to_go_mod(git_repo, version, commit)
@@ -249,14 +256,18 @@ def update_repos(map_repos):
             logger.debug("failed to update the repo %s", git_repo)
 
 
-if __name__ == "__main__":
+def do_update():
     current_path = os.getcwd()
-    import sys
-    deps_map = get_repo_deps(current_path)
-    # filter out non-github deps
-    github_deps = {
-        repo_gx_path: repo_version
-        for repo_gx_path, repo_version in deps_map.items()
-        if "github.com" in repo_version[0]
-    }
-    update_repos(github_deps)
+    deps = get_repo_deps(current_path)
+    update_repos(deps)
+
+
+def do_download():
+    current_path = os.getcwd()
+    deps = get_repo_deps(current_path)
+    git_repo_list = [i.git_repo for i in deps]
+    download_repos(git_repo_list)
+
+
+if __name__ == "__main__":
+    do_update()
