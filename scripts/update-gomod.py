@@ -27,6 +27,7 @@ if version_str < least_go_version_str:
 
 GOPATH = os.getenv('GOPATH')
 TMP_GIT_REPO_PATH = "/tmp/gx-git-repos"
+GX_PREFIX = "{}/src/gx/ipfs".format(GOPATH)
 
 RepoVersion = namedtuple("RepoVersion", ["gx_path", "git_repo", "version"])
 
@@ -46,14 +47,17 @@ class GetVersionFailure(Exception):
 
 
 def make_gx_path(gx_hash, repo_name):
-    return "{}/src/gx/ipfs/{}/{}".format(GOPATH, gx_hash, repo_name)
+    return "{}/{}/{}".format(GX_PREFIX, gx_hash, repo_name)
 
 
 def extract_gx_hash(gx_path):
-    path_list = gx_path.split('/')
-    if len(path_list) < 6:
+    if not gx_path.startswith(GX_PREFIX):
+        raise ValueError("gx_path={} should have the preifx {}".format(gx_path, GX_PREFIX))
+    # get rid of the prefix f"{GX_PREFIX}/", and split with '/'
+    path_list = gx_path[len(GX_PREFIX) + 1:].split('/')
+    if len(path_list) < 2:
         raise ValueError("malform gx_path={}".format(gx_path))
-    return path_list[4]
+    return path_list[0]
 
 
 def make_git_repo_path(git_repo):
@@ -85,7 +89,7 @@ def download_git_repo(git_repo):
         )
     else:
         res = subprocess.run(
-            make_git_cmd(repo_path, "pull origin master"),
+            make_git_cmd(repo_path, "fetch"),
             shell=True,
         )
     if res.returncode != 0:
@@ -187,10 +191,10 @@ def get_repo_deps(root_repo_path):
                 dep_gx_hash = dep_info['hash']
                 dep_gx_path = make_gx_path(dep_gx_hash, dep_name)
                 queue.append(dep_gx_path)
-        try:
-            git_repo = _dvcsimport_to_git_repo(_remove_url_prefix(package_info["bugs"]["url"]))
-        except KeyError:
-            git_repo = _dvcsimport_to_git_repo(package_info['gx']['dvcsimport'])
+        # try:
+        #     git_repo = _dvcsimport_to_git_repo(_remove_url_prefix(package_info["bugs"]["url"]))
+        # except KeyError:
+        git_repo = _dvcsimport_to_git_repo(package_info['gx']['dvcsimport'])
         version = None
         if "version" in package_info:
             version = package_info["version"]
@@ -224,6 +228,8 @@ def parse_version_from_repo_gx_hash(git_repo, raw_version, repo_gx_hash):
     # XXX: will fail if the git repo does not contain information of gx_hash
     #      the usual case is, the repo is not maintained by IPFS teams
     commit = get_commit_from_repo(git_repo, repo_gx_hash)
+    if version is not None and commit is None:
+        logger.debug("can only find version of git_repo={} through versions, raw_version={}, repo_gx_hash={}".format(git_repo, raw_version, repo_gx_hash))  # noqa: E501
     return version, commit
 
 
@@ -231,10 +237,10 @@ def update_repo_to_go_mod(git_repo, version=None, commit=None):
     """Update the repo with either version or commit(priority: version > commit)
     """
     if version is not None:
-        print("updating git_repo={} with version={} ...".format(git_repo, version), end="")
+        print("updating git_repo={} with version={} ...".format(git_repo, version))
         version_indicator = version
     elif commit is not None:
-        print("updating git_repo={} with commit={} ...".format(git_repo, commit), end="")
+        print("updating git_repo={} with commit={} ...".format(git_repo, commit))
         version_indicator = commit
     else:
         raise ValueError("failed to update {}: version and commit are both None".format(git_repo))
@@ -243,7 +249,6 @@ def update_repo_to_go_mod(git_repo, version=None, commit=None):
         shell=True,
         stdout=subprocess.PIPE,
     )
-    print("finished")
 
 
 def update_repos(repos):
@@ -255,6 +260,7 @@ def update_repos(repos):
             update_repo_to_go_mod(git_repo, version, commit)
         except ValueError:
             # FIXME: ignore the failed updates for now
+            print("failed to update repo_version={}".format(repo_version))
             logger.debug("failed to update the repo %s", git_repo)
 
 
@@ -271,7 +277,10 @@ def do_download():
     download_repos(git_repo_list)
 
 
-supported_modes = {"update": do_update, "download": do_download}
+supported_modes = {
+    "update": do_update,
+    "download": do_download,
+}
 
 
 if __name__ == "__main__":
