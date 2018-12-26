@@ -239,13 +239,8 @@ def make_local_nodes(low, top, bootnodes=None):
 
     time.sleep(5)
 
-    threads = []
     for node in nodes:
-        t = threading.Thread(target=node.set_peer_id, args=())
-        t.start()
-        threads.append(t)
-    for t in threads:
-        t.join()
+        node.set_peer_id()
     return nodes
 
 
