@@ -1,6 +1,7 @@
 from collections import (
     defaultdict,
 )
+import logging
 import subprocess
 import threading
 import os
@@ -9,6 +10,9 @@ import time
 from .config import (
     PORT_BASE,
     RPC_PORT_BASE,
+)
+from .exceptions import (
+    WrongTopology,
 )
 from .node import (
     Node,
@@ -33,7 +37,11 @@ def make_local_node(seed, bootnodes=None):
         seed + RPC_PORT_BASE,
         seed,
     )
-    n.run(bootnodes)
+    if bootnodes is None:
+        bootnodes_multiaddr = None
+    else:
+        bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
+    n.run(bootnodes_multiaddr)
     return n
 
 
@@ -66,52 +74,11 @@ def connect_nodes(nodes, topology):
             nodes[i].add_peer(nodes[j])
 
 
-def ensure_topology(nodes, expected_topology):
-    if len(nodes) <= 1:
-        return
-
-    threads = []
-
-    def check_connection(nodes, i, j):
-        peers_i = nodes[i].list_peer()
-        peers_j = nodes[j].list_peer()
-        # assume symmetric connections
-        assert nodes[j].peer_id in peers_i
-        assert nodes[i].peer_id in peers_j
-
-    for i, targets in expected_topology.items():
-        for j in targets:
-            t = threading.Thread(target=check_connection, args=(nodes, i, j))
-            t.start()
-            threads.append(t)
-    for t in threads:
-        t.join()
-
-
 def make_peer_id_map(nodes):
     return {
         node.peer_id: node.seed
         for node in nodes
     }
-
-
-def get_actual_topology(nodes):
-    map_peer_id_to_seed = make_peer_id_map(nodes)
-    topo = defaultdict(set)
-    for node in nodes:
-        peers = node.list_peer()
-        for peer_id in peers:
-            peer_seed = map_peer_id_to_seed[peer_id]
-            topo[node.seed].add(peer_seed)
-    return topo
-
-
-def kill_nodes(nodes):
-    node_names = [n.name for n in nodes]
-    subprocess.run(
-        ["docker", "kill"] + node_names,
-        stdout=subprocess.PIPE,
-    )
 
 
 def make_barbell_topology(nodes):
@@ -129,14 +96,95 @@ def make_complete_topology(nodes):
     return topo
 
 
+def ensure_topology(nodes, expected_topology):
+    if len(nodes) <= 1:
+        return
+
+    threads = []
+
+    def check_connection(nodes, i, j):
+        peers_i = nodes[i].list_peer()
+        peers_j = nodes[j].list_peer()
+        # assume symmetric connections
+        if not (nodes[j].peer_id in peers_i and nodes[i].peer_id in peers_j):
+            raise WrongTopology("Nodes are not connected as expected_topology={}".format(
+                expected_topology,
+            ))
+
+    for i, targets in expected_topology.items():
+        for j in targets:
+            t = threading.Thread(target=check_connection, args=(nodes, i, j))
+            t.start()
+            threads.append(t)
+    for t in threads:
+        t.join()
+
+
 class Network:
 
-    nodes = None
-    topo = None  # set of set
+    bootnodes = None
+    normal_nodes = None
+    topology = None
 
-    def __init__(self, num_nodes):
-        # self.nodes = nodes
-        pass
+    logger = logging.getLogger("simulation.network")
 
-    def connect(self):
-        pass
+    def __init__(self, num_bootnodes, num_normal_nodes):
+        self.logger.info("Spinning up %s bootnodes", num_bootnodes)
+        self.bootnodes = make_local_nodes(0, num_bootnodes)
+        # TODO: confirm whether to connect bootnodes in advance
+        # connect_nodes(
+        #     self.bootnodes,
+        #     make_barbell_topology(self.bootnodes),
+        # )
+        self.logger.info("Spinning up %s normal nodes", num_normal_nodes)
+        self.normal_nodes = make_local_nodes(
+            num_bootnodes,
+            num_bootnodes + num_normal_nodes,
+            bootnodes=self.bootnodes,
+        )
+
+    @property
+    def nodes(self):
+        return self.bootnodes + self.normal_nodes
+
+    def has_connected(self):
+        return self.topology is not None
+
+    def _connect(self, topo_factory):
+        if self.has_connected():
+            self.logger.warning("connected before")
+            raise Exception("connected before")
+        self.logger.info("Connecting nodes")
+        self.topology = topo_factory(self.nodes)
+        connect_nodes(self.nodes, self.topology)
+        ensure_topology(self.nodes, self.topology)
+
+    def connect_barbell(self):
+        self._connect(make_barbell_topology)
+
+    def connect_completely(self):
+        self._connect(make_complete_topology)
+
+    def _verify_topology(self):
+        if len(self.bootnodes) != 0:
+            self.logger.warning("topology might change when bootnodes are used")
+        self.logger.info("Verifying topogloy")
+        ensure_topology(self.nodes, self.topology)
+
+    def get_actual_topology(self):
+        map_peer_id_to_seed = make_peer_id_map(self.nodes)
+        topo = defaultdict(set)
+        for node in self.nodes:
+            peers = node.list_peer()
+            for peer_id in peers:
+                peer_seed = map_peer_id_to_seed[peer_id]
+                topo[node.seed].add(peer_seed)
+        return topo
+
+    def kill_nodes(self):
+        node_names = [n.name for n in self.nodes]
+        self.logger.info("Killing nodes")
+        subprocess.run(
+            ["docker", "kill"] + node_names,
+            stdout=subprocess.PIPE,
+        )

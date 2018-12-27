@@ -1,7 +1,6 @@
 import json
 import subprocess
 
-
 from dateutil import (
     parser,
 )
@@ -48,7 +47,7 @@ class Node:
         """
         self.close()
         bootnodes_cmd = ""
-        if bootnodes is not None:
+        if (bootnodes is not None) and (len(bootnodes) != 0):
             bootnodes_cmd = "-bootstrap -bootnodes={}".format(
                 ",".join(bootnodes),
             )
