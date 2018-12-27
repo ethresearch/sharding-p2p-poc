@@ -1,14 +1,20 @@
-#!/usr/bin/env python
-
 from datetime import (
     datetime,
 )
 import logging
 import math
 import os
+from pathlib import (
+    Path,
+)
+import sys
 import time
 
-from utils import (
+
+sys.path.append("{}/..".format(Path(__file__).parent))
+
+
+from simulation.network import (
     connect_nodes,
     ensure_topology,
     get_actual_topology,
@@ -16,10 +22,6 @@ from utils import (
     make_barbell_topology,
     make_local_nodes,
 )
-
-
-LOG_BROADCASTCOLLATION = 'rpcserver:BroadcastCollation: finished'
-LOG_RECEIVE_MSG = 'Validating the received message'
 
 
 def test_time_broadcasting_data_single_shard():
