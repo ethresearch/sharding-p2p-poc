@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
+from datetime import (
+    datetime,
+)
 import logging
 import math
 import os
 import time
-
-from datetime import (
-    datetime,
-)
 
 from utils import (
     connect_nodes,
