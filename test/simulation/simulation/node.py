@@ -36,11 +36,21 @@ class Node:
 
     @property
     def multiaddr(self):
+        if self.peer_id is None:
+            raise ValueError("`peer_id` has not been set")
         return f"/ip4/{self.ip}/tcp/{self.port}/ipfs/{self.peer_id}"
 
     def close(self):
-        subprocess.run(f"docker kill {self.name}", shell=True, stdout=subprocess.PIPE)
-        subprocess.run(f"docker rm -f {self.name}", shell=True, stdout=subprocess.PIPE)
+        subprocess.run(
+            ["docker", "kill", self.name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        subprocess.run(
+            ["docker", "rm", "-f", self.name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
 
     def run(self, bootnodes=None):
         """`bootnodes` should be a list of string. Each string should be a multiaddr.
@@ -61,6 +71,8 @@ class Node:
         subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, check=True)
 
     def cli(self, cmd_list):
+        if not isinstance(cmd_list, list):
+            raise CLIFailure("`cmd_list` should be of `list` type: cmd_list={!r}".format(cmd_list))
         cmd_quoted_param_list = ["'{}'".format(i) for i in cmd_list]
         cmd_quoted_param_str = " ".join(cmd_quoted_param_list)
         return subprocess.run(
@@ -114,8 +126,15 @@ class Node:
     def list_peer(self):
         return self.cli_safe(["listpeer"])
 
-    def list_topic_peer(self, topics=[]):
+    def list_topic_peer(self, topics=None):
+        if topics is None:
+            topics = []
         return self.cli_safe(["listtopicpeer"] + topics)
+
+    def list_shard_peer(self, shards=None):
+        if shards is None:
+            shards = []
+        return self.cli_safe(["listshardpeer"] + shards)
 
     def subscribe_shard(self, shard_ids, num_shard_peer_to_connect=0):
         self.cli_safe(["subshard", num_shard_peer_to_connect] + shard_ids)
@@ -135,28 +154,23 @@ class Node:
             collation_time,
         ])
 
-    def bootstrap(self, if_start):
-        self.cli_safe([
-            "bootstrap",
-            "start" if if_start else "stop",
-        ])
+    def bootstrap(self, if_start, bootnodes_str=None):
+        if if_start:
+            if bootnodes_str is None:
+                raise CLIFailure("if `bootstrap start`, `bootnodes_str` should not be `None`")
+            self.cli_safe([
+                "bootstrap",
+                "start",
+                bootnodes_str,
+            ])
+        else:
+            self.cli_safe([
+                "bootstrap",
+                "stop",
+            ])
 
     def stop(self):
         self.cli_safe(["stop"])
-
-    def grep_log(self, pattern):
-        res = subprocess.run(
-            [
-                "docker logs {} 2>&1 | grep '{}'".format(
-                    self.name,
-                    pattern,
-                ),
-            ],
-            shell=True,
-            stdout=subprocess.PIPE,
-            encoding='utf-8',
-        )
-        return res.stdout.rstrip()
 
     def wait_for_log(self, pattern, k_th):
         """Wait for the `k_th` log in the format of `pattern`

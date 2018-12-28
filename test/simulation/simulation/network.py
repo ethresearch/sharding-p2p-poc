@@ -1,6 +1,3 @@
-from collections import (
-    defaultdict,
-)
 import logging
 import subprocess
 import threading
@@ -143,9 +140,10 @@ class Network:
     normal_nodes = None
     topology = None
 
-    logger = logging.getLogger("simulation.network")
+    logger = logging.getLogger("simulation.Network")
 
     def __init__(self, num_bootnodes, num_normal_nodes, connect_bootnodes=True):
+        self.logger.setLevel(logging.DEBUG)
         self.logger.info("Spinning up %s bootnodes", num_bootnodes)
         self.bootnodes = make_local_nodes(0, num_bootnodes)
         # connect bootnodes with full topology

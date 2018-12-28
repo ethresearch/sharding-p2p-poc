@@ -10,8 +10,8 @@ from pathlib import (
 import sys
 import time
 
-from simulation.constants import (
-    LOG_BROADCASTCOLLATION,
+from simulation.logs import (
+    LOG_BROADCAST_COLLATION_FINISHED,
     LOG_RECEIVE_MSG,
 )
 from simulation.network import (
@@ -92,10 +92,6 @@ def test_joining_through_bootnodes():
 def test_reproduce_bootstrapping_issue():
     n = Network(num_bootnodes=1, num_normal_nodes=5)
 
-    print("Sleeping for seconds...", end='')
-    time.sleep(3)
-    print("done")
-
     all_nodes = n.nodes
     for node in all_nodes:
         node.subscribe_shard([1])
@@ -119,6 +115,10 @@ def test_reproduce_bootstrapping_issue():
 
 
 if __name__ == "__main__":
+    l = logging.getLogger("simulation.Network")
+    h = logging.StreamHandler()
+    h.setLevel(logging.DEBUG)
+    l.addHandler(h)
     test_time_broadcasting_data_single_shard()
     test_joining_through_bootnodes()
     test_reproduce_bootstrapping_issue()
