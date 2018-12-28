@@ -1,16 +1,13 @@
 #!/usr/bin/env python
 
+import logging
+import math
+import os
+import time
+
 from datetime import (
     datetime,
 )
-import json
-import logging
-import re
-import subprocess
-import sys
-import threading
-import os
-import time
 
 from utils import (
     connect_nodes,
@@ -21,26 +18,17 @@ from utils import (
     make_local_nodes,
 )
 
-# --i <image>
-# --n <number of nodes>
-# --I <interface> eno4
-# example:
-# os.system("./umba --i sharding --I eno4 --n 20")
-# os.system("docker exec -it whiteblock-node0 -port=8080")
-# ip eample: 10.1.0.2 would be whiteblock-node0
-# 10.1.0.6 would be whiteblock-node1 ++
-# just add the flags and commands that are needed
-# we will handle logic of collecting data and configuring umba
 
-#TEST SERIES A
-#LATENCY
+LOG_BROADCASTCOLLATION = 'rpcserver:BroadcastCollation: finished'
+LOG_RECEIVE_MSG = 'Validating the received message'
 
 
 def test_time_broadcasting_data_single_shard():
     num_nodes = 30
-    num_collations = 1
+    num_collations = 10
     collation_size = 1000000  # 1MB
     collation_time = 50  # broadcast 1 collation every 50 milliseconds
+    percent = 0.9
 
     print("Spinning up {} nodes...".format(num_nodes), end='')
     nodes = make_local_nodes(0, num_nodes)
@@ -64,19 +52,28 @@ def test_time_broadcasting_data_single_shard():
         ),
         end='',
     )
-    nodes[broadcasting_node].broadcast_collation(0, num_collations, collation_size, collation_time)  # 1MB
+    nodes[broadcasting_node].broadcast_collation(0, num_collations, collation_size, collation_time)
     print("done")
 
+    # TODO: maybe we can have a list of broadcasted data, and use them to grep in the nodes' logs
+    #       for precision, instead of using only numbers
+    # wait until all nodes receive the broadcasted data, and gather the time
     print("Gathering time...", end='')
-    time_broadcast = nodes[0].get_log_time('rpcserver:BroadcastCollation: finished', 0)
-    time_received = nodes[-1].get_log_time(
-        'Validating the received message',
-        num_collations - 1,
-    )
+    time_broadcast = nodes[broadcasting_node].get_log_time(LOG_BROADCASTCOLLATION, 0)
+    time_received_list = []
+    for i in range(len(nodes)):
+        time_received = nodes[i].get_log_time(LOG_RECEIVE_MSG, num_collations - 1,)
+        time_received_list.append(time_received)
     print("done")
+
+    # sort the time, find the last node in the first percent% nodes who received the data
+    time_received_sorted = sorted(time_received_list, key=lambda t: t)
+    index_last = math.ceil(len(nodes) * percent - 1)
+
     print(
-        "time to broadcast all data to the last node: \x1b[0;37m{}\x1b[0m".format(
-            time_received - time_broadcast,
+        "time to broadcast all data to {} percent nodes: \x1b[0;37m{}\x1b[0m".format(
+            percent,
+            time_received_sorted[index_last] - time_broadcast,
         )
     )
     print("Cleaning up the nodes...", end='')
