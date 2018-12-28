@@ -84,6 +84,7 @@ def connect_nodes(nodes, topology):
         except:
             raise InvalidTopology("conn={}, topology={}".format(conn, topology))
         nodes[index0].add_peer(nodes[index1])
+    time.sleep(1)
 
 
 def make_peer_id_map(nodes):

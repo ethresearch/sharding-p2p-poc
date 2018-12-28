@@ -29,10 +29,10 @@ def test_time_broadcasting_data_single_shard():
     collation_time = 50  # broadcast 1 collation every 50 milliseconds
     percent = 0.9
 
-    network = Network(0, 30)
-    network.connect_barbell()
+    n = Network(0, 30)
+    n.connect_barbell()
 
-    nodes = network.nodes
+    nodes = n.nodes
     for node in nodes:
         node.subscribe_shard([0])
 
@@ -73,47 +73,30 @@ def test_time_broadcasting_data_single_shard():
             time_received_sorted[index_last] - time_broadcast,
         )
     )
-    network.kill_nodes()
+    n.kill_nodes()
 
 
 def test_joining_through_bootnodes():
     n = Network(num_bootnodes=1, num_normal_nodes=10)
-    print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
-    bootnodes = make_local_nodes(0, num_bootnodes)
-    print("done")
-    print("Connecting bootnodes...", end='')
-    topo = make_barbell_topology(bootnodes)
-    connect_nodes(bootnodes, topo)
-    print("done")
-    print("Checking the connections...", end='')
-    ensure_topology(bootnodes, topo)
-    print("done")
-
-    print("Spinning up {} nodes...".format(num_normal_nodes), end='')
-    nodes = make_local_nodes(num_bootnodes, num_bootnodes + num_normal_nodes, bootnodes_multiaddr)
-    print("done")
 
     print("Sleeping for seconds...", end='')
     time.sleep(3)
     print("done")
 
-    all_nodes = bootnodes + nodes
-    actual_topo = get_actual_topology(all_nodes)
+    actual_topo = n.get_actual_topology()
     print("actual_topo =", actual_topo)
 
-    print("Cleaning up the nodes...", end='')
-    kill_nodes(all_nodes)
-    print("done")
+    n.kill_nodes()
 
 
 def test_reproduce_bootstrapping_issue():
-    network = Network(num_bootnodes=1, num_normal_nodes=5)
+    n = Network(num_bootnodes=1, num_normal_nodes=5)
 
     print("Sleeping for seconds...", end='')
     time.sleep(3)
     print("done")
 
-    all_nodes = network.nodes
+    all_nodes = n.nodes
     for node in all_nodes:
         node.subscribe_shard([1])
 
@@ -132,10 +115,10 @@ def test_reproduce_bootstrapping_issue():
         print(f"{node}: peers={peers}")
         print(f"{node}: topic_peers={topic_peers}")
 
-    network.kill_nodes()
+    n.kill_nodes()
 
 
 if __name__ == "__main__":
     test_time_broadcasting_data_single_shard()
-    # test_joining_through_bootnodes()
+    test_joining_through_bootnodes()
     test_reproduce_bootstrapping_issue()
