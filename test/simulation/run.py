@@ -56,7 +56,7 @@ def test_time_broadcasting_data_single_shard():
     #       for precision, instead of using only numbers
     # wait until all nodes receive the broadcasted data, and gather the time
     print("Gathering time...", end='')
-    time_broadcast = nodes[broadcasting_node].get_log_time(LOG_BROADCASTCOLLATION, 0)
+    time_broadcast = nodes[broadcasting_node].get_log_time(LOG_BROADCAST_COLLATION_FINISHED, 0)
     time_received_list = []
     for i in range(len(nodes)):
         time_received = nodes[i].get_log_time(LOG_RECEIVE_MSG, num_collations - 1,)

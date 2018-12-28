@@ -90,7 +90,7 @@ def test_wait_for_log(unchanged_node):
     #      if the log style changes in the container and we get fewer lines, this will block
     #      forever
     log = unchanged_node.wait_for_log("INFO", 1)
-    # just confirm
+    # just confirm the grep'ed log is correct
     assert "INFO" in log.split(' ')
 
 
