@@ -263,8 +263,10 @@ def test_broadcast_collation(nodes):
     nodes[1].subscribe_shard([0])
     nodes[2].subscribe_shard([0])
     time.sleep(2)
-    # test: see if all nodes receive the broadcasted collation
-    nodes[0].broadcast_collation(0, 1, 1000, 123)
+    # test: see if all nodes receive the broadcasted collation. Use a bigger size of collation to
+    #       avoid the possible small time difference. E.g. sometimes t2 < t1, which does not make
+    #       sense.
+    nodes[0].broadcast_collation(0, 1, 1000000, 123)
     t0 = nodes[0].get_log_time(LOG_BROADCAST_COLLATION_FINISHED, 0)
     t1 = nodes[0].get_log_time(LOG_RECEIVE_MSG, 0)
     t2 = nodes[1].get_log_time(LOG_RECEIVE_MSG, 0)
