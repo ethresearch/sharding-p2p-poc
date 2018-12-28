@@ -10,10 +10,6 @@ from pathlib import (
 import sys
 import time
 
-
-sys.path.append("{}/..".format(Path(__file__).parent))
-
-
 from simulation.constants import (
     LOG_BROADCASTCOLLATION,
     LOG_RECEIVE_MSG,
@@ -39,6 +35,11 @@ def test_time_broadcasting_data_single_shard():
     nodes = network.nodes
     for node in nodes:
         node.subscribe_shard([0])
+
+    print("Sleeping for seconds...", end='')
+    time.sleep(3)
+    print("done")
+
     broadcasting_node = 0
     print(
         "Broadcasting {} collations(size={} bytes) from node{} in the barbell topology...".format(
@@ -76,9 +77,7 @@ def test_time_broadcasting_data_single_shard():
 
 
 def test_joining_through_bootnodes():
-    num_bootnodes = 1
-    num_normal_nodes = 10
-    n = Network(1, 10)
+    n = Network(num_bootnodes=1, num_normal_nodes=10)
     print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
     bootnodes = make_local_nodes(0, num_bootnodes)
     print("done")
@@ -138,5 +137,5 @@ def test_reproduce_bootstrapping_issue():
 
 if __name__ == "__main__":
     test_time_broadcasting_data_single_shard()
-    test_joining_through_bootnodes()
+    # test_joining_through_bootnodes()
     test_reproduce_bootstrapping_issue()
