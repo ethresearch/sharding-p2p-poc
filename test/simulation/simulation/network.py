@@ -1,7 +1,9 @@
 import logging
-import subprocess
-import threading
+from multiprocessing.pool import (
+    ThreadPool,
+)
 import os
+import subprocess
 import time
 
 from .config import (
@@ -15,6 +17,9 @@ from .exceptions import (
 from .node import (
     Node,
 )
+
+
+THREAD_POOL_SIZE = 30
 
 
 def get_docker_host_ip():
@@ -44,26 +49,22 @@ def make_local_node(seed, bootnodes=None):
 
 
 def make_local_nodes(low, top, bootnodes=None):
-    nodes = []
-    threads = []
 
-    def run_node(seed, bootnodes=None):
-        node = make_local_node(seed, bootnodes)
-        nodes.append(node)
+    def run_node(seed):
+        return make_local_node(seed, bootnodes)
 
-    for i in range(low, top):
-        t = threading.Thread(target=run_node, args=(i, bootnodes))
-        t.start()
-        threads.append(t)
-    for t in threads:
-        t.join()
-    nodes = sorted(nodes, key=lambda node: node.seed)
+    pool = ThreadPool(THREAD_POOL_SIZE)
+    nodes = pool.map(
+        run_node,
+        range(low, top),
+    )
+    nodes_sorted = sorted(nodes, key=lambda node: node.seed)
 
     time.sleep(5)
 
-    for node in nodes:
+    for node in nodes_sorted:
         node.set_peer_id()
-    return nodes
+    return nodes_sorted
 
 
 def _make_conn_tuple(a, b):
@@ -111,9 +112,11 @@ def ensure_topology(nodes, expected_topology):
     if len(nodes) <= 1:
         return
 
-    threads = []
-
-    def check_connection(nodes, i, j):
+    def check_connection(conn):
+        try:
+            i, j = conn
+        except:
+            raise InvalidTopology("conn={}, expected_topology={}".format(conn, expected_topology))
         peers_i = nodes[i].list_peer()
         peers_j = nodes[j].list_peer()
         # assume symmetric connections
@@ -122,16 +125,11 @@ def ensure_topology(nodes, expected_topology):
                 expected_topology,
             ))
 
-    for conn in expected_topology:
-        try:
-            index0, index1 = conn
-        except:
-            raise InvalidTopology("conn={}, expected_topology={}".format(conn, expected_topology))
-        t = threading.Thread(target=check_connection, args=(nodes, index0, index1))
-        t.start()
-        threads.append(t)
-    for t in threads:
-        t.join()
+    pool = ThreadPool(THREAD_POOL_SIZE)
+    pool.map(
+        check_connection,
+        expected_topology,
+    )
 
 
 class Network:
