@@ -1,6 +1,7 @@
 from datetime import (
     datetime,
 )
+import functools
 import logging
 import math
 import os
@@ -23,6 +24,31 @@ from simulation.network import (
 )
 
 
+def test_decor(test_func):
+    @functools.wraps(test_func)
+    def func(*args, **kwargs):
+        total_len = 100
+        separator = "="
+        if len(test_func.__name__) > (total_len - 2):
+            start_kanban = "{} {}".format(separator * 30, test_func.__name__)
+        else:
+            num_separators = len(test_func.__name__) - 2
+            start_kanban = "{} {} {}".format(
+                separator * (num_separators // 2),
+                test_func.__name__,
+                separator * ((num_separators // 2 + 1) if num_separators % 2 != 0 else num_separators // 2),  # noqa: E501
+            )
+        print(start_kanban)
+        t_start = time.time()
+        res = test_func(*args, **kwargs)
+        print("{} execution time: {} seconds".format(test_func.__name__, time.time() - t_start))
+        end_kanban = separator * total_len
+        print(end_kanban)
+        return res
+    return func
+
+
+@test_decor
 def test_time_broadcasting_data_single_shard():
     num_collations = 10
     collation_size = 1000000  # 1MB
@@ -76,6 +102,7 @@ def test_time_broadcasting_data_single_shard():
     n.kill_nodes()
 
 
+@test_decor
 def test_joining_through_bootnodes():
     n = Network(num_bootnodes=1, num_normal_nodes=10)
 
@@ -89,6 +116,7 @@ def test_joining_through_bootnodes():
     n.kill_nodes()
 
 
+@test_decor
 def test_reproduce_bootstrapping_issue():
     n = Network(num_bootnodes=1, num_normal_nodes=5)
 
