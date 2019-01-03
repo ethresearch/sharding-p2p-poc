@@ -17,10 +17,6 @@ from simulation.logs import (
 )
 from simulation.network import (
     Network,
-    connect_nodes,
-    ensure_topology,
-    make_barbell_topology,
-    make_local_nodes,
 )
 
 
@@ -32,7 +28,7 @@ def test_decor(test_func):
         if len(test_func.__name__) > (total_len - 2):
             start_kanban = "{} {}".format(separator * 30, test_func.__name__)
         else:
-            num_separators = len(test_func.__name__) - 2
+            num_separators = total_len - (len(test_func.__name__) + 2)
             start_kanban = "{} {} {}".format(
                 separator * (num_separators // 2),
                 test_func.__name__,

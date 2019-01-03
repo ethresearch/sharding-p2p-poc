@@ -108,7 +108,7 @@ def make_complete_topology(nodes):
     return topology
 
 
-def ensure_topology(nodes, expected_topology):
+def contains_topology(nodes, expected_topology):
     if len(nodes) <= 1:
         return
 
@@ -164,11 +164,18 @@ class Network:
     def has_connected(self):
         return self.topology is not None
 
-    def _verify_topology(self):
+    def verify_topology(self):
         if len(self.bootnodes) != 0:
             self.logger.warning("topology might change when bootnodes are used")
         self.logger.info("Verifying topogloy")
-        ensure_topology(self.nodes, self.topology)
+        actual_topology = self.get_actual_topology()
+        if self.topology != actual_topology:
+            raise WrongTopology(
+                "Topology mismatch: actual_topology={}, expected_topology={}".format(
+                    actual_topology,
+                    self.topology,
+                )
+            )
 
     def _connect(self, topo_factory):
         if self.has_connected():
@@ -177,7 +184,6 @@ class Network:
         self.logger.info("Connecting nodes")
         self.topology = topo_factory(self.nodes)
         connect_nodes(self.nodes, self.topology)
-        self._verify_topology()
 
     def connect_barbell(self):
         self._connect(make_barbell_topology)
