@@ -14,8 +14,8 @@ For more information, please check out the [document](https://github.com/ethrese
 - `go` with `1.11.x` or above is installed and properly configured on your machine.
     - `$GOPATH` variable has been [specified](https://github.com/golang/go/wiki/GOPATH).
     - `$GOPATH/bin/` is part of your `$PATH`.
-- If you modify `*.proto` files, you will also need `protoc` to compile them to `*.pb.go`
-    - e.g., [Install protoc on mac](https://medium.com/@erika_dike/installing-the-protobuf-compiler-on-a-mac-a0d397af46b8)
+- If you modify `*.proto` files, you will also need `protoc` to compile them to `*.pb.go`.
+    - e.g., [Install protoc on mac](https://medium.com/@erika_dike/installing-the-protobuf-compiler-on-a-mac-a0d397af46b8).
 
 ### Build
 
@@ -60,7 +60,7 @@ Usage of ./sharding-p2p-poc:
 
 **Note**
 - `-bootstrap` controls whether to spin up a bootstrap routine, which periodically queries its peers for new peers. There will be no effect if you feed `-bootnodes` without specifying the flag `-bootstrap`.
-- `-client` indicates we are running a client of sharding-p2p-poc. If not specifying the flag it will be run as the server by default. Details can be found in the [section](#command-line-interface)
+- `-client` indicates we are running a client of sharding-p2p-poc. If not specifying the flag it will be run as the server by default. Details can be found in this [section](#command-line-interface).
 
 ### Example
 
@@ -81,7 +81,7 @@ To give commands to the node you have spun up, you can run the command in this f
 $ ./sharding-p2p-poc -client -rpcport={rpcport} {method_name} {params}
 ```
 
-The flag `-rpcport` is important since it is used to specify which node you are going to communicate with. If you don't specify it, the current default `rpcport` is `13000`
+The flag `-rpcport` is important since it is used to specify which node you are going to communicate with. If you don't specify it, the current default `rpcport` is `13000`.
 
 Since they are still subject to changes, please check out the [documentations](https://notes.ethereum.org/s/HJdvvyTmm) for further reference to the RPC methods. You can also check out the examples [here](https://github.com/ethresearch/sharding-p2p-poc/tree/master/cli-example).
 
