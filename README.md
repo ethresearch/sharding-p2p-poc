@@ -42,17 +42,25 @@ Usage of ./sharding-p2p-poc:
     	whether to do bootstrapping or not
   -client
     	is RPC client or server
+  -ip string
+    	ip listened by the process for incoming connections (default "127.0.0.1")
+  -notifierport int
+    	notifier port listened by the event rpc server
   -port int
     	port listened by the node for incoming connections (default 10000)
+  -rpcip string
+    	ip listened by the RPC server (default "127.0.0.1")
   -rpcport int
-    	rpc port listened by the rpc server (default 13000)
+    	RPC port listened by the RPC server (default 13000)
   -seed int
     	set random seed for id generation
   -verbose
-        set the log level to DEBUG, i.e., print all messages
+    	verbose output, i.e., log level is set to DEBUG, otherwise it's set to ERROR
 ```
 
-**Note**: `-bootstrap` controls whether to spin up a bootstrap routine, which periodically queries its peers for new peers. There will be no effect if you feed `-bootnodes` without specifying the flag `-bootstrap`.
+**Note**
+- `-bootstrap` controls whether to spin up a bootstrap routine, which periodically queries its peers for new peers. There will be no effect if you feed `-bootnodes` without specifying the flag `-bootstrap`.
+- `-client` indicates we are running a client of sharding-p2p-poc. If not specifying the flag it will be run as the server by default. Details can be found in the [section](#command-line-interface)
 
 ### Example
 
@@ -61,7 +69,7 @@ Usage of ./sharding-p2p-poc:
 ```bash
 $ ./sharding-p2p-poc -seed=1 -port=10001 -rpcport=13001 -bootstrap -bootnodes=/ip4/127.0.0.1/tcp/5566/ipfs/QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7,/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX
 ```
-This command spins up a node with seed `0`, listening to new connections at port `10001`, listening to RPC requests at port `13001`, turning on bootstrapping mode with the flag`-bootstrap`, with the bootstrapping nodes `/ip4/127.0.0.1/tcp/5566/ipfs/QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7` and `/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX`.
+This command spins up a node with seed `1`, listening to new connections at port `10001`, listening to RPC requests at port `13001`, turning on bootstrapping mode with the flag`-bootstrap`, with the bootstrapping nodes `/ip4/127.0.0.1/tcp/5566/ipfs/QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7` and `/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX`.
 
 **Note**: `/ip4/127.0.0.1/tcp/10001/ipfs/QmexAnfpHrhMmAC5UNQVS8iBuUUgDrMbMY17Cck2gKrqeX` is the format of ipfs address, which is in the form of `/ip4/{ip}/tcp/{port}/{peerID}`.
 
