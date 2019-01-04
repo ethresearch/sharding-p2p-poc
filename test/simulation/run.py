@@ -1,14 +1,6 @@
-from datetime import (
-    datetime,
-)
 import functools
 import logging
 import math
-import os
-from pathlib import (
-    Path,
-)
-import sys
 import time
 
 from simulation.logs import (
@@ -51,8 +43,11 @@ def test_time_broadcasting_data_single_shard():
     collation_time = 50  # broadcast 1 collation every 50 milliseconds
     percent = 0.9
 
-    n = Network(0, 30)
-    n.connect_barbell()
+    n = Network(
+        num_bootnodes=0,
+        num_normal_nodes=30,
+        topology_option=Network.topology_option.BARBELL,
+    )
 
     nodes = n.nodes
     for node in nodes:
@@ -95,12 +90,15 @@ def test_time_broadcasting_data_single_shard():
             time_received_sorted[index_last] - time_broadcast,
         )
     )
-    n.kill_nodes()
 
 
 @test_decor
 def test_joining_through_bootnodes():
-    n = Network(num_bootnodes=1, num_normal_nodes=10)
+    n = Network(
+        num_bootnodes=1,
+        num_normal_nodes=10,
+        topology_option=Network.topology_option.NONE,
+    )
 
     print("Sleeping for seconds...", end='')
     time.sleep(3)
@@ -109,12 +107,14 @@ def test_joining_through_bootnodes():
     actual_topo = n.get_actual_topology()
     print("actual_topo =", actual_topo)
 
-    n.kill_nodes()
-
 
 @test_decor
 def test_reproduce_bootstrapping_issue():
-    n = Network(num_bootnodes=1, num_normal_nodes=5)
+    n = Network(
+        num_bootnodes=1,
+        num_normal_nodes=5,
+        topology_option=Network.topology_option.NONE,
+    )
 
     all_nodes = n.nodes
     for node in all_nodes:
@@ -134,8 +134,6 @@ def test_reproduce_bootstrapping_issue():
         ))
         print(f"{node}: peers={peers}")
         print(f"{node}: topic_peers={topic_peers}")
-
-    n.kill_nodes()
 
 
 if __name__ == "__main__":

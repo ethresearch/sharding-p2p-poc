@@ -1,3 +1,4 @@
+import enum
 import logging
 from multiprocessing.pool import (
     ThreadPool,
@@ -60,7 +61,7 @@ def make_local_nodes(low, top, bootnodes=None):
     )
     nodes_sorted = sorted(nodes, key=lambda node: node.seed)
 
-    time.sleep(5)
+    time.sleep(2)
 
     for node in nodes_sorted:
         node.set_peer_id()
@@ -121,9 +122,13 @@ def contains_topology(nodes, expected_topology):
         peers_j = nodes[j].list_peer()
         # assume symmetric connections
         if not (nodes[j].peer_id in peers_i and nodes[i].peer_id in peers_j):
-            raise WrongTopology("Nodes are not connected as expected_topology={}".format(
-                expected_topology,
-            ))
+            raise WrongTopology(
+                "Nodes {} and {} are not connected, expected_topology={}".format(
+                    i,
+                    j,
+                    expected_topology,
+                )
+            )
 
     pool = ThreadPool(THREAD_POOL_SIZE)
     pool.map(
@@ -132,17 +137,39 @@ def contains_topology(nodes, expected_topology):
     )
 
 
+class TopologyOption(enum.Enum):
+    NONE = 1
+    BARBELL = 2
+    FULL = 3
+
+
+topology_factory_map = {
+    TopologyOption.NONE: lambda x: set(),
+    TopologyOption.BARBELL: make_barbell_topology,
+    TopologyOption.FULL: make_complete_topology,
+}
+
+
 class Network:
 
     bootnodes = None
     normal_nodes = None
-    topology = None
+    expected_topology = None
+    is_killed = None
+
+    topology_option = TopologyOption
 
     logger = logging.getLogger("simulation.Network")
 
-    def __init__(self, num_bootnodes, num_normal_nodes, connect_bootnodes=True):
+    def __init__(
+            self,
+            num_bootnodes,
+            num_normal_nodes,
+            topology_option=None,
+            connect_bootnodes=True):
         self.logger.setLevel(logging.DEBUG)
         self.logger.info("Spinning up %s bootnodes", num_bootnodes)
+        self.is_killed = False
         self.bootnodes = make_local_nodes(0, num_bootnodes)
         # connect bootnodes with full topology
         if connect_bootnodes:
@@ -156,24 +183,32 @@ class Network:
             num_bootnodes + num_normal_nodes,
             bootnodes=self.bootnodes,
         )
+        # setup topology
+        if topology_option is None:
+            topology_option = self.topology_option.NONE
+        topology_factory = topology_factory_map[topology_option]
+        self._connect(topology_factory)
+
+    def __del__(self):
+        self.kill_nodes()
 
     @property
     def nodes(self):
         return self.bootnodes + self.normal_nodes
 
     def has_connected(self):
-        return self.topology is not None
+        return self.expected_topology is not None
 
     def verify_topology(self):
         if len(self.bootnodes) != 0:
             self.logger.warning("topology might change when bootnodes are used")
         self.logger.info("Verifying topogloy")
         actual_topology = self.get_actual_topology()
-        if self.topology != actual_topology:
+        if self.expected_topology != actual_topology:
             raise WrongTopology(
                 "Topology mismatch: actual_topology={}, expected_topology={}".format(
                     actual_topology,
-                    self.topology,
+                    self.expected_topology,
                 )
             )
 
@@ -182,14 +217,8 @@ class Network:
             self.logger.warning("connected before")
             raise Exception("connected before")
         self.logger.info("Connecting nodes")
-        self.topology = topo_factory(self.nodes)
-        connect_nodes(self.nodes, self.topology)
-
-    def connect_barbell(self):
-        self._connect(make_barbell_topology)
-
-    def connect_completely(self):
-        self._connect(make_complete_topology)
+        self.expected_topology = topo_factory(self.nodes)
+        connect_nodes(self.nodes, self.expected_topology)
 
     def get_actual_topology(self):
         map_peer_id_to_seed = make_peer_id_map(self.nodes)
@@ -202,11 +231,20 @@ class Network:
         return topology
 
     def kill_nodes(self):
+        if self.is_killed:
+            return
         node_names = [n.name for n in self.nodes]
         self.logger.info("Killing nodes")
+        # batch `node.close()` together to speed up
         subprocess.run(
             ["docker", "kill"] + node_names,
             stdout=subprocess.PIPE,
         )
+        subprocess.run(
+            ["docker", "rm", "-f"] + node_names,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        self.is_killed = True
 
     # TODO: log aggregation?

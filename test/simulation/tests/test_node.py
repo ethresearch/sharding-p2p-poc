@@ -30,6 +30,7 @@ def unchanged_node():
     """Unchanged when tested, to save the time initializing new nodes every test.
     """
     n = make_local_node(12345)
+    time.sleep(2)
     n.set_peer_id()
     yield n
     n.close()
@@ -85,7 +86,6 @@ def test_run():
 
 
 def test_wait_for_log(unchanged_node):
-    time.sleep(0.2)
     # XXX: here assume we at least have two lines in the format of "INFO: xxx"
     #      if the log style changes in the container and we get fewer lines, this will block
     #      forever
@@ -95,7 +95,6 @@ def test_wait_for_log(unchanged_node):
 
 
 def test_get_log_time(unchanged_node):
-    time.sleep(0.2)
     unchanged_node.get_log_time("INFO", 1)
 
 
@@ -104,6 +103,7 @@ def test_set_peer_id():
     assert n.peer_id is None
     n.set_peer_id()
     assert n.peer_id is not None
+    n.close()
 
 
 def test_multiaddr(nodes):
@@ -113,8 +113,10 @@ def test_multiaddr(nodes):
         RPC_PORT_BASE,
         0,
     )
+    # test: `multiaddr` should fail since the `peer_id` haven't been set after initialized.
     with pytest.raises(ValueError):
         unrun_node.multiaddr
+    # test: nodes are run with `set_peer_id` in `make_local_nodes`
     assert nodes[0].multiaddr == "/ip4/{}/tcp/{}/ipfs/{}".format(
         nodes[0].ip,
         nodes[0].port,
@@ -124,21 +126,22 @@ def test_multiaddr(nodes):
 
 
 def test_cli(unchanged_node):
-    inexisting_command = "123456"
-    res = unchanged_node.cli([inexisting_command])
+    non_existing_command = "123456"
+    res = unchanged_node.cli([non_existing_command])
     assert res.returncode != 0
     existing_command = "listpeer"
     res = unchanged_node.cli([existing_command])
     assert res.returncode == 0
-    # wrong type: should be `list` instead of the `string`
+    # test: wrong type, should be `list` instead of the `string`
     with pytest.raises(CLIFailure):
         unchanged_node.cli(existing_command)
 
 
 def test_cli_safe(unchanged_node):
-    inexisting_command = "123456"
+    non_existing_command = "123456"
+    # test: non-existing command should fail in `cli_safe`
     with pytest.raises(CLIFailure):
-        unchanged_node.cli_safe([inexisting_command])
+        unchanged_node.cli_safe([non_existing_command])
     unchanged_node.cli_safe(["listpeer"])
 
 
@@ -166,16 +169,19 @@ def test_add_peer(nodes):
     seed_2 = nodes[2].seed
     # ip
     nodes[2].ip = "123.456.789.012"
+    # test: nodes[0] should fail to add nodes[2] because of the mocked and wrong ip
     with pytest.raises(CLIFailure):
         nodes[0].add_peer(nodes[2])
     nodes[2].ip = ip_2
     # port
     nodes[2].port = 123
+    # test: nodes[0] should fail to add nodes[2] because of the mocked and wrong port
     with pytest.raises(CLIFailure):
         nodes[0].add_peer(nodes[2])
     nodes[2].port = port_2
     # seed
     nodes[2].seed = 32767
+    # test: nodes[0] should fail to add nodes[2] because of the mocked and wrong seed
     with pytest.raises(CLIFailure):
         nodes[0].add_peer(nodes[2])
     nodes[2].seed = seed_2
@@ -189,13 +195,16 @@ def test_remove_peer(nodes):
         nodes[0].remove_peer("123")
     # test: remove non-peer
     nodes[0].remove_peer(nodes[2].peer_id)
+    assert len(nodes[0].list_peer()) == 0
     nodes[0].add_peer(nodes[1])
+    assert len(nodes[0].list_peer()) == 1
     nodes[0].remove_peer(nodes[1].peer_id)
     # symmetric connection
     assert len(nodes[0].list_peer()) == 0
     assert len(nodes[1].list_peer()) == 0
     # test: remove twice
     nodes[0].remove_peer(nodes[1].peer_id)
+    assert len(nodes[0].list_peer()) == 0
 
 
 def test_list_topic_peer(nodes):
@@ -231,7 +240,8 @@ def test_subscribe_shard(nodes):
     # test: subscribe "0" twice, and shards "1", "2"
     nodes[0].subscribe_shard([0, 1, 2])
     assert nodes[0].get_subscribed_shard() == [0, 1, 2]
-    # test: ensure there are two logs `LOG_SUBSCRIBE_SHARD_FINISHED` because of `subscribe_shard`
+    # test: ensure there are two logs LOG_SUBSCRIBE_SHARD_FINISHED because `subscribe_shard` is
+    #       called twice
     nodes[0].wait_for_log(LOG_SUBSCRIBE_SHARD_FINISHED, 1)
 
 
@@ -282,7 +292,7 @@ def test_bootstrap(nodes):
     nodes[0].add_peer(nodes[1])
     nodes[1].add_peer(nodes[2])
     time.sleep(0.2)
-    # test: nodes[0] bootstrap and get the nodes[2] as peer with nodes[1] as the bootnode
+    # test: nodes[0] bootstraps with nodes[1] as the bootnode and therefore connects to nodes[2]
     nodes[0].bootstrap(True, nodes[1].multiaddr)
     time.sleep(2)
     assert nodes[2].peer_id in nodes[0].list_peer()

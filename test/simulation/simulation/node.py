@@ -61,7 +61,7 @@ class Node:
             bootnodes_cmd = "-bootstrap -bootnodes={}".format(
                 ",".join(bootnodes),
             )
-        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethresearch/sharding-p2p:dev sh -c \"./sharding-p2p-poc -verbose -ip=0.0.0.0 -seed={} {}\"".format(
+        cmd = "docker run -d --name {} -p {}:10000 -p {}:13000 ethresearch/sharding-p2p:dev sh -c \"./sharding-p2p-poc -verbose -ip=0.0.0.0 -seed={} {}\"".format(  # noqa: E501
             self.name,
             self.port,
             self.rpc_port,
