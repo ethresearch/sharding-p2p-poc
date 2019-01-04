@@ -2,6 +2,8 @@ import pytest
 import subprocess
 import time
 
+import datetime
+
 from simulation.config import (
     PORT_BASE,
     RPC_PORT_BASE,
@@ -95,7 +97,8 @@ def test_wait_for_log(unchanged_node):
 
 
 def test_get_log_time(unchanged_node):
-    unchanged_node.get_log_time("INFO", 1)
+    log_time = unchanged_node.get_log_time("INFO", 1)
+    assert isinstance(log_time, datetime.datetime)
 
 
 def test_set_peer_id():
