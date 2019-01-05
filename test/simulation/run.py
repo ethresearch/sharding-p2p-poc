@@ -1,48 +1,62 @@
-#!/usr/bin/env python
-
+import functools
 import logging
 import math
-import os
 import time
 
-from datetime import (
-    datetime,
+from simulation.logs import (
+    LOG_BROADCAST_COLLATION_FINISHED,
+    LOG_RECEIVE_MSG,
 )
-
-from utils import (
-    connect_nodes,
-    ensure_topology,
-    get_actual_topology,
-    kill_nodes,
-    make_barbell_topology,
-    make_local_nodes,
+from simulation.network import (
+    Network,
 )
 
 
-LOG_BROADCASTCOLLATION = 'rpcserver:BroadcastCollation: finished'
-LOG_RECEIVE_MSG = 'Validating the received message'
+def test_decor(test_func):
+    @functools.wraps(test_func)
+    def func(*args, **kwargs):
+        total_len = 100
+        separator = "="
+        if len(test_func.__name__) > (total_len - 2):
+            start_kanban = "{} {}".format(separator * 30, test_func.__name__)
+        else:
+            num_separators = total_len - (len(test_func.__name__) + 2)
+            start_kanban = "{} {} {}".format(
+                separator * (num_separators // 2),
+                test_func.__name__,
+                separator * ((num_separators // 2 + 1) if num_separators % 2 != 0 else num_separators // 2),  # noqa: E501
+            )
+        print(start_kanban)
+        t_start = time.time()
+        res = test_func(*args, **kwargs)
+        print("{} execution time: {} seconds".format(test_func.__name__, time.time() - t_start))
+        end_kanban = separator * total_len
+        print(end_kanban)
+        return res
+    return func
 
 
+@test_decor
 def test_time_broadcasting_data_single_shard():
-    num_nodes = 30
     num_collations = 10
     collation_size = 1000000  # 1MB
     collation_time = 50  # broadcast 1 collation every 50 milliseconds
     percent = 0.9
 
-    print("Spinning up {} nodes...".format(num_nodes), end='')
-    nodes = make_local_nodes(0, num_nodes)
-    print("done")
-    print("Connecting nodes...", end='')
-    topo = make_barbell_topology(nodes)
-    connect_nodes(nodes, topo)
-    print("done")
-    print("Checking the connections...", end='')
-    ensure_topology(nodes, topo)
-    print("done")
+    n = Network(
+        num_bootnodes=0,
+        num_normal_nodes=30,
+        topology_option=Network.topology_option.BARBELL,
+    )
 
+    nodes = n.nodes
     for node in nodes:
         node.subscribe_shard([0])
+
+    print("Sleeping for seconds...", end='')
+    time.sleep(3)
+    print("done")
+
     broadcasting_node = 0
     print(
         "Broadcasting {} collations(size={} bytes) from node{} in the barbell topology...".format(
@@ -59,7 +73,7 @@ def test_time_broadcasting_data_single_shard():
     #       for precision, instead of using only numbers
     # wait until all nodes receive the broadcasted data, and gather the time
     print("Gathering time...", end='')
-    time_broadcast = nodes[broadcasting_node].get_log_time(LOG_BROADCASTCOLLATION, 0)
+    time_broadcast = nodes[broadcasting_node].get_log_time(LOG_BROADCAST_COLLATION_FINISHED, 0)
     time_received_list = []
     for i in range(len(nodes)):
         time_received = nodes[i].get_log_time(LOG_RECEIVE_MSG, num_collations - 1,)
@@ -76,59 +90,33 @@ def test_time_broadcasting_data_single_shard():
             time_received_sorted[index_last] - time_broadcast,
         )
     )
-    print("Cleaning up the nodes...", end='')
-    kill_nodes(nodes)
-    print("done")
 
 
+@test_decor
 def test_joining_through_bootnodes():
-    num_bootnodes = 1
-    num_normal_nodes = 10
-    print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
-    bootnodes = make_local_nodes(0, num_bootnodes)
-    print("done")
-    print("Connecting bootnodes...", end='')
-    topo = make_barbell_topology(bootnodes)
-    connect_nodes(bootnodes, topo)
-    print("done")
-    print("Checking the connections...", end='')
-    ensure_topology(bootnodes, topo)
-    print("done")
-
-    bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
-    print("Spinning up {} nodes...".format(num_normal_nodes), end='')
-    nodes = make_local_nodes(num_bootnodes, num_bootnodes + num_normal_nodes, bootnodes_multiaddr)
-    print("done")
+    n = Network(
+        num_bootnodes=1,
+        num_normal_nodes=10,
+        topology_option=Network.topology_option.NONE,
+    )
 
     print("Sleeping for seconds...", end='')
     time.sleep(3)
     print("done")
 
-    all_nodes = bootnodes + nodes
-    actual_topo = get_actual_topology(all_nodes)
+    actual_topo = n.get_actual_topology()
     print("actual_topo =", actual_topo)
 
-    print("Cleaning up the nodes...", end='')
-    kill_nodes(all_nodes)
-    print("done")
 
-
+@test_decor
 def test_reproduce_bootstrapping_issue():
-    num_bootnodes = 1
-    num_normal_nodes = 5
-    print("Spinning up {} bootnodes...".format(num_bootnodes), end='')
-    bootnodes = make_local_nodes(0, num_bootnodes)
-    print("done")
-    bootnodes_multiaddr = [node.multiaddr for node in bootnodes]
-    print("Spinning up {} nodes...".format(num_normal_nodes), end='')
-    nodes = make_local_nodes(num_bootnodes, num_bootnodes + num_normal_nodes, bootnodes_multiaddr)
-    print("done")
+    n = Network(
+        num_bootnodes=1,
+        num_normal_nodes=5,
+        topology_option=Network.topology_option.NONE,
+    )
 
-    print("Sleeping for seconds...", end='')
-    time.sleep(3)
-    print("done")
-
-    all_nodes = bootnodes + nodes
+    all_nodes = n.nodes
     for node in all_nodes:
         node.subscribe_shard([1])
 
@@ -147,10 +135,12 @@ def test_reproduce_bootstrapping_issue():
         print(f"{node}: peers={peers}")
         print(f"{node}: topic_peers={topic_peers}")
 
-    kill_nodes(bootnodes + nodes)
-
 
 if __name__ == "__main__":
+    l = logging.getLogger("simulation.Network")
+    h = logging.StreamHandler()
+    h.setLevel(logging.DEBUG)
+    l.addHandler(h)
     test_time_broadcasting_data_single_shard()
     test_joining_through_bootnodes()
     test_reproduce_bootstrapping_issue()
