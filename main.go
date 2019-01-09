@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	logger    = logging.Logger("sharding-p2p")
+	logger    = logging.Logger("sharding-p2p-poc")
 	GitCommit string
 )
 
@@ -80,9 +80,9 @@ func main() {
 	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
 	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
 	if *verbose {
-		logging.SetLogLevel("sharding-p2p", "DEBUG")
+		logging.SetLogLevel("sharding-p2p-poc", "DEBUG")
 	} else {
-		logging.SetLogLevel("sharding-p2p", "ERROR")
+		logging.SetLogLevel("sharding-p2p-poc", "ERROR")
 	}
 
 	cliArgs := flag.Args()

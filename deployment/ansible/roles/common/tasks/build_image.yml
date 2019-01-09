@@ -10,7 +10,7 @@
   become: true
   docker_image:
     path: "/home/ubuntu/sharding-p2p-poc"
-    name: ethereum/sharding-p2p:dev
+    name: ethereum/sharding-p2p-poc:dev
     dockerfile: docker/dev.Dockerfile
     nocache: true
     force: true
