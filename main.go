@@ -273,7 +273,10 @@ func makeNode(
 	// Make a host that listens on the given multiaddress
 	node := NewNode(ctx, routedHost, dht, eventNotifier)
 	if doBootstrapping {
-		node.StartBootstrapping(ctx, bootstrapPeers)
+		err := node.StartBootstrapping(ctx, bootstrapPeers)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return node, nil
