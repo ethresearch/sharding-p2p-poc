@@ -309,3 +309,6 @@ def test_stop():
     n.stop()
     time.sleep(2)  # FIXME: we need to wait for a fairly long time to wait for its stop
     assert not is_node_running(n)
+
+
+# TODO: discover_shard
