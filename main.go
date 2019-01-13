@@ -191,7 +191,7 @@ func runServer(
 			Param: 1,
 		},
 		Reporter: &jaegerconfig.ReporterConfig{
-			LogSpans:           true,
+			LogSpans:           false,
 			LocalAgentHostPort: localAgentHostPort,
 		},
 	}
