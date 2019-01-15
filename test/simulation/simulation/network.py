@@ -247,4 +247,10 @@ class Network:
         )
         self.is_killed = True
 
-    # TODO: log aggregation?
+    def get_events(self):
+        """Get the happened events from all nodes
+        """
+        map_node_events = {}
+        for node in self.nodes:
+            map_node_events[node] = tuple(node.get_events())
+        return map_node_events

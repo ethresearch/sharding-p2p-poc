@@ -45,7 +45,7 @@ def parse_line(line):
             try:
                 log_time = parser.parse(matched_fields[0])
             except ValueError:
-                raise ParsingError("malform log_time, {!r}".format(matched_fields[0]))
+                raise ParsingError("malform log_time: {!r}".format(matched_fields[0]))
             event = Event(
                 time=log_time,
                 log_type=matched_fields[1],
@@ -56,9 +56,3 @@ def parse_line(line):
             )
             return event
     raise NoMatchingPattern("line={!r}".format(line))
-
-
-def parse_logs(node):
-    """Perform `parse_line` for each line of logs from the `node`.
-    """
-    pass

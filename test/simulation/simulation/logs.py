@@ -4,7 +4,7 @@ from enum import (
     auto,
 )
 
-# RPC_LOGS = namedtuple('')
+
 class RPCLogs(Enum):
     LOG_ADD_PEER_FMT = auto()
     LOG_ADD_PEER_FINISHED = auto()

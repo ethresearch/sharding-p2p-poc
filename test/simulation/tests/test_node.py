@@ -317,3 +317,7 @@ def test_stop():
 
 
 # TODO: discover_shard
+
+# TODO: get_logs
+
+# TODO: get_events
