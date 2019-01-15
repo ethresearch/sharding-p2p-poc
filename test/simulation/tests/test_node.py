@@ -9,10 +9,9 @@ from simulation.config import (
     RPC_PORT_BASE,
 )
 from simulation.logs import (
-    LOG_BROADCAST_COLLATION_FINISHED,
-    LOG_RECEIVE_MSG,
-    LOG_SUBSCRIBE_SHARD_FINISHED,
-    LOG_UNSUBSCRIBE_SHARD_FINISHED,
+    RPCLogs,
+    OperationLogs,
+    map_log_enum_pattern,
 )
 from simulation.exceptions import (
     CLIFailure,
@@ -245,7 +244,10 @@ def test_subscribe_shard(nodes):
     assert nodes[0].get_subscribed_shard() == [0, 1, 2]
     # test: ensure there are two logs LOG_SUBSCRIBE_SHARD_FINISHED because `subscribe_shard` is
     #       called twice
-    nodes[0].wait_for_log(LOG_SUBSCRIBE_SHARD_FINISHED, 1)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_SUBSCRIBE_SHARD_FINISHED],
+        1,
+    )
 
 
 def test_unsubscribe_shard(nodes):
@@ -263,7 +265,10 @@ def test_unsubscribe_shard(nodes):
     assert nodes[1].list_shard_peer([0])["0"] == []
     # test: ensure there are two logs `LOG_UNSUBSCRIBE_SHARD_FINISHED` because of
     #       `unsubscribe_shard`
-    nodes[0].wait_for_log(LOG_UNSUBSCRIBE_SHARD_FINISHED, 1)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_UNSUBSCRIBE_SHARD_FINISHED],
+        1,
+    )
 
 
 def test_broadcast_collation(nodes):
@@ -280,10 +285,10 @@ def test_broadcast_collation(nodes):
     #       avoid the possible small time difference. E.g. sometimes t2 < t1, which does not make
     #       sense.
     nodes[0].broadcast_collation(0, 1, 1000000, 123)
-    t0 = nodes[0].get_log_time(LOG_BROADCAST_COLLATION_FINISHED, 0)
-    t1 = nodes[0].get_log_time(LOG_RECEIVE_MSG, 0)
-    t2 = nodes[1].get_log_time(LOG_RECEIVE_MSG, 0)
-    t3 = nodes[2].get_log_time(LOG_RECEIVE_MSG, 0)
+    t0 = nodes[0].get_log_time(RPCLogs.LOG_BROADCAST_COLLATION_FINISHED, 0)
+    t1 = nodes[0].get_log_time(RPCLogs.LOG_RECEIVE_MSG, 0)
+    t2 = nodes[1].get_log_time(RPCLogs.LOG_RECEIVE_MSG, 0)
+    t3 = nodes[2].get_log_time(RPCLogs.LOG_RECEIVE_MSG, 0)
     assert t0 < t1
     assert t1 < t2
     assert t2 < t3

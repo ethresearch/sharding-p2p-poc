@@ -6,7 +6,7 @@ import time
 from simulation.logs import (
     RPCLogs,
     OperationLogs,
-    logs_map,
+    map_log_enum_pattern,
 )
 from simulation.network import (
     Network,
@@ -75,13 +75,13 @@ def test_time_broadcasting_data_single_shard():
     # wait until all nodes receive the broadcasted data, and gather the time
     print("Gathering time...", end='')
     time_broadcast = nodes[broadcasting_node].get_log_time(
-        logs_map[RPCLogs.LOG_BROADCAST_COLLATION_FINISHED],
+        map_log_enum_pattern[RPCLogs.LOG_BROADCAST_COLLATION_FINISHED],
         0,
     )
     time_received_list = []
     for i in range(len(nodes)):
         time_received = nodes[i].get_log_time(
-            logs_map[OperationLogs.LOG_RECEIVE_MSG],
+            map_log_enum_pattern[OperationLogs.LOG_RECEIVE_MSG],
             num_collations - 1,
         )
         time_received_list.append(time_received)

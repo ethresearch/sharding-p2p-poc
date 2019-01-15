@@ -179,8 +179,15 @@ class Node:
         """Wait for the `k_th` log in the format of `pattern`
         """
         # TODO: should set a `timeout`?
-        cmd = "docker logs {} -t -f 2>&1 | grep --line-buffered '{}' -m {}".format(
+
+        # This `sed` removes the color control code, to make `grep` work easier
+        # FIXME: it seems `wait_for_log` gets far slower after adding `cmd_rm_color_control`,
+        #        possibly because of the buffering in `sed`? But the situation didn't get better
+        #        even though added `-l`(line buffering) to `sed` in macOS.
+        cmd_rm_color_control = "sed -l 's/\\x1b\\\\[[0-9;]*[a-zA-Z]//g'"
+        cmd = "docker logs {} -t -f 2>&1 | {} | grep --line-buffered -E '{}' -m {}".format(
             self.name,
+            cmd_rm_color_control,
             pattern,
             k_th + 1,
         )

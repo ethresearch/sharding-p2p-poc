@@ -14,10 +14,10 @@ from simulation.log_aggregation import (
 )
 
 
-def test_parse_line_log_format_invalid_time(line):
+def test_parse_line_log_format_invalid_time():
     with pytest.raises(ParsingError):
         parse_line(
-            'abc 03:53:21.346 DEBUG sharding-p: rpcserver:AddPeer: ip=192.168.0.15, port=10001, seed=1 rpcserver.go:95',
+            'ABC123 03:53:21.346 DEBUG sharding-p: rpcserver:AddPeer: ip=192.168.0.15, port=10001, seed=1 rpcserver.go:95',
         )
 
 
