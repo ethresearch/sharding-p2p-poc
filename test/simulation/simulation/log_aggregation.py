@@ -30,7 +30,7 @@ _map_log_enum_pats = {
 
 
 # def _get_params_handler(log_enum):
-#     return lambda x: 
+#     return lambda x:
 
 
 def parse_line(line):
@@ -40,29 +40,25 @@ def parse_line(line):
     for log_enum, pat in _map_log_enum_pats.items():
         match = pat.search(line)
         # only return if a event is found
-        if match is None:
-            raise NoMatchingPattern
-        matched_fields = match.groups()
-        try:
-            log_time = parser.parse(matched_fields[0])
-        except ValueError:
-            raise ParsingError("malform log_time, {!r}".format(matched_fields[0]))
-        event = Event(
-            time=log_time,
-            log_type=matched_fields[1],
-            logger_name=matched_fields[2],
-            event_type=log_enum,
-            # TODO: params parser
-            params=matched_fields[3:],
-        )
-        return event
-    # not found
-    return None
+        if match is not None:
+            matched_fields = match.groups()
+            try:
+                log_time = parser.parse(matched_fields[0])
+            except ValueError:
+                raise ParsingError("malform log_time, {!r}".format(matched_fields[0]))
+            event = Event(
+                time=log_time,
+                log_type=matched_fields[1],
+                logger_name=matched_fields[2],
+                event_type=log_enum,
+                # TODO: params parser
+                params=matched_fields[3:],
+            )
+            return event
+    raise NoMatchingPattern("line={!r}".format(line))
 
 
 def parse_logs(node):
     """Perform `parse_line` for each line of logs from the `node`.
     """
     pass
-
-

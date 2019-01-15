@@ -28,8 +28,9 @@ class OperationLogs(Enum):
     LOG_RECEIVE_MSG = auto()
 
 
-
-LIST_REGEX = r'\[[^\]]*\]'
+# The regex for the list of elements: empty list, or 1 or more words, delimited by whitespaces
+# E.g. [], [1], [1 2], [shardCollations_2]
+REGEX_LIST = r'\[(?:|\w+(?:\s\w+)*)\]'
 
 
 _rpc_logs_map = {
@@ -41,12 +42,12 @@ _rpc_logs_map = {
     RPCLogs.LOG_BROADCAST_COLLATION_FINISHED: r'rpcserver:BroadcastCollation: finished',
     # FIXME: should change the list from [0 1 2] to JSON [0, 1, 2], for a more precise parsing
 # LOG_SUBSCRIBE_SHARD = 'rpcserver:SubscribeShard: shardIDs=[0 1 2]'
-    RPCLogs.LOG_SUBSCRIBE_SHARD_FMT: r'rpcserver:SubscribeShard: shardIDs=({})'.format(LIST_REGEX),
+    RPCLogs.LOG_SUBSCRIBE_SHARD_FMT: r'rpcserver:SubscribeShard: shardIDs=({})'.format(REGEX_LIST),
     RPCLogs.LOG_SUBSCRIBE_SHARD_FINISHED: r'rpcserver:SubscribeShard: finished',
 # LOG_UNSUBSCRIBE_SHARD = 'rpcserver:UnsubscribeShard: shardIDs=[0]'
-    RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT: r'rpcserver:UnsubscribeShard: shardIDs=({})'.format(LIST_REGEX),
+    RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT: r'rpcserver:UnsubscribeShard: shardIDs=({})'.format(REGEX_LIST),
     RPCLogs.LOG_UNSUBSCRIBE_SHARD_FINISHED: r'rpcserver:UnsubscribeShard: finished',
-    RPCLogs.LOG_DISCOVER_SHARD_FMT: r'rpcserver:DiscoverShard: Shards=({})'.format(LIST_REGEX),
+    RPCLogs.LOG_DISCOVER_SHARD_FMT: r'rpcserver:DiscoverShard: Shards=({})'.format(REGEX_LIST),
     RPCLogs.LOG_DISCOVER_SHARD_FINISHED: r'rpcserver:DiscoverShard: finished',
     RPCLogs.LOG_REMOVE_PEER_FMT: r'rpcserver:RemovePeer: peerID=(\w+)',
     RPCLogs.LOG_REMOVE_PEER_FINISHED: r'rpcserver:RemovePeer: finished',

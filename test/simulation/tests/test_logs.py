@@ -4,6 +4,7 @@ import pytest
 
 from simulation.logs import (
     OperationLogs,
+    REGEX_LIST,
     RPCLogs,
     map_log_enum_to_content_pattern,
 )
@@ -111,3 +112,43 @@ def test_log_patterns(log_enum, log):
     pattern = map_log_enum_to_content_pattern[log_enum]
     match = re.search(pattern, log)
     assert match is not None
+
+
+@pytest.mark.parametrize(
+    'log, parsed',
+    (
+        (
+            "[]",
+            "[]",
+        ),
+        (
+            "[0]",
+            "[0]",
+        ),
+        (
+            "[0 1 2]",
+            '[0 1 2]',
+        ),
+    ),
+)
+def test_regex_list_valid(log, parsed):
+    match = re.search(REGEX_LIST, log)
+    assert match is not None
+
+
+@pytest.mark.parametrize(
+    'log',
+    (
+        "",
+        "[",
+        "]",
+        "[ ]"
+        "[0,1,2]",
+        "[0, 1, 2]",
+        "[ 0]",
+        "[0 ]",
+    ),
+)
+def test_regex_list_invalid(log):
+    match = re.search(REGEX_LIST, log)
+    assert match is None
