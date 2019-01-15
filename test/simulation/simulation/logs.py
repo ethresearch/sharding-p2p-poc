@@ -62,7 +62,7 @@ _operation_logs_map = {
 }
 
 
-_log_enum_to_content_pattern = {
+map_log_enum_to_content_pattern = {
     **_rpc_logs_map,
     **_operation_logs_map,
 }
@@ -79,5 +79,5 @@ LOG_PATTERN = r"^([\w:\-\.]+)\s+[\d:\.]+\s+(\w+)\s+([^:]+):\s+{}"
 
 map_log_enum_pattern = {
     log_enum: LOG_PATTERN.format(log_content_pattern)
-    for log_enum, log_content_pattern in _log_enum_to_content_pattern.items()
+    for log_enum, log_content_pattern in map_log_enum_to_content_pattern.items()
 }
