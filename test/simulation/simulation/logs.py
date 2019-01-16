@@ -1,4 +1,6 @@
-# LOG_ADD_PEER = 'rpcserver:AddPeer: ip=192.168.11.69, port=10001, seed=1'
+from functools import (
+    partial,
+)
 from enum import (
     Enum,
     auto,
@@ -30,7 +32,53 @@ class OperationLogs(Enum):
 
 # The regex for the list of elements: empty list, or 1 or more words, delimited by whitespaces
 # E.g. [], [1], [1 2], [shardCollations_2]
-REGEX_LIST = r'\[(?:|\w+(?: \w+)*)\]'
+LIST_DELIMITER = r' '
+REGEX_LIST = r'\[(?:|\w+(?:{}\w+)*)\]'.format(LIST_DELIMITER)
+
+
+def list_ctor(list_str, element_type):
+    list_content = list_str[1:-1]
+    return tuple(
+        element_type(i)
+        for i in list_content.split(LIST_DELIMITER)
+    )
+
+
+# TODO: typing!!!
+_rpc_logs_params_ctor_map = {
+    RPCLogs.LOG_ADD_PEER_FMT: (str, int, int),
+    RPCLogs.LOG_BROADCAST_COLLATION_FMT: (int, int, int, int),
+    RPCLogs.LOG_SUBSCRIBE_SHARD_FMT: (partial(list_ctor, element_type=int),),
+    RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT: (partial(list_ctor, element_type=int),),
+    RPCLogs.LOG_DISCOVER_SHARD_FMT: (partial(list_ctor, element_type=str),),
+    RPCLogs.LOG_REMOVE_PEER_FMT: (str,),
+    RPCLogs.LOG_BOOTSTRAP_FMT: (bool, str),
+}
+
+
+def convert_type(param_strs, event_type):
+    if event_type not in _rpc_logs_params_ctor_map:
+        # do nothing
+        return param_strs
+    params_ctors = _rpc_logs_params_ctor_map[event_type]
+    if len(param_strs) != len(params_ctors):
+        raise ValueError(
+            "length of `params_ctors` and `param_strs` should be the same: "
+            "params_ctors={}, param_strs={}".format(params_ctors, param_strs)
+        )
+    return tuple(
+        params_ctors[index](param_str)
+        for index, param_str in enumerate(param_strs)
+    )
+
+
+a = ('1', '2', '3')
+b = convert_type(a, RPCLogs.LOG_ADD_PEER_FMT)
+print(b)
+c = ("[1 3 4]",)
+d = convert_type(c, RPCLogs.LOG_SUBSCRIBE_SHARD_FMT)
+print(d)
+
 
 
 _rpc_logs_map = {

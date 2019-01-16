@@ -152,3 +152,6 @@ def test_regex_list_valid(log, parsed):
 def test_regex_list_invalid(log):
     match = re.search(REGEX_LIST, log)
     assert match is None
+
+
+# TODO: test for `convert_type`

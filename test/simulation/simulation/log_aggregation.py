@@ -8,6 +8,7 @@ from dateutil import (
 )
 
 from .logs import (
+    convert_type,
     map_log_enum_pattern,
 )
 
@@ -29,10 +30,6 @@ _map_log_enum_pats = {
 }
 
 
-# def _get_params_handler(log_enum):
-#     return lambda x:
-
-
 def parse_line(line):
     """Try over all patterns. Parse the line with the first matching pattern to a `Event`.
         Returns `None` when no pattern matches.
@@ -51,7 +48,8 @@ def parse_line(line):
                 log_type=matched_fields[1],
                 logger_name=matched_fields[2],
                 event_type=log_enum,
-                # TODO: params parser
+                # TODO: parse the params with `convert_type`
+                # params=convert_type(matched_fields[3:], log_enum),
                 params=matched_fields[3:],
             )
             return event
