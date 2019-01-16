@@ -1,14 +1,16 @@
-import pytest
+import datetime
+import re
 import subprocess
 import time
 
-import datetime
+import pytest
 
 from simulation.config import (
     PORT_BASE,
     RPC_PORT_BASE,
 )
 from simulation.logs import (
+    LOG_PATTERN,
     RPCLogs,
     OperationLogs,
     map_log_enum_pattern,
@@ -346,11 +348,57 @@ def test_discover_shard(nodes):
     assert nodes[2].peer_id not in nodes[0].discover_shard([0])["0"]
 
 
-# TODO: get_logs
-def test_get_logs():
-    pass
+def test_get_logs(nodes):
+    nodes[0].subscribe_shard([0])
+    nodes[0].broadcast_collation(0, 1, 10000, 100)
+    nodes[0].discover_shard([0])
+    nodes[0].bootstrap(True, nodes[1].multiaddr)
+    nodes[0].bootstrap(False)
+    nodes[0].unsubscribe_shard([0])
+    nodes[0].remove_peer(nodes[1].peer_id)
+    time.sleep(0.5)
+    # test: just ensure we get enough lines that conform to the format `LOG_PATTERN` and are
+    #       `DEBUG` type logs
+    log_pattern = LOG_PATTERN.format(".*")
+    valid_logs = tuple(
+        line
+        for line in nodes[0].get_logs()
+        if re.search(log_pattern, line) and ("DEBUG" in line)
+    )
+    # 7 RPCs above, 2 logs(doing and finished) for each operation, so at least
+    # we get `7 * 2 = 14` logs
+    assert len(valid_logs) >= 14
 
 
-# TODO: get_events
-def test_get_events():
-    pass
+def test_get_events(nodes):
+    assert len(tuple(nodes[0].get_events())) == 0
+    nodes[0].subscribe_shard([0])
+    nodes[0].broadcast_collation(0, 1, 10000, 100)
+    nodes[0].discover_shard([0])
+    nodes[0].bootstrap(True, nodes[1].multiaddr)
+    nodes[0].bootstrap(False)
+    nodes[0].unsubscribe_shard([0])
+    nodes[0].remove_peer(nodes[1].peer_id)
+    event_types = [
+        node.event_type
+        for node in nodes[0].get_events()
+    ]
+    # test: only receive one message
+    assert event_types.count(OperationLogs.LOG_RECEIVE_MSG) == 1
+    # remove `OperationLogs.LOG_RECEIVE_MSG`, because we only guarantee the order of RPCLogs
+    event_types.remove(OperationLogs.LOG_RECEIVE_MSG)
+    # test: the order of the events
+    assert event_types[0] == RPCLogs.LOG_SUBSCRIBE_SHARD_FMT
+    assert event_types[1] == RPCLogs.LOG_SUBSCRIBE_SHARD_FINISHED
+    assert event_types[2] == RPCLogs.LOG_BROADCAST_COLLATION_FMT
+    assert event_types[3] == RPCLogs.LOG_BROADCAST_COLLATION_FINISHED
+    assert event_types[4] == RPCLogs.LOG_DISCOVER_SHARD_FMT
+    assert event_types[5] == RPCLogs.LOG_DISCOVER_SHARD_FINISHED
+    assert event_types[6] == RPCLogs.LOG_BOOTSTRAP_FMT
+    assert event_types[7] == RPCLogs.LOG_BOOTSTRAP_FINISHED
+    assert event_types[8] == RPCLogs.LOG_BOOTSTRAP_FMT
+    assert event_types[9] == RPCLogs.LOG_BOOTSTRAP_FINISHED
+    assert event_types[10] == RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT
+    assert event_types[11] == RPCLogs.LOG_UNSUBSCRIBE_SHARD_FINISHED
+    assert event_types[12] == RPCLogs.LOG_REMOVE_PEER_FMT
+    assert event_types[13] == RPCLogs.LOG_REMOVE_PEER_FINISHED
