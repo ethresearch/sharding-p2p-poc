@@ -20,6 +20,7 @@ from simulation.network import (
     get_docker_host_ip,
     make_local_node,
     make_local_nodes,
+    wait_for_pubsub_heartbeat,
 )
 from simulation.node import (
     Node,
@@ -31,7 +32,7 @@ def unchanged_node():
     """Unchanged when tested, to save the time initializing new nodes every test.
     """
     n = make_local_node(12345)
-    time.sleep(2)
+    wait_for_pubsub_heartbeat()
     n.set_peer_id()
     yield n
     n.close()
@@ -280,7 +281,7 @@ def test_broadcast_collation(nodes):
     nodes[0].subscribe_shard([0])
     nodes[1].subscribe_shard([0])
     nodes[2].subscribe_shard([0])
-    time.sleep(2)
+    wait_for_pubsub_heartbeat()
     # test: see if all nodes receive the broadcasted collation. Use a bigger size of collation to
     #       avoid the possible small time difference. E.g. sometimes t2 < t1, which does not make
     #       sense.
@@ -317,7 +318,39 @@ def test_stop():
 
 
 # TODO: discover_shard
+def test_discover_shard(nodes):
+    # connection: 0 <-> 1 <-> 2
+    nodes[0].add_peer(nodes[1])
+    nodes[1].add_peer(nodes[2])
+    # test: calls without `shard_ids`
+    with pytest.raises(TypeError):
+        nodes[0].discover_shard()
+    peers_shard_0 = nodes[0].discover_shard([0])
+    assert len(peers_shard_0["0"]) == 0
+    # test: discover shard through pubsub topic
+    nodes[2].subscribe_shard([0])
+    # wait for subscription broadcasted to the topic "listeningShards"
+    wait_for_pubsub_heartbeat()
+    assert nodes[2].peer_id in nodes[0].discover_shard([0])["0"]
+    # test: return nothing when no shard_ids
+    assert len(nodes[0].discover_shard([])) == 0
+    # test: should be able discover recently subscribed shards
+    nodes[2].subscribe_shard([1])
+    wait_for_pubsub_heartbeat()
+    # test: should return all shards if no `shard_ids` given
+    assert nodes[2].peer_id in nodes[0].discover_shard([0])["0"]
+    assert nodes[2].peer_id in nodes[0].discover_shard([1])["1"]
+    # test: should not discover unsubscribed shards
+    nodes[2].unsubscribe_shard([0])
+    wait_for_pubsub_heartbeat()
+    assert nodes[2].peer_id not in nodes[0].discover_shard([0])["0"]
+
 
 # TODO: get_logs
+def test_get_logs():
+    pass
+
 
 # TODO: get_events
+def test_get_events():
+    pass

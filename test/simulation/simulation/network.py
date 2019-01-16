@@ -34,6 +34,10 @@ def get_docker_host_ip():
     return res.stdout.rstrip()
 
 
+def wait_for_pubsub_heartbeat():
+    time.sleep(3)
+
+
 def make_local_node(seed, bootnodes=None):
     n = Node(
         get_docker_host_ip(),
@@ -61,7 +65,7 @@ def make_local_nodes(low, top, bootnodes=None):
     )
     nodes_sorted = sorted(nodes, key=lambda node: node.seed)
 
-    time.sleep(2)
+    wait_for_pubsub_heartbeat()
 
     for node in nodes_sorted:
         node.set_peer_id()

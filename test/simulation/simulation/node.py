@@ -149,8 +149,8 @@ class Node:
     def get_subscribed_shard(self):
         return self.cli_safe(["getsubshard"])
 
-    def discover_shard(self, topics):
-        return self.cli_safe(["discovershard"] + topics)
+    def discover_shard(self, shard_ids):
+        return self.cli_safe(["discovershard"] + shard_ids)
 
     def broadcast_collation(self, shard_id, num_collations, collation_size, collation_time):
         self.cli_safe([
