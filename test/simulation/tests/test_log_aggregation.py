@@ -17,7 +17,7 @@ from simulation.log_aggregation import (
 def test_parse_line_log_format_invalid_time():
     with pytest.raises(ParsingError):
         parse_line(
-            'ABC123 03:53:21.346 DEBUG sharding-p: rpcserver:AddPeer: ip=192.168.0.15, port=10001, seed=1 rpcserver.go:95',
+            'ABC123 03:53:21.346 DEBUG sharding-p: rpcserver:AddPeer: ip=192.168.0.15, port=10001, seed=1 rpcserver.go:95',  # noqa: E501
         )
 
 
@@ -25,9 +25,9 @@ def test_parse_line_log_format_invalid_time():
     "line",
     (
         '03:53:21.386 DEBUG sharding-p: rpcserver:AddPeer: finished rpcserver.go:126',
-        '2019-01-12T03:53:21.387236300Z DEBUG sharding-p: rpcserver:AddPeer: finished rpcserver.go:126',
-        '2019-01-12T03:53:21.387236300Z 03:53:21.386 sharding-p: rpcserver:AddPeer: finished rpcserver.go:126',
-        '2019-01-12T03:53:21.387236300Z 03:53:21.386 DEBUG rpcserver:AddPeer: finished rpcserver.go:126',
+        '2019-01-12T03:53:21.387236300Z DEBUG sharding-p: rpcserver:AddPeer: finished rpcserver.go:126',  # noqa: E501
+        '2019-01-12T03:53:21.387236300Z 03:53:21.386 sharding-p: rpcserver:AddPeer: finished rpcserver.go:126',  # noqa: E501
+        '2019-01-12T03:53:21.387236300Z 03:53:21.386 DEBUG rpcserver:AddPeer: finished rpcserver.go:126',  # noqa: E501
         '2019-01-12T03:53:21.387236300Z 03:53:21.386 DEBUG sharding-p: 123',
     ),
     ids=(

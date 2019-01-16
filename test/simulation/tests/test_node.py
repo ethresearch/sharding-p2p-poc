@@ -48,6 +48,12 @@ def nodes():
         n.close()
 
 
+def connect(node_0, node_1):
+    node_0.add_peer(node_1)
+    assert node_1.peer_id in node_0.list_peer()
+    assert node_0.peer_id in node_1.list_peer()
+
+
 def test_name(unchanged_node):
     assert unchanged_node.name == "whiteblock-node{}".format(unchanged_node.seed)
 
@@ -201,7 +207,7 @@ def test_remove_peer(nodes):
     # test: remove non-peer
     nodes[0].remove_peer(nodes[2].peer_id)
     assert len(nodes[0].list_peer()) == 0
-    nodes[0].add_peer(nodes[1])
+    connect(nodes[0], nodes[1])
     assert len(nodes[0].list_peer()) == 1
     nodes[0].remove_peer(nodes[1].peer_id)
     # symmetric connection
@@ -218,7 +224,7 @@ def test_list_topic_peer(nodes):
     assert "listeningShard" in topic_peers
     assert len(topic_peers["listeningShard"]) == 0
     # test: add_peer and should be one more peer in `listeningShard`
-    nodes[0].add_peer(nodes[1])
+    connect(nodes[0], nodes[1])
     assert len(nodes[0].list_topic_peer()["listeningShard"]) == 1
     # test: remove_peer and should be one less peer in `listeningShard`
     nodes[0].remove_peer(nodes[1].peer_id)
@@ -239,7 +245,7 @@ def test_subscribe_shard(nodes):
     assert nodes[0].get_subscribed_shard() == [0]
     assert nodes[1].list_shard_peer([0])["0"] == []
     # test: after adding peers, the node should know the shards its peer subscribes
-    nodes[1].add_peer(nodes[0])
+    connect(nodes[0], nodes[1])
     time.sleep(0.2)
     assert nodes[0].peer_id in nodes[1].list_shard_peer([0])["0"]
     # test: subscribe "0" twice, and shards "1", "2"
@@ -261,7 +267,7 @@ def test_unsubscribe_shard(nodes):
     nodes[0].unsubscribe_shard([0])
     # test: normally subscribe
     nodes[0].subscribe_shard([0])
-    nodes[0].add_peer(nodes[1])
+    connect(nodes[0], nodes[1])
     nodes[0].unsubscribe_shard([0])
     assert nodes[0].get_subscribed_shard() == []
     # test: ensure the peer knows its peer unsubscribes
@@ -278,8 +284,8 @@ def test_broadcast_collation(nodes):
     # test: broadcast to a non-subscribed shard
     with pytest.raises(CLIFailure):
         nodes[0].broadcast_collation(0, 1, 100, 123)
-    nodes[0].add_peer(nodes[1])
-    nodes[1].add_peer(nodes[2])
+    connect(nodes[0], nodes[1])
+    connect(nodes[1], nodes[2])
     nodes[0].subscribe_shard([0])
     nodes[1].subscribe_shard([0])
     nodes[2].subscribe_shard([0])
@@ -288,10 +294,22 @@ def test_broadcast_collation(nodes):
     #       avoid the possible small time difference. E.g. sometimes t2 < t1, which does not make
     #       sense.
     nodes[0].broadcast_collation(0, 1, 1000000, 123)
-    t0 = nodes[0].get_log_time(RPCLogs.LOG_BROADCAST_COLLATION_FINISHED, 0)
-    t1 = nodes[0].get_log_time(RPCLogs.LOG_RECEIVE_MSG, 0)
-    t2 = nodes[1].get_log_time(RPCLogs.LOG_RECEIVE_MSG, 0)
-    t3 = nodes[2].get_log_time(RPCLogs.LOG_RECEIVE_MSG, 0)
+    t0 = nodes[0].get_log_time(
+        map_log_enum_pattern[RPCLogs.LOG_BROADCAST_COLLATION_FINISHED],
+        0,
+    )
+    t1 = nodes[0].get_log_time(
+        map_log_enum_pattern[OperationLogs.LOG_RECEIVE_MSG],
+        0,
+    )
+    t2 = nodes[1].get_log_time(
+        map_log_enum_pattern[OperationLogs.LOG_RECEIVE_MSG],
+        0,
+    )
+    t3 = nodes[2].get_log_time(
+        map_log_enum_pattern[OperationLogs.LOG_RECEIVE_MSG],
+        0,
+    )
     assert t0 < t1
     assert t1 < t2
     assert t2 < t3
@@ -300,8 +318,8 @@ def test_broadcast_collation(nodes):
 def test_bootstrap(nodes):
     # test: stop before start
     nodes[0].bootstrap(False)
-    nodes[0].add_peer(nodes[1])
-    nodes[1].add_peer(nodes[2])
+    connect(nodes[0], nodes[1])
+    connect(nodes[1], nodes[2])
     time.sleep(0.2)
     # test: nodes[0] bootstraps with nodes[1] as the bootnode and therefore connects to nodes[2]
     nodes[0].bootstrap(True, nodes[1].multiaddr)
@@ -310,7 +328,10 @@ def test_bootstrap(nodes):
     # TODO: grep logs
 
 
-@pytest.mark.skip("Sometimes this test fails but it is not important, because it just need more time to stop")  # noqa: E501
+@pytest.mark.skip(
+    "Sometimes this test fails but it is not important,"
+    "because it just need more time to stop"
+)
 def test_stop():
     n = make_local_node(0)
     assert is_node_running(n)
@@ -322,8 +343,8 @@ def test_stop():
 # TODO: discover_shard
 def test_discover_shard(nodes):
     # connection: 0 <-> 1 <-> 2
-    nodes[0].add_peer(nodes[1])
-    nodes[1].add_peer(nodes[2])
+    connect(nodes[0], nodes[1])
+    connect(nodes[1], nodes[2])
     # test: calls without `shard_ids`
     with pytest.raises(TypeError):
         nodes[0].discover_shard()
