@@ -84,7 +84,7 @@ def connect_nodes(nodes, topology):
     for conn in topology:
         try:
             index0, index1 = conn
-        except:
+        except ValueError:
             raise InvalidTopology("conn={}, topology={}".format(conn, topology))
         nodes[index0].add_peer(nodes[index1])
     time.sleep(1)
@@ -120,7 +120,7 @@ def contains_topology(nodes, expected_topology):
     def check_connection(conn):
         try:
             i, j = conn
-        except:
+        except ValueError:
             raise InvalidTopology("conn={}, expected_topology={}".format(conn, expected_topology))
         peers_i = nodes[i].list_peer()
         peers_j = nodes[j].list_peer()

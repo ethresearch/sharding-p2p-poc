@@ -144,8 +144,7 @@ map_log_enum_to_content_pattern = {
 
 
 # {docker_time} {time} {log_type} {logger_name} {log_content}
-# _example_log = "2019-01-12T03:53:20.874775100Z 03:53:20.874 DEBUG sharding-p: rpcserver:IdentifyRequest: receive= rpcserver.go:70"
-# _example_add_peer_log = "03:57:49.742 DEBUG sharding-p: rpcserver:AddPeer: ip=192.168.0.15, port=10001, seed=1 rpcserver.go:95"
+# _example_add_peer_log = "2019-01-12T03:53:20.874775100Z 03:57:49.742 DEBUG sharding-p: rpcserver:AddPeer: ip=192.168.0.15, port=10001, seed=1 rpcserver.go:95"  # noqa: E501
 LOG_PATTERN = r"^([A-Z0-9:\.\-]+) +[0-9:\.]+ +(\w+) +([^:]+): +{}"
 
 

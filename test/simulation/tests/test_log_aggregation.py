@@ -95,7 +95,7 @@ def test_parse_line_log_format_invalid_no_matching_pattern(line):
             Event(time=datetime.datetime(2019, 1, 12, 3, 53, 25, 794956, tzinfo=datetime.timezone.utc), log_type='DEBUG', logger_name='sharding-p', event_type=RPCLogs.LOG_BOOTSTRAP_FINISHED, params=()),  # noqa: E501
         ),
         (
-            '2019-01-12T03:53:26.460124600Z 03:53:26.459 DEBUG sharding-p: rpcserver:RemovePeer: peerID=QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd rpcserver.go:455',
+            '2019-01-12T03:53:26.460124600Z 03:53:26.459 DEBUG sharding-p: rpcserver:RemovePeer: peerID=QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd rpcserver.go:455',  # noqa: E501
             Event(time=datetime.datetime(2019, 1, 12, 3, 53, 26, 460124, tzinfo=datetime.timezone.utc), log_type='DEBUG', logger_name='sharding-p', event_type=RPCLogs.LOG_REMOVE_PEER_FMT, params=('QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd',)),  # noqa: E501
         ),
         (
@@ -137,4 +137,3 @@ def test_parse_line_log_format_invalid_no_matching_pattern(line):
 )
 def test_parse_line_valid(line, expected):
     assert parse_line(line) == expected
-

@@ -44,7 +44,7 @@ from simulation.logs import (
         ),
         (
             RPCLogs.LOG_BROADCAST_COLLATION_FMT,
-            "rpcserver:BroadcastCollation: broadcasting: shardID=0, numCollations=2, sizeInBytes=9900, timeInMs=100 rpcserver.go:269",
+            "rpcserver:BroadcastCollation: broadcasting: shardID=0, numCollations=2, sizeInBytes=9900, timeInMs=100 rpcserver.go:269",  # noqa: E501
         ),
         (
             RPCLogs.LOG_BROADCAST_COLLATION_FINISHED,
@@ -60,7 +60,7 @@ from simulation.logs import (
         ),
         (
             RPCLogs.LOG_BOOTSTRAP_FMT,
-            "rpcserver:Bootstrap: flag=true, bootnodes=/ip4/192.168.0.15/tcp/10001/ipfs/QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd rpcserver.go:487",
+            "rpcserver:Bootstrap: flag=true, bootnodes=/ip4/192.168.0.15/tcp/10001/ipfs/QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd rpcserver.go:487",  # noqa: E501
         ),
         (
             RPCLogs.LOG_BOOTSTRAP_FMT,
@@ -72,7 +72,7 @@ from simulation.logs import (
         ),
         (
             RPCLogs.LOG_REMOVE_PEER_FMT,
-            "rpcserver:RemovePeer: peerID=QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd rpcserver.go:455",
+            "rpcserver:RemovePeer: peerID=QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd rpcserver.go:455",  # noqa: E501
         ),
         (
             RPCLogs.LOG_REMOVE_PEER_FINISHED,
@@ -88,7 +88,7 @@ from simulation.logs import (
         ),
         (
             OperationLogs.LOG_RECEIVE_MSG,
-            "Validating the received message: topic=shardCollations_0, from=<peer.ID Qm*zMzwwi>, dataSize=9908 shardmanager.go:364",
+            "Validating the received message: topic=shardCollations_0, from=<peer.ID Qm*zMzwwi>, dataSize=9908 shardmanager.go:364",  # noqa: E501
         ),
     ),
     ids=(

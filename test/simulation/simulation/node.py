@@ -14,6 +14,7 @@ from .log_aggregation import (
     parse_line,
 )
 
+
 class Node:
 
     ip = None
