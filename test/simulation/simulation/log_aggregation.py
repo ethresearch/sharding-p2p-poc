@@ -37,7 +37,7 @@ def parse_line(line):
     """
     for log_enum, pat in _map_log_enum_pats.items():
         match = pat.search(line)
-        # only return if a event is found
+        # only return if the line matches a pattern
         if match is not None:
             matched_fields = match.groups()
             try:
