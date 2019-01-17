@@ -37,7 +37,7 @@ class EventHasNoParameter(Exception):
 # The regex for the list of elements: empty list, or 1 or more words, delimited by whitespaces
 # E.g. [], [1], [1 2], [shardCollations_2]
 LIST_DELIMITER = r' '
-REGEX_LIST = r'\[(?:|\w+(?:{}\w+)*)\]'.format(LIST_DELIMITER)
+REGEX_LIST = r'\[(?:\w+(?:{}\w+)*)*\]'.format(LIST_DELIMITER)
 
 
 def boolean(param_str):
