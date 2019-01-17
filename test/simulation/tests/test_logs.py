@@ -1,3 +1,4 @@
+import functools
 import re
 
 import pytest
@@ -6,7 +7,10 @@ from simulation.logs import (
     OperationLogs,
     REGEX_LIST,
     RPCLogs,
+    boolean,
+    list_ctor,
     map_log_enum_to_content_pattern,
+    parse_event_params,
 )
 
 
@@ -154,4 +158,172 @@ def test_regex_list_invalid(log):
     assert match is None
 
 
-# TODO: test for `convert_type`
+@pytest.mark.parametrize(
+    'list_str, element_type, expected',
+    (
+        ("[]", str, ()),
+        ("[abc]", str, ('abc',)),
+        ("[abc cba]", str, ('abc', 'cba')),
+        ("[]", int, ()),
+        ("[123]", int, (123,)),
+        ("[123 321]", int, (123, 321)),
+        ("[123  321 ]", int, (123, 321)),
+    ),
+)
+def test_list_ctor_success(list_str, element_type, expected):
+    assert list_ctor(list_str, element_type) == expected
+
+
+@pytest.mark.parametrize(
+    'list_str, element_type',
+    (
+        ("", str),
+        ("", int),
+        ("[", str),
+        ("]", str),
+        ("[abc]", int),
+        ("[abc cba]", int),
+    ),
+)
+def test_list_ctor_failure(list_str, element_type):
+    with pytest.raises(ValueError):
+        list_ctor(list_str, element_type)
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    (
+        ("true", True),
+        ("True", True),
+        ("false", False),
+        ("False", False),
+        ("FALse", False),
+        ("FALSE", False),
+    ),
+)
+def test_boolean_success(input, expected):
+    assert boolean(input) == expected
+
+
+@pytest.mark.parametrize(
+    'input',
+    (
+        "",
+        "123",
+        "abc",
+    ),
+)
+def test_boolean_failure(input):
+    with pytest.raises(ValueError):
+        boolean(input)
+
+
+@pytest.mark.parametrize(
+    'param_strs, param_types, expected',
+    (
+        (
+            (),
+            (),
+            (),
+        ),
+        (
+            ("1",),
+            (str,),
+            ("1",),
+        ),
+        (
+            ("1",),
+            (int,),
+            (1,),
+        ),
+        (
+            ("False",),
+            (boolean,),
+            (False,),
+        ),
+        (
+            ("true",),
+            (boolean,),
+            (True,),
+        ),
+        (
+            ("[abc cba]",),
+            (functools.partial(list_ctor, element_type=str),),
+            (('abc', 'cba'),),
+        ),
+        (
+            ("[1 2]",),
+            (functools.partial(list_ctor, element_type=int),),
+            ((1, 2),),
+        ),
+    ),
+)
+def test_parse_event_params_types_success(param_strs, param_types, expected, monkeypatch):
+    mock_event_type = 0
+    mock_rpc_logs_params_ctor_map = {
+        mock_event_type: param_types,
+    }
+    monkeypatch.setattr(
+        'simulation.logs._rpc_logs_params_ctor_map',
+        mock_rpc_logs_params_ctor_map,
+    )
+    assert parse_event_params(param_strs, mock_event_type) == expected
+
+
+@pytest.mark.parametrize(
+    'param_strs, param_types',
+    (
+        (
+            ("abc",),
+            (),
+        ),
+        (
+            ("abc",),
+            (int,),
+        ),
+        (
+            ("abc",),
+            (boolean,),
+        ),
+        (
+            ("[abc]",),
+            (int,),
+        ),
+    ),
+    ids=(
+        "inconsistent length between `param_strs` and `param_types`",
+        "wrong types in `param_types`: should not be `int`",
+        "wrong types in `param_types`: should not be `bool`",
+        "wrong types in `param_types`: should be the result of `list_ctor`",
+    )
+)
+def test_parse_event_params_types_failure(param_strs, param_types, monkeypatch):
+    mock_event_type = 0
+    mock_rpc_logs_params_ctor_map = {
+        mock_event_type: param_types,
+    }
+    monkeypatch.setattr(
+        'simulation.logs._rpc_logs_params_ctor_map',
+        mock_rpc_logs_params_ctor_map,
+    )
+    with pytest.raises(ValueError):
+        parse_event_params(param_strs, mock_event_type)
+
+
+@pytest.mark.parametrize(
+    'param_strs, event_type, expected',
+    (
+        (
+            ('127.0.0.1', '10000', '0'),
+            RPCLogs.LOG_ADD_PEER_FMT,
+            ('127.0.0.1', 10000, 0),
+        ),
+        (
+            ("[1 3 4]",),
+            RPCLogs.LOG_SUBSCRIBE_SHARD_FMT,
+            ((1, 3, 4),)
+        ),
+    )
+)
+def test_parse_event_params_supported_events(param_strs, event_type, expected):
+    assert parse_event_params(param_strs, event_type) == expected

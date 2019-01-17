@@ -36,15 +36,35 @@ LIST_DELIMITER = r' '
 REGEX_LIST = r'\[(?:|\w+(?:{}\w+)*)\]'.format(LIST_DELIMITER)
 
 
-def list_ctor(list_str, element_type):
-    list_content = list_str[1:-1]
-    return tuple(
-        element_type(i)
-        for i in list_content.split(LIST_DELIMITER)
+def boolean(param_str):
+    param_str_lower = param_str.lower()
+    if param_str_lower == "true":
+        return True
+    elif param_str_lower == "false":
+        return False
+    raise ValueError(
+        "Invalid `param_str`, whose `.lower` should be either `true` or `false`, "
+        "param_str={}".format(param_str)
     )
 
 
-# TODO: typing!!!
+def list_ctor(list_str, element_type):
+    if len(list_str) < 2:
+        raise ValueError("len(list_str) <= 2, list_str={}".format(list_str))
+    splitted_list = list_str[1:-1].split(LIST_DELIMITER)
+    # filter empty strings
+    filtered_list = (
+        x
+        for x in splitted_list
+        if x != ''
+    )
+    return tuple(
+        element_type(i)
+        for i in filtered_list
+    )
+
+
+# TODO: better way to handle types? like typing?
 _rpc_logs_params_ctor_map = {
     RPCLogs.LOG_ADD_PEER_FMT: (str, int, int),
     RPCLogs.LOG_BROADCAST_COLLATION_FMT: (int, int, int, int),
@@ -52,11 +72,22 @@ _rpc_logs_params_ctor_map = {
     RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT: (partial(list_ctor, element_type=int),),
     RPCLogs.LOG_DISCOVER_SHARD_FMT: (partial(list_ctor, element_type=str),),
     RPCLogs.LOG_REMOVE_PEER_FMT: (str,),
-    RPCLogs.LOG_BOOTSTRAP_FMT: (bool, str),
+    RPCLogs.LOG_BOOTSTRAP_FMT: (boolean, str),
 }
 
 
-def convert_type(param_strs, event_type):
+def parse_event_params(param_strs, event_type):
+    """
+    Args:
+        params_strs: A tuple of strings, derived from the regex.
+        event_type: The type of the log event.
+
+    Returns:
+        A tuple of parsed parameters with proper types, indicated by `_rpc_logs_params_ctor_map`
+
+    Raises:
+        ValueError: Raised when the length of `param_strs` is not correct.
+    """
     if event_type not in _rpc_logs_params_ctor_map:
         # do nothing
         return param_strs
@@ -67,18 +98,9 @@ def convert_type(param_strs, event_type):
             "params_ctors={}, param_strs={}".format(params_ctors, param_strs)
         )
     return tuple(
-        params_ctors[index](param_str)
-        for index, param_str in enumerate(param_strs)
+        ctor(param_str)
+        for ctor, param_str in zip(params_ctors, param_strs)
     )
-
-
-a = ('1', '2', '3')
-b = convert_type(a, RPCLogs.LOG_ADD_PEER_FMT)
-print(b)
-c = ("[1 3 4]",)
-d = convert_type(c, RPCLogs.LOG_SUBSCRIBE_SHARD_FMT)
-print(d)
-
 
 
 _rpc_logs_map = {
