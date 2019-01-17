@@ -8,8 +8,9 @@ from dateutil import (
 )
 
 from .logs import (
-    convert_type,
+    EventHasNoParameter,
     map_log_enum_pattern,
+    parse_event_params,
 )
 
 
@@ -43,14 +44,17 @@ def parse_line(line):
                 log_time = parser.parse(matched_fields[0])
             except ValueError:
                 raise ParsingError("malform log_time: {!r}".format(matched_fields[0]))
+            params = matched_fields[3:]
+            try:
+                params = parse_event_params(matched_fields[3:], log_enum)
+            except EventHasNoParameter:
+                pass
             event = Event(
                 time=log_time,
                 log_type=matched_fields[1],
                 logger_name=matched_fields[2],
                 event_type=log_enum,
-                # TODO: parse the params with `convert_type`
-                # params=convert_type(matched_fields[3:], log_enum),
-                params=matched_fields[3:],
+                params=params,
             )
             return event
     raise NoMatchingPattern("line={!r}".format(line))

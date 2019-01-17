@@ -4,6 +4,7 @@ import re
 import pytest
 
 from simulation.logs import (
+    EventHasNoParameter,
     OperationLogs,
     REGEX_LIST,
     RPCLogs,
@@ -109,7 +110,7 @@ from simulation.logs import (
         "stop format",
         "stop finished",
         "receive message",
-    )
+    ),
 )
 def test_log_patterns(log_enum, log):
     assert log_enum in map_log_enum_to_content_pattern
@@ -295,7 +296,7 @@ def test_parse_event_params_types_success(param_strs, param_types, expected, mon
         "wrong types in `param_types`: should not be `int`",
         "wrong types in `param_types`: should not be `bool`",
         "wrong types in `param_types`: should be the result of `list_ctor`",
-    )
+    ),
 )
 def test_parse_event_params_types_failure(param_strs, param_types, monkeypatch):
     mock_event_type = 0
@@ -319,11 +320,49 @@ def test_parse_event_params_types_failure(param_strs, param_types, monkeypatch):
             ('127.0.0.1', 10000, 0),
         ),
         (
+            ("0", "1", "2", "3"),
+            RPCLogs.LOG_BROADCAST_COLLATION_FMT,
+            (0, 1, 2, 3),
+        ),
+        (
             ("[1 3 4]",),
             RPCLogs.LOG_SUBSCRIBE_SHARD_FMT,
             ((1, 3, 4),)
         ),
-    )
+        (
+            ("[1 3 4]",),
+            RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT,
+            ((1, 3, 4),)
+        ),
+        (
+            ("[shardCollations_0]",),
+            RPCLogs.LOG_DISCOVER_SHARD_FMT,
+            (("shardCollations_0",),),
+        ),
+        (
+            ("QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd",),
+            RPCLogs.LOG_REMOVE_PEER_FMT,
+            ("QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd",),
+        ),
+        (
+            ("true", "/ip4/192.168.0.15/tcp/10001/ipfs/QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd,/ip4/192.168.0.15/tcp/10001/ipfs/QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd"),  # noqa: E501
+            RPCLogs.LOG_BOOTSTRAP_FMT,
+            (True, "/ip4/192.168.0.15/tcp/10001/ipfs/QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd,/ip4/192.168.0.15/tcp/10001/ipfs/QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd"),  # noqa: E501
+        ),
+        (
+            ("false", ""),
+            RPCLogs.LOG_BOOTSTRAP_FMT,
+            (False, ""),
+        ),
+    ),
 )
 def test_parse_event_params_supported_events(param_strs, event_type, expected):
     assert parse_event_params(param_strs, event_type) == expected
+
+
+def test_parse_event_params_unsupported_event():
+    with pytest.raises(EventHasNoParameter):
+        parse_event_params(
+            ('1',),
+            event_type=0,
+        )

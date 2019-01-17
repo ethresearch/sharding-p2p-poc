@@ -30,6 +30,10 @@ class OperationLogs(Enum):
     LOG_RECEIVE_MSG = auto()
 
 
+class EventHasNoParameter(Exception):
+    pass
+
+
 # The regex for the list of elements: empty list, or 1 or more words, delimited by whitespaces
 # E.g. [], [1], [1 2], [shardCollations_2]
 LIST_DELIMITER = r' '
@@ -89,8 +93,13 @@ def parse_event_params(param_strs, event_type):
         ValueError: Raised when the length of `param_strs` is not correct.
     """
     if event_type not in _rpc_logs_params_ctor_map:
-        # do nothing
-        return param_strs
+        raise EventHasNoParameter(
+            "`event_type` has no parameters: "
+            "event_type={}, supported_types={}".format(
+                event_type,
+                _rpc_logs_params_ctor_map.keys(),
+            )
+        )
     params_ctors = _rpc_logs_params_ctor_map[event_type]
     if len(param_strs) != len(params_ctors):
         raise ValueError(
@@ -132,8 +141,6 @@ map_log_enum_to_content_pattern = {
     **_rpc_logs_map,
     **_operation_logs_map,
 }
-
-
 
 
 # {docker_time} {time} {log_type} {logger_name} {log_content}
