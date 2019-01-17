@@ -96,9 +96,9 @@ def test_run():
 
 
 def test_wait_for_log(unchanged_node):
-    # XXX: here assume we at least have two lines in the format of "INFO: xxx"
-    #      if the log style changes in the container and we get fewer lines, this will block
-    #      forever
+    # Note: here assume we at least have two lines in the format of "INFO: xxx"
+    #       if the log style changes in the container and we get fewer lines, this will block
+    #       forever
     log = unchanged_node.wait_for_log("INFO", 1)
     # just confirm the grep'ed log is correct
     assert "INFO" in log.split(' ')
@@ -171,9 +171,17 @@ def test_add_peer(nodes):
     assert len(nodes[0].list_peer()) == 0
     assert len(nodes[1].list_peer()) == 0
     nodes[0].add_peer(nodes[1])
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_ADD_PEER_FMT],
+        0,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_ADD_PEER_FINISHED],
+        0,
+    )
     # symmetric connection
-    assert len(nodes[0].list_peer()) == 1
-    assert len(nodes[1].list_peer()) == 1
+    assert nodes[1].peer_id in nodes[0].list_peer()
+    assert nodes[0].peer_id in nodes[1].list_peer()
     # set the wrong `ip`/`port`/`seed` of nodes[2], and nodes[0] try to add it
     ip_2 = nodes[2].ip
     port_2 = nodes[2].port
@@ -198,6 +206,16 @@ def test_add_peer(nodes):
     nodes[2].seed = seed_2
     # add 2 peers(avoid nodes[0] adding nodes[2] again because of `dial backoff `)
     nodes[2].add_peer(nodes[0])
+    nodes[2].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_ADD_PEER_FMT],
+        0,
+    )
+    nodes[2].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_ADD_PEER_FINISHED],
+        0,
+    )
+    assert len(nodes[0].list_peer()) == 2
+    assert len(nodes[2].list_peer()) == 1
 
 
 def test_remove_peer(nodes):
@@ -206,15 +224,39 @@ def test_remove_peer(nodes):
         nodes[0].remove_peer("123")
     # test: remove non-peer
     nodes[0].remove_peer(nodes[2].peer_id)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_REMOVE_PEER_FMT],
+        0,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_REMOVE_PEER_FINISHED],
+        0,
+    )
     assert len(nodes[0].list_peer()) == 0
     connect(nodes[0], nodes[1])
     assert len(nodes[0].list_peer()) == 1
     nodes[0].remove_peer(nodes[1].peer_id)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_REMOVE_PEER_FMT],
+        1,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_REMOVE_PEER_FINISHED],
+        1,
+    )
     # symmetric connection
     assert len(nodes[0].list_peer()) == 0
     assert len(nodes[1].list_peer()) == 0
     # test: remove twice
     nodes[0].remove_peer(nodes[1].peer_id)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_REMOVE_PEER_FMT],
+        2,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_REMOVE_PEER_FINISHED],
+        2,
+    )
     assert len(nodes[0].list_peer()) == 0
 
 
@@ -242,6 +284,14 @@ def test_subscribe_shard(nodes):
         nodes[0].subscribe_shard(0)
     # test: normally subscribe
     nodes[0].subscribe_shard([0])
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_SUBSCRIBE_SHARD_FMT],
+        0,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_SUBSCRIBE_SHARD_FINISHED],
+        0,
+    )
     assert nodes[0].get_subscribed_shard() == [0]
     assert nodes[1].list_shard_peer([0])["0"] == []
     # test: after adding peers, the node should know the shards its peer subscribes
@@ -250,13 +300,17 @@ def test_subscribe_shard(nodes):
     assert nodes[0].peer_id in nodes[1].list_shard_peer([0])["0"]
     # test: subscribe "0" twice, and shards "1", "2"
     nodes[0].subscribe_shard([0, 1, 2])
-    assert nodes[0].get_subscribed_shard() == [0, 1, 2]
     # test: ensure there are two logs LOG_SUBSCRIBE_SHARD_FINISHED because `subscribe_shard` is
     #       called twice
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_SUBSCRIBE_SHARD_FMT],
+        1,
+    )
     nodes[0].wait_for_log(
         map_log_enum_pattern[RPCLogs.LOG_SUBSCRIBE_SHARD_FINISHED],
         1,
     )
+    assert nodes[0].get_subscribed_shard() == [0, 1, 2]
 
 
 def test_unsubscribe_shard(nodes):
@@ -265,19 +319,29 @@ def test_unsubscribe_shard(nodes):
         nodes[0].unsubscribe_shard(0)
     # test: unsubscribe before subscribe
     nodes[0].unsubscribe_shard([0])
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT],
+        0,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_UNSUBSCRIBE_SHARD_FINISHED],
+        0,
+    )
     # test: normally subscribe
     nodes[0].subscribe_shard([0])
     connect(nodes[0], nodes[1])
     nodes[0].unsubscribe_shard([0])
-    assert nodes[0].get_subscribed_shard() == []
-    # test: ensure the peer knows its peer unsubscribes
-    assert nodes[1].list_shard_peer([0])["0"] == []
-    # test: ensure there are two logs `LOG_UNSUBSCRIBE_SHARD_FINISHED` because of
-    #       `unsubscribe_shard`
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_UNSUBSCRIBE_SHARD_FMT],
+        1,
+    )
     nodes[0].wait_for_log(
         map_log_enum_pattern[RPCLogs.LOG_UNSUBSCRIBE_SHARD_FINISHED],
         1,
     )
+    assert nodes[0].get_subscribed_shard() == []
+    # test: ensure the peer knows its peer unsubscribes
+    assert nodes[1].list_shard_peer([0])["0"] == []
 
 
 def test_broadcast_collation(nodes):
@@ -294,6 +358,10 @@ def test_broadcast_collation(nodes):
     #       avoid the possible small time difference. E.g. sometimes t2 < t1, which does not make
     #       sense.
     nodes[0].broadcast_collation(0, 1, 1000000, 123)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_BROADCAST_COLLATION_FMT],
+        0,
+    )
     t0 = nodes[0].get_log_time(
         map_log_enum_pattern[RPCLogs.LOG_BROADCAST_COLLATION_FINISHED],
         0,
@@ -318,18 +386,33 @@ def test_broadcast_collation(nodes):
 def test_bootstrap(nodes):
     # test: stop before start
     nodes[0].bootstrap(False)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_BOOTSTRAP_FMT],
+        0,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_BOOTSTRAP_FINISHED],
+        0,
+    )
     connect(nodes[0], nodes[1])
     connect(nodes[1], nodes[2])
     time.sleep(0.2)
     # test: nodes[0] bootstraps with nodes[1] as the bootnode and therefore connects to nodes[2]
     nodes[0].bootstrap(True, nodes[1].multiaddr)
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_BOOTSTRAP_FMT],
+        1,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_BOOTSTRAP_FINISHED],
+        1,
+    )
     time.sleep(2)
     assert nodes[2].peer_id in nodes[0].list_peer()
-    # TODO: grep logs
 
 
 @pytest.mark.skip(
-    "Sometimes this test fails but it is not important,"
+    "Sometimes this test fails but it is not important, "
     "because it just need more time to stop"
 )
 def test_stop():
@@ -340,7 +423,6 @@ def test_stop():
     assert not is_node_running(n)
 
 
-# TODO: discover_shard
 def test_discover_shard(nodes):
     # connection: 0 <-> 1 <-> 2
     connect(nodes[0], nodes[1])
@@ -349,6 +431,14 @@ def test_discover_shard(nodes):
     with pytest.raises(TypeError):
         nodes[0].discover_shard()
     peers_shard_0 = nodes[0].discover_shard([0])
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_DISCOVER_SHARD_FMT],
+        0,
+    )
+    nodes[0].wait_for_log(
+        map_log_enum_pattern[RPCLogs.LOG_DISCOVER_SHARD_FINISHED],
+        0,
+    )
     assert len(peers_shard_0["0"]) == 0
     # test: discover shard through pubsub topic
     nodes[2].subscribe_shard([0])
