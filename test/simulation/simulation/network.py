@@ -34,6 +34,10 @@ def get_docker_host_ip():
     return res.stdout.rstrip()
 
 
+def wait_for_pubsub_heartbeat():
+    time.sleep(3)
+
+
 def make_local_node(seed, bootnodes=None):
     n = Node(
         get_docker_host_ip(),
@@ -61,7 +65,7 @@ def make_local_nodes(low, top, bootnodes=None):
     )
     nodes_sorted = sorted(nodes, key=lambda node: node.seed)
 
-    time.sleep(2)
+    wait_for_pubsub_heartbeat()
 
     for node in nodes_sorted:
         node.set_peer_id()
@@ -80,7 +84,7 @@ def connect_nodes(nodes, topology):
     for conn in topology:
         try:
             index0, index1 = conn
-        except:
+        except ValueError:
             raise InvalidTopology("conn={}, topology={}".format(conn, topology))
         nodes[index0].add_peer(nodes[index1])
     time.sleep(1)
@@ -116,7 +120,7 @@ def contains_topology(nodes, expected_topology):
     def check_connection(conn):
         try:
             i, j = conn
-        except:
+        except ValueError:
             raise InvalidTopology("conn={}, expected_topology={}".format(conn, expected_topology))
         peers_i = nodes[i].list_peer()
         peers_j = nodes[j].list_peer()
@@ -247,4 +251,10 @@ class Network:
         )
         self.is_killed = True
 
-    # TODO: log aggregation?
+    def get_events(self):
+        """Get the happened events from all nodes
+        """
+        map_node_events = {}
+        for node in self.nodes:
+            map_node_events[node] = tuple(node.get_events())
+        return map_node_events

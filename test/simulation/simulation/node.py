@@ -8,6 +8,11 @@ from dateutil import (
 from .exceptions import (
     CLIFailure,
 )
+from .log_aggregation import (
+    NoMatchingPattern,
+    ParsingError,
+    parse_line,
+)
 
 
 class Node:
@@ -145,6 +150,9 @@ class Node:
     def get_subscribed_shard(self):
         return self.cli_safe(["getsubshard"])
 
+    def discover_shard(self, shard_ids):
+        return self.cli_safe(["discovershard"] + shard_ids)
+
     def broadcast_collation(self, shard_id, num_collations, collation_size, collation_time):
         self.cli_safe([
             "broadcastcollation",
@@ -176,8 +184,15 @@ class Node:
         """Wait for the `k_th` log in the format of `pattern`
         """
         # TODO: should set a `timeout`?
-        cmd = "docker logs {} -t -f 2>&1 | grep --line-buffered '{}' -m {}".format(
+
+        # This `sed` removes the color control code, to make `grep` work easier
+        # FIXME: it seems `wait_for_log` gets far slower after adding `cmd_rm_color_control`,
+        #        possibly because of the buffering in `sed`? But the situation didn't get better
+        #        even though added `-l`(line buffering) to `sed` in macOS.
+        cmd_rm_color_control = "sed -l $'s/\\x1b\\\\[[0-9;]*[a-zA-Z]//g'"
+        cmd = "docker logs {} -t -f 2>&1 | {} | grep --line-buffered -E '{}' -m {}".format(
             self.name,
+            cmd_rm_color_control,
             pattern,
             k_th + 1,
         )
@@ -199,3 +214,27 @@ class Node:
         log = self.wait_for_log(pattern, k_th)
         time_str_iso8601 = log.split(' ')[0]
         return parser.parse(time_str_iso8601)
+
+    def get_logs(self):
+        cmd_rm_color_control = "sed $'s/\\x1b\\\\[[0-9;]*[a-zA-Z]//g'"
+        cmd = "docker logs {} -t 2>&1 | {}".format(
+            self.name,
+            cmd_rm_color_control,
+        )
+        res = subprocess.run(
+            [cmd],
+            shell=True,
+            stdout=subprocess.PIPE,
+            encoding='utf-8',
+        )
+        logs = res.stdout.rstrip().split('\n')
+        for line in logs:
+            yield line
+
+    def get_events(self):
+        for line in self.get_logs():
+            try:
+                event = parse_line(line)
+                yield event
+            except (NoMatchingPattern, ParsingError):
+                continue
