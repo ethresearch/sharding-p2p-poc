@@ -8,3 +8,11 @@ class InvalidTopology(Exception):
 
 class WrongTopology(Exception):
     pass
+
+
+class NoMatchingPattern(Exception):
+    pass
+
+
+class ParsingError(Exception):
+    pass

@@ -7,19 +7,15 @@ from dateutil import (
     parser,
 )
 
+from .exceptions import (
+    NoMatchingPattern,
+    ParsingError,
+)
 from .logs import (
     EventHasNoParameter,
     map_log_enum_pattern,
     parse_event_params,
 )
-
-
-class NoMatchingPattern(Exception):
-    pass
-
-
-class ParsingError(Exception):
-    pass
 
 
 Event = namedtuple('Event', ['time', 'log_type', 'logger_name', 'event_type', 'params'])
