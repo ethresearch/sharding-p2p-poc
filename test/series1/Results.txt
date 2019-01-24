@@ -1,0 +1,112 @@
+*********** Peer List ***********
+Peer List node0: ["QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"]
+=>10
+
+Peer List node1: ["QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL"]
+==>10
+
+Peer List node2: ["QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R"]
+==>10
+
+Peer List node3: ["QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U"]
+==>10
+
+Peer List node4: ["QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv"]
+==>10
+
+Peer List node5: ["Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"]
+==>10
+
+Peer List node6: ["QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"]
+==>10
+
+Peer List node7: ["Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"]
+==>10
+
+Peer List node8: ["QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"]
+==>10
+
+Peer List node9: ["Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"]
+==>10
+
+Peer List node10: ["Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB"]
+==>10
+
+ *********** Topic Peer List ***********
+Topic Peer List node0: {
+    "listeningShard":["QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"],
+    ==>10
+    "shardCollations_1":["QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"]
+    ==>10
+}
+
+
+Topic Peer List node1: {
+    "listeningShard":["QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL"],
+    ==>10
+    "shardCollations_1":["Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"]
+    ==>10
+}
+
+Topic Peer List node2: {
+    "listeningShard":["QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2"],
+    ==>10
+    "shardCollations_1":["QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"]
+    ==>10
+}
+
+Topic Peer List node3: {
+    "listeningShard":["QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN"],
+    ==>10
+    "shardCollations_1":["QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd"]
+    ==>10
+}
+
+Topic Peer List node4: {
+    "listeningShard":["QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB"],
+    ==>10
+    "shardCollations_1":["QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U"]
+    ==>10
+}
+
+Topic Peer List node5: {
+    "listeningShard":["QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"],
+    ==>10
+    "shardCollations_1":["QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL"]
+    ==>10
+}
+
+Topic Peer List node6: {
+    "listeningShard":["QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2"],
+    ==>10
+    "shardCollations_1":["Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv"]
+    ==>10
+}
+
+Topic Peer List node7: {
+    "listeningShard":["QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"],
+    ==>10
+    "shardCollations_1":["QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R"]
+    ==>10
+}
+
+Topic Peer List node8: {
+    "listeningShard":["Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"],
+    ==>10
+    "shardCollations_1":["QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2"]
+    ==>10
+}
+
+Topic Peer List node9: {
+    "listeningShard":["QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm"],
+    ==>10
+    "shardCollations_1":["QmeMdxpbB5aK6gYu78TdMHMLnQuEatPAw5UuRPTfoXLDsm","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2"]
+    ==>10
+}
+
+Topic Peer List node10: {
+    "listeningShard":["QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"],
+    ==>10
+    "shardCollations_1":["QmaPF7a84gB8Ld35T9mJG2kDPNgQ1v5DkZr3hvjeGaxuQN","QmYfkGxaRn675YYywLu7CHR9iTjUa7A4tHbskDcpFtPc5R","QmRfvHwkUAnv5shq1e8mEdMjbHkuJruQgab6ijSYR5kJXv","QmXEM4JajZe6o2ejwkWA6pH3qRw3rkNbF23Lo5PJxrof7U","QmTkBrU7gzzAZo6B93oPc2hetvv8EhmVEZGdkpmdkg7Pw2","QmWxmXbDqhho2CrJhiu2hHFHba2bsdKDbCSV548KxxAmbB","QmRd2F8C6Nk49zjLmNCHKRzPaMUggEicJMw6tHX6DEe8VL","QmXtW5fXrrvmHWPhq3FLHdm4zKnC5FZdhTRynSQT57Yrmd","Qmd8vXqRiFVkcXcB1nigjCDuUyHcFkja6fQcU9w2zMzwwi","QmUEYt4pTZwnmeiWJhCQJ2sHH46A3bs3KBVN8eN2nC87Y4"]
+    ==>10
+}
