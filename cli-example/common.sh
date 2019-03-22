@@ -31,6 +31,16 @@ spinup_node() {
     $EXE_NAME -seed=$seed -port=$port -rpcport=$rpcport -verbose $params &
 }
 
+# spinup_node_with_bootstrapping {seed} {list_bootnode_multiaddr}
+spinup_node_with_bootstrapping() {
+    seed=$1
+    port=$(show_port $seed)
+    rpcport=$(show_rpcport $seed)
+    p=$@
+    list_bootnode_multiaddr=${@:2}
+    $EXE_NAME -seed=$seed -port=$port -rpcport=$rpcport -verbose -bootstrap -bootnodes=$list_bootnode_multiaddr &
+}
+
 cli_prompt() {
     p=$@
     seed=$1
@@ -49,7 +59,8 @@ identify() {
 show_pid() {
     seed=$1
     identify=$(identify $seed)
-    re="^([A-Za-z0-9]+) "
+    re='"peerID":"([A-Za-z0-9]+)"'
+    # re='^{"peer(ID)"'
     if [[ $identify =~ $re ]]; then
         pid=${BASH_REMATCH[1]};
     fi

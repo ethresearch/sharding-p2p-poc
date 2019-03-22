@@ -12,8 +12,8 @@ services:
   - docker
 
 install:
-  - docker build -t ethresearch/sharding-p2p:latest .
-  - docker run -d --name p2p ethresearch/sharding-p2p:latest
+  - docker build -t ethresearch/sharding-p2p-poc:latest .
+  - docker run -d --name p2p ethresearch/sharding-p2p-poc:latest
 
 before_install:
   - go mod download

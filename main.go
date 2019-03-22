@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	logger    = logging.Logger("sharding-p2p")
+	logger    = logging.Logger("sharding-p2p-poc")
 	GitCommit string
 )
 
@@ -80,9 +80,9 @@ func main() {
 	rpcAddr := fmt.Sprintf("%v:%v", *rpcIP, *rpcPort)
 	notifierAddr := fmt.Sprintf("%v:%v", *rpcIP, *notifierPort)
 	if *verbose {
-		logging.SetLogLevel("sharding-p2p", "DEBUG")
+		logging.SetLogLevel("sharding-p2p-poc", "DEBUG")
 	} else {
-		logging.SetLogLevel("sharding-p2p", "ERROR")
+		logging.SetLogLevel("sharding-p2p-poc", "ERROR")
 	}
 
 	cliArgs := flag.Args()
@@ -191,7 +191,7 @@ func runServer(
 			Param: 1,
 		},
 		Reporter: &jaegerconfig.ReporterConfig{
-			LogSpans:           true,
+			LogSpans:           false,
 			LocalAgentHostPort: localAgentHostPort,
 		},
 	}
@@ -273,7 +273,10 @@ func makeNode(
 	// Make a host that listens on the given multiaddress
 	node := NewNode(ctx, routedHost, dht, eventNotifier)
 	if doBootstrapping {
-		node.StartBootstrapping(ctx, bootstrapPeers)
+		err := node.StartBootstrapping(ctx, bootstrapPeers)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return node, nil
